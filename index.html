@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumignis — Une vie de prière et des forces nouvelles au service d'un lieu d'Église</title>
+<meta name="description" content="Lumignis : des familles chrétiennes et un prêtre qui souhaitent mettre une vie de prière, un accueil et une économie solide au service d'un lieu ou d'une communauté d'Église." />
+<meta name="robots" content="noindex, nofollow" />
+<meta property="og:title" content="Lumignis" />
+<meta property="og:description" content="Mettre des familles, un prêtre et une vie de prière au service d'un lieu d'Église." />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --ivory:#F7F2E9;
+    --ivory-2:#FBF8F1;
+    --ink:#241F19;
+    --ink-soft:#4A4137;
+    --ink-faint:#7A6E5E;
+    --gold:#B0894F;
+    --gold-deep:#8C6A38;
+    --burgundy:#5B2333;
+    --line:#E4D9C6;
+    --line-strong:#D6C6AC;
+    --max:44rem;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--ivory);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,"Times New Roman",serif;
+    font-size:19px;
+    line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 1.5rem;}
+
+  /* ————— Ornaments ————— */
+  .flame{display:block;margin:0 auto;width:34px;height:auto;color:var(--gold-deep);}
+  .rule{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--line-strong) 20%,var(--line-strong) 80%,transparent);margin:0;}
+  .ornament{display:flex;align-items:center;justify-content:center;gap:1rem;color:var(--gold);margin:3.4rem 0;}
+  .ornament::before,.ornament::after{content:"";height:1px;width:3.5rem;background:linear-gradient(90deg,transparent,var(--line-strong));}
+  .ornament::after{background:linear-gradient(90deg,var(--line-strong),transparent);}
+  .ornament span{font-size:1.1rem;letter-spacing:.3em;}
+
+  /* ————— Hero ————— */
+  header.hero{
+    text-align:center;
+    padding:5.5rem 1.5rem 3.2rem;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(176,137,79,.10), transparent 60%),
+      var(--ivory);
+    border-bottom:1px solid var(--line);
+  }
+  .kicker{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.34em;font-size:.7rem;
+    color:var(--gold-deep);font-weight:600;margin:1.4rem 0 0;
+  }
+  h1.brand{
+    font-size:clamp(3.2rem,9vw,5.2rem);
+    line-height:.98;margin:.5rem 0 .2rem;font-weight:600;letter-spacing:.01em;
+    color:var(--ink);
+  }
+  .latin{
+    font-style:italic;color:var(--gold-deep);letter-spacing:.16em;
+    font-size:1rem;margin:0 0 1.9rem;
+  }
+  .promise{
+    font-size:clamp(1.15rem,3.2vw,1.5rem);
+    line-height:1.5;color:var(--ink-soft);max-width:32rem;margin:0 auto;
+    font-style:italic;
+  }
+  .confidential{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+    margin-top:2.6rem;
+  }
+
+  /* ————— Sections ————— */
+  main{padding:1rem 0 2rem;}
+  section{padding:2.6rem 0;}
+  h2{
+    font-size:clamp(1.5rem,4vw,1.95rem);
+    line-height:1.2;font-weight:600;margin:0 0 1.1rem;color:var(--ink);
+    letter-spacing:.005em;
+  }
+  h2 .num{
+    display:block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:.68rem;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);
+    margin-bottom:.5rem;font-weight:600;
+  }
+  p{margin:0 0 1.15rem;}
+  .lead{font-size:1.12rem;color:var(--ink);}
+  em,i{color:var(--ink-soft);}
+  strong{font-weight:600;color:var(--ink);}
+  .soft{color:var(--ink-soft);}
+
+  /* pull quote */
+  .pull{
+    border-left:2px solid var(--gold);
+    padding:.2rem 0 .2rem 1.6rem;margin:2.2rem 0;
+    font-size:1.28rem;line-height:1.45;font-style:italic;color:var(--burgundy);
+  }
+
+  /* engagement list */
+  ul.commit{list-style:none;padding:0;margin:1.4rem 0;}
+  ul.commit li{
+    position:relative;padding:.55rem 0 .55rem 2rem;border-bottom:1px solid var(--line);
+  }
+  ul.commit li:last-child{border-bottom:0;}
+  ul.commit li::before{
+    content:"";position:absolute;left:.2rem;top:1.1rem;width:7px;height:7px;
+    background:var(--gold);transform:rotate(45deg);
+  }
+
+  /* gains grid */
+  .gains{display:grid;gap:0;margin:1.4rem 0;border-top:1px solid var(--line);}
+  .gains .row{
+    display:grid;grid-template-columns:1fr;gap:.15rem;
+    padding:1.05rem 0;border-bottom:1px solid var(--line);
+  }
+  .gains .row b{color:var(--ink);font-weight:600;}
+  .gains .row span{color:var(--ink-soft);font-size:.98rem;}
+
+  /* seriousness cards */
+  .cards{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:1.6rem 0;}
+  .cards .card{background:var(--ivory-2);padding:1.4rem 1.5rem;}
+  .cards .card h3{margin:0 0 .5rem;font-size:1.08rem;font-weight:600;color:var(--burgundy);}
+  .cards .card p{margin:0;font-size:1rem;color:var(--ink-soft);}
+
+  /* ask / closing */
+  .ask{
+    background:var(--ivory-2);border:1px solid var(--line-strong);
+    border-radius:2px;padding:2.4rem 2rem;margin:2rem 0 0;text-align:center;
+  }
+  .ask h2{margin-bottom:1rem;}
+  .ask .three{
+    display:grid;grid-template-columns:1fr;gap:1.3rem;margin:1.8rem 0 0;text-align:left;
+  }
+  .ask .three div b{display:block;color:var(--burgundy);font-weight:600;margin-bottom:.2rem;}
+  .ask .three div span{color:var(--ink-soft);font-size:1rem;}
+
+  /* contact */
+  .contact{text-align:center;padding:3rem 1.5rem 1rem;}
+  .contact .who{font-size:1.05rem;color:var(--ink);}
+  .contact a{color:var(--gold-deep);text-decoration:none;border-bottom:1px solid var(--line-strong);}
+  .contact a:hover{border-color:var(--gold-deep);}
+  .signoff{font-style:italic;color:var(--ink-soft);max-width:30rem;margin:0 auto 2rem;}
+
+  footer{
+    text-align:center;padding:2.4rem 1.5rem 3.4rem;color:var(--ink-faint);
+    font-size:.78rem;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    letter-spacing:.04em;border-top:1px solid var(--line);
+  }
+  footer .latin-foot{font-family:inherit;font-style:italic;letter-spacing:.16em;color:var(--gold-deep);display:block;margin-bottom:.6rem;font-size:.95rem;}
+
+  @media (min-width:640px){
+    .ask .three{grid-template-columns:repeat(3,1fr);}
+  }
+  @media print{
+    body{background:#fff;font-size:12pt;color:#000;}
+    header.hero{padding-top:1.5rem;border:0;}
+    .confidential{display:none;}
+    section{padding:1.1rem 0;}
+    .pull{color:#000;}
+    a{color:#000;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="flame" viewBox="0 0 24 34" fill="none" aria-hidden="true">
+    <path d="M12 1C12 8 5 10 5 18a7 7 0 0 0 14 0c0-4-2-5-3-7-1 3-3 3-3 1 0-4 2-6-1-11z" fill="currentColor" opacity=".92"/>
+  </svg>
+  <p class="kicker">Un discernement porté en Église</p>
+  <h1 class="brand">Lumignis</h1>
+  <p class="latin">Lumen&nbsp;·&nbsp;Ignis — la petite flamme qu'on ne laisse pas mourir</p>
+  <p class="promise">Mettre des familles, un prêtre et une vie de prière au service d'un lieu ou d'une communauté d'Église qui en a besoin.</p>
+  <p class="confidential">Document de présentation · partagé à un cercle restreint</p>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <section>
+      <p class="lead">Ce document n'est ni un dossier de financement, ni un plan d'affaires. C'est une présentation de qui nous sommes, de ce que nous portons, et de ce que nous venons humblement proposer — à ceux qui, dans l'Église, ont la charge de discerner.</p>
+    </section>
+
+    <div class="ornament"><span>✦</span></div>
+
+    <section>
+      <h2><span class="num">L'intuition</span>Une vie de prière et des forces nouvelles, au service d'un lieu qui en a besoin</h2>
+      <p>Partout en France, des lieux d'Église peinent : faute de vocations, faute de bras, faute de relève. Des communautés religieuses vieillissent ; des sanctuaires et des maisons qui portaient une vie de prière et d'accueil intense peinent aujourd'hui à la maintenir seuls. Beaucoup de diocèses vivent cette même tension, et la conduisent avec courage.</p>
+      <p>Nous sommes quelques familles chrétiennes et un prêtre. Nous ne cherchons pas d'abord un lieu vacant à occuper : nous venons proposer d'<strong>apporter des forces</strong> à un lieu ou à une communauté qui en manque — une présence stable, des familles engagées, un prêtre, une vie de prière quotidienne, et la capacité de faire vivre un accueil ample et une économie qui se tienne, <strong>au service</strong> de ceux qui nous recevraient, et non à côté d'eux.</p>
+      <p class="pull">Lumignis — la petite flamme qu'on ne laisse pas mourir, ou qu'on vient aider à faire rebrûler plus fort.</p>
+      <p>Ce désir n'a de sens que porté en Église, sous une autorité, avec une bénédiction. C'est pourquoi nous venons, avant tout lieu et avant toute communauté précise, nous présenter et demander à discerner.</p>
+    </section>
+
+    <hr class="rule" />
+
+    <section>
+      <h2><span class="num">Qui nous sommes</span>Des familles, pas un homme seul</h2>
+      <p>Nous sommes deux à trois familles fondatrices, avec d'autres en discernement, qui souhaitent vivre proches les unes des autres, élever leurs enfants dans la foi, et mettre leur vie au service d'un lieu ou d'une communauté d'Église. Ce projet est né d'un désir personnel, mais il est devenu, avec le temps, <strong>le projet de tous</strong> : une responsabilité partagée entre adultes libres, et non l'aventure d'un seul.</p>
+      <p>Un <strong>prêtre expérimenté</strong> chemine avec nous. Ayant connu de l'intérieur, par le passé, les dérives possibles d'une communauté, il est aujourd'hui le plus attentif d'entre nous à la nécessité d'une couverture claire, d'une gouvernance collégiale et d'une totale transparence envers l'autorité épiscopale. Sa situation canonique complète et les références utiles sont à la disposition de l'autorité qui souhaiterait les vérifier — nous accueillons cette vérification comme la moindre des choses.</p>
+    </section>
+
+    <hr class="rule" />
+
+    <section>
+      <h2><span class="num">Notre premier engagement</span>La protection des enfants</h2>
+      <p>Nous accueillerons des familles, donc des enfants — et nous savons que rien n'est plus grave, aujourd'hui, que la sécurité des mineurs dans un lieu d'Église. Ce n'est pas une case que nous cochons pour rassurer : c'est une condition que nous nous posons à nous-mêmes, avant même qu'on ait à nous la demander.</p>
+      <p>Concrètement, nous nous engageons, dès la constitution de notre communauté, à :</p>
+      <ul class="commit">
+        <li><strong>adhérer pleinement au dispositif diocésain de protection des mineurs</strong> et signer la charte de bientraitance ;</li>
+        <li><strong>désigner un référent protection des mineurs</strong>, en lien direct avec le délégué diocésain compétent ;</li>
+        <li><strong>vérifier systématiquement l'honorabilité</strong> — extraits de casier judiciaire — de toute personne, laïque ou religieuse, en contact avec des enfants ;</li>
+        <li>construire une <strong>gouvernance collégiale</strong>, sans figure unique incontestable, avec une vraie liberté d'entrée et de sortie pour chacun — la meilleure protection contre toute forme d'emprise.</li>
+      </ul>
+      <p class="soft">Nous savons que ce sujet pèse aujourd'hui, plus que jamais, sur les épaules des évêques. Nous ne venons pas ajouter une inquiétude : nous venons avec un engagement déjà pensé, que nous voulons construire avec l'autorité et ses services, pas à côté d'eux.</p>
+    </section>
+
+    <hr class="rule" />
+
+    <section>
+      <h2><span class="num">Ce que nous cherchons</span>Une bénédiction, une lecture, une mise en relation</h2>
+      <p>Nous ne venons demander ni un lieu précis, ni de l'argent. Nous venons chercher trois choses.</p>
+      <p><strong>Une bénédiction, d'abord</strong> — l'assurance que ce désir a sa place, et la permission de continuer à le discerner en Église.</p>
+      <p><strong>Une lecture, ensuite.</strong> L'autorité connaît, mieux que quiconque, l'état réel des communautés et des lieux : ceux qui vieillissent, ceux qui chercheraient un renfort, ceux pour qui une présence de familles et d'un prêtre serait un soulagement plutôt qu'une charge. Nous venons avec une vraie ambition — porter une vie de prière quotidienne, un accueil ample, une économie qui se tienne — et une vraie humilité : nous sommes prêts à nous insérer dans une communauté déjà existante, <strong>dans le respect plein et entier de son charisme et de sa règle</strong>, plutôt qu'à imposer les nôtres.</p>
+      <p><strong>Une mise en relation, si cela est jugé juste.</strong> Si un lieu ou une communauté vient à l'esprit, nous serions heureux qu'on nous ouvre cette porte, ou qu'on nous indique vers qui aller.</p>
+      <p class="soft">Nous savons qu'un bien d'Église précieux ne se donne pas librement, et ce n'est pas ce que nous cherchons. Le jour où un lieu se prêterait à notre présence, nous ne demanderions qu'à nous le voir <strong>confier</strong>, selon la forme jugée la plus juste — une convention, un prêt à usage, un bail. Et le jour où notre communauté aura trouvé sa forme, nous chercherons naturellement la reconnaissance canonique qui lui revient, sous un mandat révisable. Mais cela viendra après ; aujourd'hui, nous venons simplement discerner.</p>
+    </section>
+
+    <hr class="rule" />
+
+    <section>
+      <h2><span class="num">Ce que cela apporte</span>Un renfort, pas une charge</h2>
+      <div class="gains">
+        <div class="row"><b>Des forces nouvelles</b><span>Des familles engagées, un prêtre, une présence stable et priante, prête à s'inscrire dans une dynamique missionnaire plutôt qu'à côté d'elle.</span></div>
+        <div class="row"><b>Un soutien à un lieu qui peine</b><span>Sans lui imposer ni reprise ni dissolution : un renfort, pas une prise de contrôle.</span></div>
+        <div class="row"><b>Aucun coût, aucun risque financier</b><span>Nous ne venons pas chercher un financement, mais une orientation.</span></div>
+        <div class="row"><b>Une mission qui reste sous l'autorité de l'Église</b><span>La vocation du lieu et sa fidélité restent sous la vigilance de l'évêque, et inscrites dans nos statuts le moment venu.</span></div>
+        <div class="row"><b>Une réversibilité</b><span>Si un lieu diocésain venait à nous être confié, selon la forme choisie il peut demeurer la propriété du diocèse ou lui revenir en cas d'échec — jamais à des particuliers.</span></div>
+      </div>
+    </section>
+
+    <hr class="rule" />
+
+    <section>
+      <h2><span class="num">Nos gages de sérieux</span>Une intuition, portée avec rigueur</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Une économie pensée, pas improvisée</h3>
+          <p>Nous avons construit, avec sérieux, les principes d'un modèle auto-suffisant : un accueil et une vie communautaire capables de couvrir les charges courantes et de provisionner chaque année l'entretien du bâti, sans jamais solliciter le diocèse. Ce travail — statuts envisagés, gouvernance, principes de viabilité — est à disposition de qui souhaite l'examiner.</p>
+        </div>
+        <div class="card">
+          <h3>Une gouvernance collégiale</h3>
+          <p>Le projet ne repose pas sur un homme, mais sur une communauté de familles adultes et responsables, en lien assumé avec l'autorité épiscopale. Nous pensons dès maintenant une présence qui ne dépend pas d'une seule personne, et une présence sacerdotale discernée dans la durée.</p>
+        </div>
+        <div class="card">
+          <h3>Une identité qui est simplement celle de l'Église</h3>
+          <p>Le cœur de notre vie sera l'Eucharistie, l'adoration, et le « que ta volonté soit faite » du Notre Père — rien qui ne soit la piété commune de l'Église, vécue en pleine docilité à son magistère.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="ornament"><span>✦</span></div>
+
+    <section>
+      <div class="ask">
+        <h2>Notre demande, aujourd'hui</h2>
+        <p class="soft" style="max-width:34rem;margin:0 auto;">Nous ne venons pas chercher une décision. Nous venons chercher un regard, des questions, et une lecture de ce dont un diocèse — ou une communauté — pourrait avoir besoin. Si cela est jugé juste, nous venons chercher une bénédiction pour poursuivre ce discernement.</p>
+        <div class="three">
+          <div><b>Se présenter</b><span>Dire qui nous sommes, en vérité et en humilité.</span></div>
+          <div><b>Écouter</b><span>Recevoir votre lecture et vos questions.</span></div>
+          <div><b>Cheminer</b><span>Poursuivre le discernement en Église, avec votre bénédiction.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact">
+      <p class="signoff">Si ce que vous venez de lire fait écho à un lieu, une communauté, ou simplement à une intuition que vous souhaiteriez éprouver avec nous, nous serions honorés d'échanger.</p>
+      <p class="who">
+        <strong>Benoit Decuyper</strong><br />
+        <a href="mailto:benoit.decuyper@gmail.com">benoit.decuyper@gmail.com</a>
+      </p>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <span class="latin-foot">Lumen · Ignis</span>
+  Lumignis — nom porté à titre provisoire · Document de présentation partagé à un cercle restreint · Merci de ne pas le diffuser au-delà.
+</footer>
+
+</body>
+</html>
