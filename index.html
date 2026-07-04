@@ -3,44 +3,251 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
 <title>Lumignis — Une vie chrétienne donnée à un lieu de l'Église</title>
 <meta name="description" content="Lumignis : des familles et un prêtre qui veulent remettre une vie chrétienne — prière quotidienne, travail, fraternité, accueil — au service d'un lieu de l'Église, sous son autorité, pour embraser le monde à la lumière de l'Esprit Saint." />
-<meta name="robots" content="noindex, nofollow" />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0M0NTAxRSIgZD0iTTEyIDJjMyA1IDYgNyA2IDEyYTYgNiAwIDAgMS0xMiAwYzAtMyAyLTUgMy03IDAgMiAxIDMgMiAzIDEtMy0xLTYgMS04eiIvPjxwYXRoIGZpbGw9IiNFQkE5M0MiIGQ9Ik0xMiAxMC41YzEuNiAyIDMgMy4xIDMgNS4yYTMgMyAwIDAgMS02IDBjMC0yIDEuNC0zLjIgMy01LjJ6Ii8+PC9zdmc+" />
 <meta property="og:title" content="Lumignis" />
 <meta property="og:description" content="Des familles et un prêtre, une vie donnée à un lieu de l'Église — pour embraser le monde à la lumière de l'Esprit Saint." />
 <meta property="og:type" content="website" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0M0NTAxRSIgZD0iTTEyIDJjMyA1IDYgNyA2IDEyYTYgNiAwIDAgMS0xMiAwYzAtMyAyLTUgMy03IDAgMiAxIDMgMiAzIDEtMy0xLTYgMS04eiIvPjxwYXRoIGZpbGw9IiNFQkE5M0MiIGQ9Ik0xMiAxMC41YzEuNiAyIDMgMy4xIDMgNS4yYTMgMyAwIDAgMS02IDBjMC0yIDEuNC0zLjIgMy01LjJ6Ii8+PC9zdmc+" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,560;9..144,600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
   :root{
-    --paper:#FFFFFF;
-    --paper-warm:#FAF7F1;
-    --ink:#201B15;
-    --ink-soft:#4A443B;
-    --ink-faint:#8A8177;
-    --gold:#B8862F;
-    --gold-deep:#9A6F22;
-    --ember:#C4501E;
-    --line:#ECE6D9;
-    --line-strong:#DFD6C4;
-    --f-display:"Fraunces",Georgia,"Times New Roman",serif;
-    --f-body:"Literata",Georgia,serif;
-    --f-label:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    --max:42rem;
+    --paper:#FFFFFF;--paper-warm:#FAF7F1;--ink:#201B15;--ink-soft:#4A443B;--ink-faint:#8A8177;
+    --gold:#B8862F;--gold-deep:#9A6F22;--ember:#C4501E;--slate:#6B7A8F;--line:#ECE6D9;--line-strong:#DFD6C4;
+    --green:#5C7A4A;
+    --f-display:"Fraunces",Georgia,serif;--f-body:"Literata",Georgia,serif;--f-label:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --max:46rem;--max-accueil:42rem;
+    --r-s:.35rem;--r-m:.6rem;--r-l:1rem;--r-full:999px;
+    --sh-s:0 1px 3px rgba(32,24,14,.07);
+    --sh-m:0 10px 30px rgba(32,24,14,.09);
+    --sh-l:0 26px 64px rgba(24,16,8,.16);
+    --ease:cubic-bezier(.22,.7,.24,1);
   }
   *{box-sizing:border-box;}
   html{-webkit-text-size-adjust:100%;}
-  body{
-    margin:0;background:var(--paper);color:var(--ink);
-    font-family:var(--f-body);font-size:18px;line-height:1.68;
-    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-  }
-  .wrap{max-width:var(--max);margin:0 auto;padding:0 1.5rem;}
+  body{margin:0;background:var(--paper-warm);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 1.25rem;}
+  h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);line-height:1.2;font-variation-settings:"opsz" 30,"SOFT" 30,"WONK" 0;}
+  a{color:var(--ember);}
+  .soft{color:var(--ink-soft);} .center{text-align:center;} .hidden{display:none !important;}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:3px;}
+  button{font:inherit;}
 
-  /* ————— Hero ————— */
-  .hero{
+  /* ===== Auth (contenu réutilisé dans la modale) ===== */
+  .auth-card{position:relative;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-l);max-width:25rem;width:100%;padding:2.75rem 2.25rem 2.4rem;box-shadow:var(--sh-l);}
+  .auth-card::before{content:"";position:absolute;top:0;left:2.25rem;right:2.25rem;height:2px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),var(--ember),var(--gold),transparent);opacity:.85;}
+  .auth-mark{text-align:center;color:var(--gold);font-size:1.1rem;margin:0 0 .7rem;}
+  .auth-brand{font-family:var(--f-display);font-weight:600;font-size:2.1rem;text-align:center;margin:0 0 .2rem;letter-spacing:-.01em;}
+  .auth-sub{font-family:var(--f-label);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);text-align:center;margin:0 0 1.6rem;}
+  .auth-rule{height:1px;width:2.6rem;background:var(--line-strong);margin:0 auto 1.9rem;}
+  .field{margin:0 0 1rem;}
+  .field label{display:block;font-family:var(--f-label);font-size:.74rem;letter-spacing:.03em;color:var(--ink-soft);margin:0 0 .35rem;}
+  .field input{width:100%;font-family:var(--f-body);font-size:1rem;padding:.75rem .85rem;border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper-warm);color:var(--ink);transition:border-color .15s var(--ease),box-shadow .15s var(--ease);}
+  .field input:hover{border-color:var(--ink-faint);}
+  .field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,47,.15);}
+  .btn{width:100%;font-family:var(--f-label);font-weight:600;font-size:.92rem;letter-spacing:.02em;padding:.85rem;border:0;border-radius:var(--r-s);background:var(--ember);color:#fff;cursor:pointer;margin-top:.4rem;transition:background .15s var(--ease),transform .15s var(--ease),box-shadow .15s var(--ease);box-shadow:var(--sh-s);}
+  .btn:hover{background:#a8431a;box-shadow:var(--sh-m);transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none;}
+  .msg{font-size:.86rem;min-height:1.1rem;margin:1.1rem 0 0;text-align:center;} .msg.err{color:var(--ember);} .msg.ok{color:var(--gold-deep);}
+  .auth-help{text-align:center;color:var(--ink-soft);font-size:.8rem;margin-top:1.5rem;line-height:1.6;}
+  .auth-help a{color:var(--gold-deep);text-decoration:none;border-bottom:1px solid rgba(154,111,34,.35);}
+  .auth-help a:hover{border-color:var(--gold-deep);}
+
+  .btn-ghost{font-family:var(--f-label);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.55rem 1.1rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s;}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep);}
+
+  /* ===== Modale de connexion ===== */
+  .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(32,24,14,.55);display:flex;align-items:center;justify-content:center;padding:1.25rem;}
+  .modal-card{max-height:92vh;overflow-y:auto;}
+  .modal-close{position:absolute;top:.85rem;right:.85rem;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;background:none;border:0;font-size:1.4rem;line-height:1;color:var(--ink-faint);cursor:pointer;border-radius:50%;transition:background .15s,color .15s;}
+  .modal-close:hover{background:var(--paper-warm);color:var(--ink);}
+
+  /* ===== Topbar ===== */
+  .topbar{background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:500;}
+  .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:wrap;row-gap:.5rem;}
+  .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;}
+  .tb-brand:hover{color:var(--gold-deep);}
+  .ecole{font-size:.9rem;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--r-s);padding:.5rem .7rem;margin:.7rem 0;}
+  .ecole b{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);}
+  .tb-mark{color:var(--gold);font-size:.8em;}
+  .topbar-actions{display:flex;align-items:center;gap:.7rem;}
+
+  /* Menu compte */
+  .account{position:relative;}
+  .account-trigger{display:flex;align-items:center;gap:.55rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.3rem .8rem .3rem .3rem;cursor:pointer;color:var(--ink-soft);transition:border-color .15s,box-shadow .15s;}
+  .account-trigger:hover{border-color:var(--gold);box-shadow:var(--sh-s);}
+  .account-trigger[aria-expanded="true"]{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,47,.14);}
+  .account-avatar{display:flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:50%;background:linear-gradient(155deg,var(--gold),var(--ember));color:#fff;font-family:var(--f-display);font-weight:600;font-size:.78rem;flex-shrink:0;}
+  .tb-user{font-family:var(--f-label);font-size:.76rem;color:var(--ink-soft);max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .account-caret{color:var(--ink-faint);transition:transform .18s var(--ease);flex-shrink:0;}
+  .account-trigger[aria-expanded="true"] .account-caret{transform:rotate(180deg);}
+  .account-menu{position:absolute;top:calc(100% + .55rem);right:0;min-width:14rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:var(--sh-l);padding:.4rem;
+    opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:top right;transition:opacity .16s var(--ease),transform .16s var(--ease),visibility .16s;z-index:600;}
+  .account.is-open .account-menu{opacity:1;visibility:visible;transform:none;}
+  .account-menu-item{display:block;width:100%;text-align:left;font-family:var(--f-label);font-size:.85rem;background:none;border:0;border-radius:var(--r-s);padding:.65rem .8rem;color:var(--ink-soft);cursor:pointer;transition:background .12s,color .12s;}
+  .account-menu-item:hover{background:var(--paper-warm);color:var(--gold-deep);}
+  .account-menu-item--danger:hover{color:var(--ember);}
+  .account-menu-sep{height:1px;background:var(--line);margin:.35rem .2rem;}
+
+  /* ===== Bandeau "compte pas encore autorisé" ===== */
+  .notmember-banner{background:var(--paper-warm);border-bottom:1px solid var(--line-strong);}
+  .notmember-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.7rem 0;}
+  .notmember-inner p{margin:0;font-size:.86rem;color:var(--ink-soft);}
+
+  /* ===== Tabs ===== */
+  .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:1.6rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{position:relative;font-family:var(--f-label);font-weight:600;font-size:.9rem;background:none;border:0;padding:.75rem .95rem;margin-bottom:-1px;color:var(--ink-faint);cursor:pointer;white-space:nowrap;transition:color .15s;}
+  .tab::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;background:var(--ember);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform .18s var(--ease);}
+  .tab:hover{color:var(--ink-soft);}
+  .tab.is-active{color:var(--ink);}
+  .tab.is-active::after{transform:scaleX(1);}
+  .methode-box{border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper);margin:0 0 1.4rem;padding:.2rem .9rem;}
+  .methode-box>summary{font-family:var(--f-label);font-size:.8rem;letter-spacing:.03em;color:var(--ink-soft);cursor:pointer;padding:.7rem .1rem;list-style:none;}
+  .methode-box>summary::-webkit-details-marker{display:none;}
+  .methode-box>summary::before{content:"▸";color:var(--gold);margin-right:.5rem;display:inline-block;transition:transform .15s;}
+  .methode-box[open]>summary::before{transform:rotate(90deg);}
+  .methode-box .page-sec{border:0;border-top:1px solid var(--line);border-radius:0;padding:1.2rem .1rem;margin:0;background:none;}
+  .methode-box .page-sec:first-child{border-top:0;}
+  .panel{display:none;padding-bottom:4.5rem;} .panel.is-active{display:block;animation:fadein .25s var(--ease);}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  .lead{font-size:1.12rem;color:var(--ink);}
+  .foot-note{color:var(--ink-soft);font-size:.9rem;margin-top:1.8rem;}
+
+  /* ===== Fil d'actu ===== */
+  .post{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:1.6rem 1.7rem;margin:0 0 1.15rem;transition:box-shadow .15s;}
+  .post:hover{box-shadow:var(--sh-s);}
+  .post-date{font-family:var(--f-label);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 .4rem;}
+  .post h3{font-weight:560;font-size:1.32rem;margin:0 0 .85rem;}
+  .post p{margin:0 0 1rem;} .post p:last-child{margin-bottom:0;}
+  .post ul{margin:0 0 1rem;padding-left:1.2rem;} .post li{margin:0 0 .5rem;}
+
+  /* ===== Le projet (pages internes) ===== */
+  .page-sec{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:1.9rem 1.9rem;margin:0 0 1.3rem;}
+  .page-sec h2{font-weight:560;font-size:1.55rem;margin:0 0 1.1rem;position:relative;padding-bottom:.7rem;}
+  .page-sec h2::after{content:"";position:absolute;left:0;bottom:0;width:2.4rem;height:2px;background:linear-gradient(90deg,var(--gold),var(--ember));border-radius:2px;}
+  .page-sec h3{font-weight:560;font-size:1.14rem;margin:1.5rem 0 .65rem;}
+  .page-sec p{margin:0 0 1.05rem;} .page-sec ul{margin:0 0 1.05rem;padding-left:1.2rem;} .page-sec li{margin:0 0 .55rem;}
+  .page-nav{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.5rem;}
+  .page-nav a{font-family:var(--f-label);font-size:.78rem;text-decoration:none;color:var(--ink-soft);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.4rem .9rem;transition:border-color .15s,color .15s,background .15s;}
+  .page-nav a:hover{border-color:var(--gold);color:var(--gold-deep);background:var(--paper-warm);}
+
+  /* ===== Lieux : carte, filtres, fiches ===== */
+  .filters{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.1rem 0 .55rem;}
+  .chip{font-family:var(--f-label);font-size:.78rem;font-weight:500;display:inline-flex;align-items:center;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.4rem .95rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s var(--ease),color .15s var(--ease),background .15s var(--ease);}
+  .chip:hover{border-color:var(--gold);color:var(--gold-deep);}
+  .chip.is-on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .chip-dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;margin-right:.45rem;flex-shrink:0;}
+  .chip-t1 .chip-dot{background:var(--ember);} .chip-t2 .chip-dot{background:var(--gold);} .chip-t3 .chip-dot{background:var(--slate);}
+  .chip-t1.is-on{background:var(--ember);border-color:var(--ember);}
+  .chip-t2.is-on{background:var(--gold);border-color:var(--gold);}
+  .chip-t3.is-on{background:var(--slate);border-color:var(--slate);}
+  .chip.is-on .chip-dot{background:#fff;}
+  .filters-help{font-family:var(--f-label);font-size:.78rem;line-height:1.65;color:var(--ink-soft);margin:0 0 1.1rem;}
+  .filters-help strong{color:var(--ink);font-weight:600;}
+  .map-frame{position:relative;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:.5rem;margin:.9rem 0 1.6rem;box-shadow:var(--sh-s);}
+  .map{height:min(56vh,440px);width:100%;border-radius:calc(var(--r-m) - .3rem);}
+  .map-reset{position:absolute;top:1.35rem;right:1.35rem;z-index:650;display:flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.72rem;font-weight:600;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.45rem .85rem;color:var(--ink-soft);cursor:pointer;box-shadow:var(--sh-s);transition:border-color .15s,color .15s,box-shadow .15s;}
+  .map-reset:hover{border-color:var(--gold);color:var(--gold-deep);box-shadow:var(--sh-m);}
+  .map-reset svg{flex-shrink:0;}
+  .dot{display:inline-block;width:.7rem;height:.7rem;border-radius:50%;margin-right:.4rem;vertical-align:middle;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);}
+  .dot.t1{background:var(--ember);}.dot.t2{background:var(--gold);}.dot.t3{background:var(--slate);}
+
+  .cards{display:grid;gap:1.4rem;}
+  .lieu-group-title{display:flex;align-items:center;font-family:var(--f-label);font-weight:600;font-size:.76rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 .55rem;padding-bottom:.45rem;border-bottom:1px solid var(--line);}
+  .lieu-group-count{color:var(--ink-faint);font-weight:500;text-transform:none;letter-spacing:0;margin-left:.3rem;}
+  .lieu-rows{display:grid;gap:.55rem;}
+  .lrow{background:var(--paper);border:1px solid var(--line-strong);border-left-width:4px;border-radius:var(--r-s);transition:box-shadow .18s var(--ease);}
+  .lrow.t1{border-left-color:var(--ember);}.lrow.t2{border-left-color:var(--gold);}.lrow.t3{border-left-color:var(--slate);}
+  .lrow:hover{box-shadow:var(--sh-s);}
+  .lrow.is-sel{box-shadow:var(--sh-m);background:var(--paper-warm);}
+  .lrow-main{display:grid;grid-template-columns:1fr auto;column-gap:.7rem;row-gap:.2rem;width:100%;text-align:left;background:none;border:0;padding:.85rem 1rem;cursor:pointer;font:inherit;color:inherit;}
+  .lrow-name{grid-column:1;font-family:var(--f-display);font-weight:560;font-size:1.06rem;color:var(--ink);}
+  .lrow-badge{grid-column:2;align-self:start;font-family:var(--f-label);font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);white-space:nowrap;}
+  .lrow-meta{grid-column:1/-1;font-family:var(--f-label);font-size:.79rem;color:var(--ink-soft);}
+  .detail{max-height:0;overflow:hidden;opacity:0;transition:max-height .32s var(--ease),opacity .22s,padding .22s;padding:0 1rem;}
+  .lrow.is-sel .detail{max-height:200rem;opacity:1;padding:0 1rem 1.05rem;}
+  .lieu-photo{margin:0 0 .9rem;}
+  .lieu-photo img{display:block;width:100%;max-height:20rem;object-fit:cover;border-radius:var(--r-m);box-shadow:var(--sh-s);}
+  .lieu-photo figcaption{font-family:var(--f-label);font-size:.7rem;color:var(--ink-faint);margin:.4rem 0 0;font-style:italic;}
+  .forts{background:linear-gradient(180deg,rgba(184,134,47,.08),rgba(184,134,47,.03));border:1px solid rgba(184,134,47,.28);border-left:3px solid var(--gold);border-radius:var(--r-s);padding:.7rem .95rem;margin:.8rem 0;}
+  .forts h4{font-family:var(--f-label);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 .35rem;}
+  .forts ul{margin:0;padding-left:1.1rem;} .forts li{margin:0 0 .3rem;font-size:.92rem;color:var(--ink);}
+  .crit-block{margin:.9rem 0;border:1px solid var(--line);border-radius:var(--r-s);padding:.3rem .7rem;background:var(--paper);}
+  .crit-block>summary{font-family:var(--f-label);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;padding:.5rem .1rem;list-style:none;}
+  .crit-block>summary::-webkit-details-marker{display:none;}
+  .crit-block>summary::before{content:"▸";color:var(--ink-faint);margin-right:.5rem;display:inline-block;transition:transform .15s;}
+  .crit-block[open]>summary::before{transform:rotate(90deg);}
+  .crit-grid{display:flex;flex-direction:column;gap:.15rem;margin:.3rem 0 .5rem;}
+  .crit{display:grid;grid-template-columns:1.3rem auto 1fr;align-items:baseline;gap:.5rem;font-size:.86rem;padding:.28rem .3rem;border-radius:4px;}
+  .crit:nth-child(odd){background:var(--paper-warm);}
+  .crit-v{font-weight:700;text-align:center;}
+  .crit-oui .crit-v,.crit-v.crit-oui{color:var(--green);}
+  .crit-partiel .crit-v,.crit-v.crit-partiel{color:var(--gold-deep);}
+  .crit-non .crit-v,.crit-v.crit-non{color:var(--ember);}
+  .crit-inconnu .crit-v,.crit-v.crit-inconnu{color:var(--ink-faint);}
+  .crit-lbl b{color:var(--ink-faint);font-weight:600;}
+  .crit.sacri .crit-lbl{color:var(--ink-soft);}
+  .crit-note{color:var(--ink-faint);font-size:.8rem;text-align:right;}
+  .crit-legend{font-size:.7rem;color:var(--ink-faint);margin:.2rem 0 .5rem;line-height:1.5;}
+  .crit-legend .crit-v{font-weight:700;}
+  @media (max-width:520px){ .crit{grid-template-columns:1.3rem 1fr;} .crit-note{grid-column:2;text-align:left;} }
+  .badge{display:inline-block;font-family:var(--f-label);font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;padding:.25rem .65rem;border-radius:var(--r-full);background:var(--paper-warm);border:1px solid var(--line-strong);color:var(--ink-soft);}
+  .meta{font-size:.9rem;color:var(--ink-soft);margin:.7rem 0;display:inline-block;}
+  .meta b{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;}
+  .pc{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin:.8rem 0;}
+  .pc h4{font-family:var(--f-label);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;margin:0 0 .35rem;}
+  .pc .pour h4{color:var(--green);} .pc .contre h4{color:var(--ember);}
+  .pc ul{margin:0;padding-left:1.1rem;font-size:.9rem;color:var(--ink-soft);} .pc li{margin:0 0 .35rem;}
+  .next{font-size:.92rem;background:var(--paper-warm);border:1px dashed var(--line-strong);border-radius:var(--r-s);padding:.65rem .85rem;margin:.7rem 0;}
+  .srcs{font-size:.8rem;color:var(--ink-faint);margin:.55rem 0 0;}
+  @media (max-width:480px){
+    .pc{grid-template-columns:1fr;}
+    .map-reset{top:.6rem;right:.6rem;padding:.42rem .6rem;font-size:0;}
+    .map-reset svg{margin:0;}
+  }
+
+  /* ===== Commentaires ===== */
+  .comments{border-top:1px solid var(--line);margin-top:1.1rem;padding-top:1rem;}
+  .comments h4{font-family:var(--f-label);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 .65rem;}
+  .cmt{font-size:.92rem;margin:0 0 .75rem;padding-left:.9rem;border-left:2px solid var(--line);}
+  .cmt .who{font-family:var(--f-label);font-size:.72rem;color:var(--gold-deep);font-weight:600;}
+  .cmt-form{display:flex;gap:.55rem;margin-top:.7rem;}
+  .cmt-form textarea{flex:1;font-family:var(--f-body);font-size:.92rem;padding:.55rem .7rem;border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper-warm);resize:vertical;min-height:2.5rem;transition:border-color .15s;}
+  .cmt-form textarea:focus{outline:none;border-color:var(--gold);}
+  .cmt-form button{align-self:flex-end;font-family:var(--f-label);font-weight:600;font-size:.8rem;padding:.6rem .95rem;border:0;border-radius:var(--r-s);background:var(--slate);color:#fff;cursor:pointer;transition:opacity .15s;}
+  .cmt-form button:hover{opacity:.88;}
+
+  /* ===== Documents ===== */
+  .doc-drop{background:var(--paper);border:1.5px dashed var(--line-strong);border-radius:var(--r-m);padding:1.7rem 1.4rem;text-align:center;margin:0 0 1.3rem;transition:border-color .15s,background .15s;}
+  .doc-drop:hover{border-color:var(--gold);}
+  .doc-drop input{display:none;}
+  .doc-drop-icon{width:2.4rem;height:2.4rem;border-radius:50%;background:var(--paper-warm);border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;margin:0 auto .8rem;color:var(--gold-deep);font-size:1.1rem;}
+  .doc-label{display:inline-block;font-family:var(--f-label);font-weight:600;font-size:.85rem;background:var(--ember);color:#fff;padding:.65rem 1.2rem;border-radius:var(--r-s);cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s;box-shadow:var(--sh-s);}
+  .doc-label:hover{background:#a8431a;box-shadow:var(--sh-m);transform:translateY(-1px);}
+  .doc-drop-hint{font-family:var(--f-label);font-size:.78rem;color:var(--ink-faint);margin:.75rem 0 0;}
+  #doc-status{font-size:.85rem;margin:.8rem 0 0;color:var(--ink-soft);}
+  .doc-list{display:grid;gap:.55rem;}
+  .doc{display:flex;align-items:center;justify-content:space-between;gap:.8rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-s);padding:.75rem .95rem;transition:box-shadow .15s;}
+  .doc:hover{box-shadow:var(--sh-s);}
+  .doc .dn{font-size:.95rem;word-break:break-word;}
+  .doc .dmeta{font-family:var(--f-label);font-size:.7rem;color:var(--ink-faint);}
+  .doc .dact{display:flex;gap:.5rem;flex-shrink:0;}
+  .doc a,.doc button{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-decoration:none;background:none;border:1px solid var(--line-strong);border-radius:var(--r-s);padding:.4rem .7rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s;}
+  .doc a:hover,.doc button:hover{border-color:var(--gold);color:var(--gold-deep);}
+
+  .loading{text-align:center;color:var(--ink-faint);padding:2.6rem 0;font-style:italic;}
+
+  /* ===== Accueil (présentation du projet) — scopé à #panel-accueil ===== */
+  #panel-accueil{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:18px;line-height:1.68;}
+  #panel-accueil .accueil-wrap{max-width:var(--max-accueil);margin:0 auto;padding:0 1.5rem;}
+  #panel-accueil .hero{
     position:relative;min-height:min(82vh,800px);
     display:flex;align-items:flex-end;
     padding:2.5rem 1.75rem 3rem;
@@ -48,7 +255,7 @@
     background-size:cover;background-position:center 42%;
     color:#FFFCF5;overflow:hidden;
   }
-  .hero::before{
+  #panel-accueil .hero::before{
     content:"";position:absolute;inset:0;
     background:linear-gradient(180deg,
       rgba(30,20,10,.02) 0%,
@@ -56,183 +263,698 @@
       rgba(24,15,7,.52) 74%,
       rgba(16,10,5,.82) 100%);
   }
-  .hero-inner{position:relative;z-index:1;width:100%;max-width:var(--max);margin:0 auto;}
-  h1.brand{
+  #panel-accueil .hero-inner{position:relative;z-index:1;width:100%;max-width:var(--max-accueil);margin:0 auto;}
+  #panel-accueil h1.brand{
     font-family:var(--f-display);font-weight:600;
     font-variation-settings:"opsz" 40,"SOFT" 50,"WONK" 0;
     font-size:clamp(2.9rem,8.5vw,4.6rem);line-height:.98;letter-spacing:-.012em;
     margin:0 0 1rem;color:#FFFDF8;text-shadow:0 1px 22px rgba(0,0,0,.30);
   }
-  .accroche{
+  #panel-accueil .accroche{
     font-family:var(--f-display);font-weight:500;font-style:italic;
     font-size:clamp(1.35rem,3.6vw,2.05rem);line-height:1.25;letter-spacing:-.005em;
     color:#FBEFD9;margin:0 0 1.3rem;max-width:27rem;
     text-shadow:0 1px 16px rgba(0,0,0,.28);
   }
-  .promise{
+  #panel-accueil .promise{
     font-family:var(--f-body);font-size:clamp(1.02rem,2.3vw,1.18rem);
     line-height:1.5;color:#F1E8D9;max-width:34rem;margin:0;
   }
-  .confidential{
+  #panel-accueil .confidential{
     font-family:var(--f-label);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
     color:rgba(255,252,245,.7);margin:1.9rem 0 0;
   }
-  .hero-sep{height:3px;background:linear-gradient(90deg,var(--gold),rgba(196,80,30,.9));}
+  #panel-accueil .hero-sep{height:3px;background:linear-gradient(90deg,var(--gold),rgba(196,80,30,.9));}
 
-  /* ————— Sections ————— */
-  main{padding:.5rem 0 1rem;}
-  section{padding:2.7rem 0;}
-  .lead{font-size:1.18rem;line-height:1.6;color:var(--ink);}
-  h2{
+  #panel-accueil main{padding:.5rem 0 1rem;}
+  #panel-accueil section{padding:2.7rem 0;}
+  #panel-accueil .lead{font-size:1.18rem;line-height:1.6;color:var(--ink);}
+  #panel-accueil h2{
     font-family:var(--f-display);font-weight:560;
     font-variation-settings:"opsz" 26,"SOFT" 42,"WONK" 0;
     font-size:clamp(1.55rem,4vw,2.05rem);line-height:1.18;letter-spacing:-.005em;
     margin:0 0 1.1rem;color:var(--ink);
   }
-  p{margin:0 0 1.15rem;}
-  strong{font-weight:600;color:var(--ink);}
-  em,i{color:var(--ink-soft);}
-  .soft{color:var(--ink-soft);}
+  #panel-accueil p{margin:0 0 1.15rem;}
+  #panel-accueil strong{font-weight:600;color:var(--ink);}
+  #panel-accueil em,#panel-accueil i{color:var(--ink-soft);}
 
-  hr.rule{border:0;height:1px;background:var(--line);margin:0;}
-  .ornament{display:flex;align-items:center;justify-content:center;gap:1rem;margin:3rem 0;color:var(--gold);}
-  .ornament::before,.ornament::after{content:"";height:1px;width:3.5rem;background:linear-gradient(90deg,transparent,var(--line-strong));}
-  .ornament::after{background:linear-gradient(90deg,var(--line-strong),transparent);}
-  .ornament span{font-family:var(--f-display);font-size:1rem;}
+  #panel-accueil hr.rule{border:0;height:1px;background:var(--line);margin:0;}
+  #panel-accueil .ornament{display:flex;align-items:center;justify-content:center;gap:1rem;margin:3rem 0;color:var(--gold);}
+  #panel-accueil .ornament::before,#panel-accueil .ornament::after{content:"";height:1px;width:3.5rem;background:linear-gradient(90deg,transparent,var(--line-strong));}
+  #panel-accueil .ornament::after{background:linear-gradient(90deg,var(--line-strong),transparent);}
+  #panel-accueil .ornament span{font-family:var(--f-display);font-size:1rem;}
 
-  .pull{
+  #panel-accueil .pull{
     border-left:3px solid var(--ember);
     padding:.35rem 0 .35rem 1.6rem;margin:2rem 0;
     font-family:var(--f-display);font-weight:500;font-style:italic;
     font-size:clamp(1.25rem,3vw,1.55rem);line-height:1.4;color:var(--ink);
   }
 
-  .ask{background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:3px;padding:2.5rem 2rem;margin:1rem 0 0;}
-  .ask h2{margin-bottom:1rem;text-align:center;}
-  .ask p{max-width:34rem;margin-left:auto;margin-right:auto;}
+  #panel-accueil .ask{background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:3px;padding:2.5rem 2rem;margin:1rem 0 0;}
+  #panel-accueil .ask h2{margin-bottom:1rem;text-align:center;}
+  #panel-accueil .ask p{max-width:34rem;margin-left:auto;margin-right:auto;}
 
-  .contact{text-align:center;padding:3rem 1.5rem 1rem;}
-  .signoff{font-style:italic;color:var(--ink-soft);max-width:33rem;margin:0 auto 1.8rem;font-size:1.08rem;}
-  .contact .who{font-size:1.05rem;color:var(--ink);}
-  .contact .who strong{font-family:var(--f-display);}
-  .contact a{color:var(--ember);text-decoration:none;border-bottom:1px solid rgba(196,80,30,.35);}
-  .contact a:hover{border-color:var(--ember);}
+  #panel-accueil .contact{text-align:center;padding:3rem 1.5rem 1rem;}
+  #panel-accueil .signoff{font-style:italic;color:var(--ink-soft);max-width:33rem;margin:0 auto 1.8rem;font-size:1.08rem;}
+  #panel-accueil .contact .who{font-size:1.05rem;color:var(--ink);}
+  #panel-accueil .contact .who strong{font-family:var(--f-display);}
+  #panel-accueil .contact a{color:var(--ember);text-decoration:none;border-bottom:1px solid rgba(196,80,30,.35);}
+  #panel-accueil .contact a:hover{border-color:var(--ember);}
 
-  footer{
+  #panel-accueil footer{
     text-align:center;padding:2.4rem 1.5rem 3.4rem;color:var(--ink-faint);
     font-family:var(--f-label);font-size:.72rem;letter-spacing:.04em;border-top:1px solid var(--line);
   }
-  footer .latin-foot{font-family:var(--f-display);font-style:italic;letter-spacing:.02em;color:var(--gold-deep);display:block;margin-bottom:.5rem;font-size:.92rem;}
+  #panel-accueil footer .latin-foot{font-family:var(--f-display);font-style:italic;letter-spacing:.02em;color:var(--gold-deep);display:block;margin-bottom:.5rem;font-size:.92rem;}
 
   @media print{
-    body{font-size:12pt;color:#000;}
-    .hero{background:none !important;color:#000;min-height:auto;padding:1.2rem 0;align-items:flex-start;}
-    .hero::before{display:none;}
-    .accroche,.promise,.hero h1.brand{color:#000;text-shadow:none;}
-    .confidential{color:#555;}
-    .hero-sep{display:none;}
-    section{padding:1.1rem 0;}
-    a{color:#000;}
+    #panel-accueil{font-size:12pt;color:#000;}
+    #panel-accueil .hero{background:none !important;color:#000;min-height:auto;padding:1.2rem 0;align-items:flex-start;}
+    #panel-accueil .hero::before{display:none;}
+    #panel-accueil .accroche,#panel-accueil .promise,#panel-accueil h1.brand{color:#000;text-shadow:none;}
+    #panel-accueil .confidential{color:#555;}
+    #panel-accueil .hero-sep{display:none;}
+    #panel-accueil section{padding:1.1rem 0;}
+    #panel-accueil a{color:#000;}
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width:640px){
+    .tb-user{display:none;}
+    .account-trigger{padding:.3rem;}
+  }
+  @media (max-width:520px){
+    body{font-size:16px;}
   }
 </style>
 </head>
 <body>
 
-<a href="equipe/" title="Accès réservé à l'équipe" style="position:fixed;top:1rem;right:1rem;z-index:50;font-family:'Work Sans',-apple-system,sans-serif;font-size:.66rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#FFFCF5;background:rgba(24,16,8,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border:1px solid rgba(255,252,245,.4);border-radius:999px;padding:.5rem .95rem;text-decoration:none;">Espace équipe →</a>
+<!-- BARRE DU HAUT — toujours visible -->
+<header class="topbar"><div class="wrap topbar-inner">
+  <button class="tb-brand" id="brand-home" type="button" title="Retour à l'accueil"><span class="tb-mark" aria-hidden="true">&#10022;</span>Lumignis</button>
 
-<header class="hero">
-  <div class="hero-inner">
-    <h1 class="brand">Lumignis</h1>
-    <p class="accroche">Embraser le monde à la lumière de l'Esprit Saint.</p>
-    <p class="promise">Le projet de familles qui veulent se retrouver, avec le Christ au centre.</p>
-    <p class="confidential">Document de présentation · partagé à un cercle restreint</p>
-  </div>
-</header>
-<div class="hero-sep"></div>
+  <div class="topbar-actions">
+    <button class="btn-ghost" id="btn-team" type="button">Espace équipe</button>
 
-<main>
-  <div class="wrap">
-
-    <section>
-      <p class="lead">Nous sommes des familles et un prêtre. Nous croyons qu'un lieu de l'Église ne se sauve pas en le gardant, mais en y remettant une vie : la prière quotidienne, le travail de nos mains, la fraternité, l'accueil. Nous voulons offrir cette vie à un lieu qui en manque — et le faire humblement, sous l'autorité de l'Église, à laquelle nous remettons ce désir.</p>
-    </section>
-
-    <div class="ornament"><span>✦</span></div>
-
-    <section>
-      <h2>Le Christ au centre, et la vie qui en découle</h2>
-      <p>Au cœur de tout, il y a une présence : celle du Christ dans l'Eucharistie. C'est de là que nous voulons faire partir chaque journée — la messe, l'adoration — et c'est de là que le reste prend son sens : le travail, la table partagée, les enfants qui grandissent, la porte ouverte à celui qui passe.</p>
-      <p>Nous ne cherchons pas à inventer une spiritualité nouvelle, ni à porter un charisme à nous. Nous voulons simplement vivre l'Évangile, ensemble et pour de vrai, dans un lieu de l'Église — assez pleinement pour que cette vie se voie, et donne à d'autres l'envie de croire.</p>
-      <p class="pull">Un lieu de l'Église ne se sauve pas en le gardant fermé, mais en y rallumant un feu : celui d'une vie chrétienne vécue au grand jour.</p>
-    </section>
-
-    <hr class="rule" />
-
-    <section>
-      <h2>Envoyés, non installés</h2>
-      <p>Ce désir n'a de sens que porté en Église. Nous ne voulons pas d'un lieu à nous, gouverné par nous : nous voulons être <strong>envoyés</strong>, reconnus, et repris s'il le faut.</p>
-      <p>C'est pourquoi, le jour où un lieu se prêterait à notre présence, nous ne demanderions qu'à nous le voir <strong>confier</strong> — jamais donner — selon la forme que l'Église jugerait juste : une convention, un prêt à usage, un bail. Le lieu resterait ce qu'il est, et pourrait, à tout moment, revenir à ceux qui nous l'auraient confié. Nous ne demandons aucune subvention à l'Église, et ne ferions courir aucun risque financier au lieu qui nous accueillerait : c'est notre travail, et l'activité du lieu, qui doivent nous faire vivre. Et le jour où notre vie commune aura trouvé sa forme, nous chercherons la reconnaissance canonique qui lui revient, sous un mandat révisable.</p>
-    </section>
-
-    <hr class="rule" />
-
-    <section>
-      <h2>Une vie ordinaire, offerte</h2>
-      <p>Concrètement, cela ressemble à peu de choses, et à tout : la messe et l'adoration chaque jour ; le travail qui fait vivre le lieu et l'entretient ; les repas pris ensemble ; des familles qui habitent là, dont les enfants courent dans les cours et grandissent au rythme de la prière ; et un accueil, simple et vrai, pour les pèlerins, les groupes, les âmes de passage venues chercher un peu de silence et de Dieu.</p>
-      <p>Car ce n'est pas du bénévolat. Les familles ne viennent pas donner leur temps libre : elles viennent y bâtir leur vie. Le lieu et son activité doivent pouvoir les <strong>faire vivre dignement</strong> — un travail vrai, justement rémunéré, à la hauteur de ce que chacun y engage. C'est la condition pour qu'un tel engagement tienne dans la durée, et ne repose pas sur l'épuisement de quelques-uns.</p>
-      <p>Rien d'extraordinaire. Une vie chrétienne, mais entière — et c'est précisément cela qui rayonne.</p>
-    </section>
-
-    <hr class="rule" />
-
-    <section>
-      <h2>Des familles, un prêtre — pas un homme seul</h2>
-      <p>Nous sommes deux à trois familles, avec d'autres en chemin, unies par un même désir : vivre proches les unes des autres et mettre notre vie au service d'un lieu de l'Église. Ce projet n'est pas né d'une ambition ni d'un calcul, mais d'un <strong>désir profond de nous relier les uns aux autres, avec Jésus au milieu de nous</strong>.</p>
-      <p>Un <strong>prêtre expérimenté</strong> chemine avec nous et portera la vie sacramentelle du lieu. Ayant connu, par le passé, les fragilités possibles d'une communauté, il est le premier d'entre nous à vouloir des garde-fous clairs et une totale transparence envers l'autorité de l'Église. Sa situation canonique est à la disposition de qui souhaitera la vérifier ; nous appelons cette vérification de nos vœux, nous ne la subissons pas.</p>
-    </section>
-
-    <hr class="rule" />
-
-    <section>
-      <h2>Des garde-fous contre toute dérive</h2>
-      <p>Nous savons ce qui peut faire glisser une communauté vers l'entre-soi ou l'emprise — l'un de nous l'a vu de l'intérieur. C'est pourquoi nous voulons, dès le premier jour, nous en prémunir par des règles claires :</p>
-      <ul class="commit">
-        <li><strong>Ancrés dans l'Église locale</strong> — la messe du dimanche à la paroisse, avec tout le monde, jamais repliés sur notre seule chapelle. Une communauté ouverte, pas un monde à part.</li>
-        <li><strong>Le gouvernement séparé de l'accompagnement des âmes</strong> — celui qui accompagne spirituellement ne gouverne pas ; chacun reste libre de son confesseur et de son accompagnateur, au-dehors s'il le souhaite.</li>
-        <li><strong>Une gouvernance collégiale, à mandats révisables</strong> — pas de figure unique et inamovible ; des décisions prises ensemble et rendues à l'autorité de l'Église.</li>
-        <li><strong>Chacun libre de ses biens et de son départ</strong> — pas de mise en commun des patrimoines, aucune dépendance qui enferme ; on peut partir sans rupture ni pression.</li>
-        <li><strong>Des comptes transparents</strong> — ouverts au regard et au contrôle de l'Église.</li>
-        <li><strong>Fidèles au magistère, sans doctrine privée</strong> — aucune spiritualité personnelle érigée en règle du lieu ; c'est l'Église qui discerne, jamais nous seuls.</li>
-      </ul>
-      <p class="soft">Ces garde-fous ne sont pas une contrainte qu'on nous impose : ils sont les nôtres, et nous y tenons.</p>
-    </section>
-
-    <div class="ornament"><span>✦</span></div>
-
-    <section>
-      <div class="ask">
-        <h2>Ce que nous cherchons</h2>
-        <p>Concrètement, nous cherchons un <strong>lieu</strong>. Un lieu de l'Église — une abbaye, un monastère, un sanctuaire, une grande maison — assez vaste pour qu'une communauté y vive et y accueille. Si possible un lieu qui <strong>porte déjà une activité, une exploitation</strong> capable de le faire vivre, sur laquelle notre vie pourrait se greffer plutôt que de tout bâtir de zéro.</p>
-        <p>Nous le cherchons sous l'autorité de l'Église, et sans jamais chercher à le posséder.</p>
-        <p>Si vous connaissez un tel lieu, une communauté qui cherche un renfort, ou simplement quelqu'un vers qui nous tourner — que vous soyez évêque, prêtre, ou touché par ce que nous portons —, une porte que vous nous ouvririez peut être le commencement de tout.</p>
+    <div class="account hidden" id="account">
+      <button class="account-trigger" id="account-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-menu">
+        <span class="account-avatar" id="account-avatar" aria-hidden="true"></span>
+        <span class="tb-user" id="tb-user"></span>
+        <svg class="account-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="account-menu" id="account-menu" role="menu" aria-label="Compte">
+        <button class="account-menu-item" id="chpw" type="button" role="menuitem">Changer le mot de passe</button>
+        <div class="account-menu-sep"></div>
+        <button class="account-menu-item account-menu-item--danger" id="logout" type="button" role="menuitem">Se déconnecter</button>
       </div>
-    </section>
-
-    <section class="contact">
-      <p class="signoff">Si ce que vous venez de lire fait écho à un lieu, à une communauté, ou simplement à une espérance que vous portez, nous serions heureux d'échanger.</p>
-      <p class="who">
-        <strong>Écrire à Lumignis</strong><br />
-        <a href="mailto:equipe.ignisofficiel@gmail.com">equipe.ignisofficiel@gmail.com</a>
-      </p>
-    </section>
-
+    </div>
   </div>
-</main>
+</div></header>
 
-<footer>
-  <span class="latin-foot">Lumen · Ignis</span>
-  Lumignis — nom porté à titre provisoire · Document partagé à un cercle restreint · Merci de ne pas le diffuser au-delà.
-</footer>
+<!-- NAVIGATION — visible uniquement pour les membres connectés -->
+<div class="wrap">
+  <nav class="tabs hidden" id="main-tabs" aria-label="Sections">
+    <button class="tab" data-panel="accueil" type="button">Accueil</button>
+    <button class="tab" data-panel="actu" type="button">Fil d'actu</button>
+    <button class="tab" data-panel="lieux" type="button">Les lieux</button>
+    <button class="tab" data-panel="docs" type="button">Documents</button>
+  </nav>
+</div>
 
+<!-- Compte connecté mais pas encore autorisé -->
+<div class="notmember-banner hidden" id="notmember-banner">
+  <div class="wrap notmember-inner">
+    <p>Ton compte est créé, mais il n'est pas encore autorisé à accéder à l'espace équipe. Préviens l'équipe pour qu'on t'ouvre l'accès.</p>
+    <button class="btn-ghost" id="nm-logout" type="button">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- PANNEAU ACCUEIL — présentation publique du projet -->
+<div class="panel is-active" id="panel-accueil">
+
+  <header class="hero">
+    <div class="hero-inner">
+      <h1 class="brand">Lumignis</h1>
+      <p class="accroche">Embraser le monde à la lumière de l'Esprit Saint.</p>
+      <p class="promise">Le projet de familles qui veulent se retrouver, avec le Christ au centre.</p>
+      <p class="confidential">Document de présentation · partagé à un cercle restreint</p>
+    </div>
+  </header>
+  <div class="hero-sep"></div>
+
+  <main>
+    <div class="accueil-wrap">
+
+      <section>
+        <p class="lead">Nous sommes des familles et un prêtre. Nous croyons qu'un lieu de l'Église ne se sauve pas en le gardant, mais en y remettant une vie : la prière quotidienne, le travail de nos mains, la fraternité, l'accueil. Nous voulons offrir cette vie à un lieu qui en manque — et le faire humblement, sous l'autorité de l'Église, à laquelle nous remettons ce désir.</p>
+      </section>
+
+      <div class="ornament"><span>&#10022;</span></div>
+
+      <section>
+        <h2>Le Christ au centre, et la vie qui en découle</h2>
+        <p>Au cœur de tout, il y a une présence : celle du Christ dans l'Eucharistie. C'est de là que nous voulons faire partir chaque journée — la messe, l'adoration — et c'est de là que le reste prend son sens : le travail, la table partagée, les enfants qui grandissent, la porte ouverte à celui qui passe.</p>
+        <p>Nous ne cherchons pas à inventer une spiritualité nouvelle, ni à porter un charisme à nous. Nous voulons simplement vivre l'Évangile, ensemble et pour de vrai, dans un lieu de l'Église — assez pleinement pour que cette vie se voie, et donne à d'autres l'envie de croire.</p>
+        <p class="pull">Un lieu de l'Église ne se sauve pas en le gardant fermé, mais en y rallumant un feu : celui d'une vie chrétienne vécue au grand jour.</p>
+      </section>
+
+      <hr class="rule" />
+
+      <section>
+        <h2>Envoyés, non installés</h2>
+        <p>Ce désir n'a de sens que porté en Église. Nous ne voulons pas d'un lieu à nous, gouverné par nous : nous voulons être <strong>envoyés</strong>, reconnus, et repris s'il le faut.</p>
+        <p>C'est pourquoi, le jour où un lieu se prêterait à notre présence, nous ne demanderions qu'à nous le voir <strong>confier</strong> — jamais donner — selon la forme que l'Église jugerait juste : une convention, un prêt à usage, un bail. Le lieu resterait ce qu'il est, et pourrait, à tout moment, revenir à ceux qui nous l'auraient confié. Nous ne demandons aucune subvention à l'Église, et ne ferions courir aucun risque financier au lieu qui nous accueillerait : c'est notre travail, et l'activité du lieu, qui doivent nous faire vivre. Et le jour où notre vie commune aura trouvé sa forme, nous chercherons la reconnaissance canonique qui lui revient, sous un mandat révisable.</p>
+      </section>
+
+      <hr class="rule" />
+
+      <section>
+        <h2>Une vie ordinaire, offerte</h2>
+        <p>Concrètement, cela ressemble à peu de choses, et à tout : la messe et l'adoration chaque jour ; le travail qui fait vivre le lieu et l'entretient ; les repas pris ensemble ; des familles qui habitent là, dont les enfants courent dans les cours et grandissent au rythme de la prière ; et un accueil, simple et vrai, pour les pèlerins, les groupes, les âmes de passage venues chercher un peu de silence et de Dieu.</p>
+        <p>Car ce n'est pas du bénévolat. Les familles ne viennent pas donner leur temps libre : elles viennent y bâtir leur vie. Le lieu et son activité doivent pouvoir les <strong>faire vivre dignement</strong> — un travail vrai, justement rémunéré, à la hauteur de ce que chacun y engage. C'est la condition pour qu'un tel engagement tienne dans la durée, et ne repose pas sur l'épuisement de quelques-uns.</p>
+        <p>Rien d'extraordinaire. Une vie chrétienne, mais entière — et c'est précisément cela qui rayonne.</p>
+      </section>
+
+      <hr class="rule" />
+
+      <section>
+        <h2>Des familles, un prêtre — pas un homme seul</h2>
+        <p>Nous sommes deux à trois familles, avec d'autres en chemin, unies par un même désir : vivre proches les unes des autres et mettre notre vie au service d'un lieu de l'Église. Ce projet n'est pas né d'une ambition ni d'un calcul, mais d'un <strong>désir profond de nous relier les uns aux autres, avec Jésus au milieu de nous</strong>.</p>
+        <p>Un <strong>prêtre expérimenté</strong> chemine avec nous et portera la vie sacramentelle du lieu. Ayant connu, par le passé, les fragilités possibles d'une communauté, il est le premier d'entre nous à vouloir des garde-fous clairs et une totale transparence envers l'autorité de l'Église. Sa situation canonique est à la disposition de qui souhaitera la vérifier ; nous appelons cette vérification de nos vœux, nous ne la subissons pas.</p>
+      </section>
+
+      <hr class="rule" />
+
+      <section>
+        <h2>Des garde-fous contre toute dérive</h2>
+        <p>Nous savons ce qui peut faire glisser une communauté vers l'entre-soi ou l'emprise — l'un de nous l'a vu de l'intérieur. C'est pourquoi nous voulons, dès le premier jour, nous en prémunir par des règles claires :</p>
+        <ul class="commit">
+          <li><strong>Ancrés dans l'Église locale</strong> — la messe du dimanche à la paroisse, avec tout le monde, jamais repliés sur notre seule chapelle. Une communauté ouverte, pas un monde à part.</li>
+          <li><strong>Le gouvernement séparé de l'accompagnement des âmes</strong> — celui qui accompagne spirituellement ne gouverne pas ; chacun reste libre de son confesseur et de son accompagnateur, au-dehors s'il le souhaite.</li>
+          <li><strong>Une gouvernance collégiale, à mandats révisables</strong> — pas de figure unique et inamovible ; des décisions prises ensemble et rendues à l'autorité de l'Église.</li>
+          <li><strong>Chacun libre de ses biens et de son départ</strong> — pas de mise en commun des patrimoines, aucune dépendance qui enferme ; on peut partir sans rupture ni pression.</li>
+          <li><strong>Des comptes transparents</strong> — ouverts au regard et au contrôle de l'Église.</li>
+          <li><strong>Fidèles au magistère, sans doctrine privée</strong> — aucune spiritualité personnelle érigée en règle du lieu ; c'est l'Église qui discerne, jamais nous seuls.</li>
+        </ul>
+        <p class="soft">Ces garde-fous ne sont pas une contrainte qu'on nous impose : ils sont les nôtres, et nous y tenons.</p>
+      </section>
+
+      <div class="ornament"><span>&#10022;</span></div>
+
+      <section>
+        <div class="ask">
+          <h2>Ce que nous cherchons</h2>
+          <p>Concrètement, nous cherchons un <strong>lieu</strong>. Un lieu de l'Église — une abbaye, un monastère, un sanctuaire, une grande maison — assez vaste pour qu'une communauté y vive et y accueille. Si possible un lieu qui <strong>porte déjà une activité, une exploitation</strong> capable de le faire vivre, sur laquelle notre vie pourrait se greffer plutôt que de tout bâtir de zéro.</p>
+          <p>Nous le cherchons sous l'autorité de l'Église, et sans jamais chercher à le posséder.</p>
+          <p>Si vous connaissez un tel lieu, une communauté qui cherche un renfort, ou simplement quelqu'un vers qui nous tourner — que vous soyez évêque, prêtre, ou touché par ce que nous portons —, une porte que vous nous ouvririez peut être le commencement de tout.</p>
+        </div>
+      </section>
+
+      <section class="contact">
+        <p class="signoff">Si ce que vous venez de lire fait écho à un lieu, à une communauté, ou simplement à une espérance que vous portez, nous serions heureux d'échanger.</p>
+        <p class="who">
+          <strong>Écrire à Lumignis</strong><br />
+          <a href="mailto:equipe.ignisofficiel@gmail.com">equipe.ignisofficiel@gmail.com</a>
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <span class="latin-foot">Lumen · Ignis</span>
+    Lumignis — nom porté à titre provisoire · Document partagé à un cercle restreint · Merci de ne pas le diffuser au-delà.
+  </footer>
+
+</div>
+
+<!-- PANNEAUX INTERNES — visibles uniquement pour les membres connectés -->
+<div class="wrap">
+
+  <div class="panel" id="panel-actu">
+    <div id="actu-list"><p class="loading">Chargement…</p></div>
+  </div>
+
+  <div class="panel" id="panel-lieux">
+    <p class="lead">Les lieux repérés. Rien n'est décidé : ce sont des pistes à activer par le contact humain. Filtre les catégories, clique un point sur la carte ou une ligne dans la liste pour ouvrir le détail.</p>
+    <details class="methode-box"><summary>Notre méthode &amp; nos 10 critères</summary><div id="methode-content"><p class="loading">Chargement…</p></div></details>
+
+    <div class="filters" id="filters">
+      <button class="chip is-on" data-f="all" type="button">Tous</button>
+      <button class="chip chip-t1" data-f="1" type="button" title="Opportunités vivantes, les plus actionnables tout de suite."><span class="chip-dot"></span>À activer</button>
+      <button class="chip chip-t2" data-f="2" type="button" title="Pistes sérieuses, à trancher par un appel ou une visite."><span class="chip-dot"></span>Chaudes</button>
+      <button class="chip chip-t3" data-f="3" type="button" title="Pas des lieux à acquérir : des relais (diocèses, partenaires) qui peuvent ouvrir des portes."><span class="chip-dot"></span>Appuis</button>
+    </div>
+    <p class="filters-help">
+      <strong>À activer maintenant</strong> : opportunités vivantes, les plus actionnables tout de suite. &nbsp;·&nbsp;
+      <strong>Chaudes</strong> : pistes sérieuses, mais à trancher par un appel ou une visite. &nbsp;·&nbsp;
+      <strong>Appuis</strong> : pas des lieux à acquérir, mais des relais — diocèses, partenaires — qui peuvent ouvrir des portes.
+    </p>
+
+    <div class="map-frame">
+      <div id="map" class="map"></div>
+      <button class="map-reset" id="map-reset" type="button" title="Recentrer sur la France entière">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Toute la France</span>
+      </button>
+    </div>
+
+    <div id="cards" class="cards"><p class="loading">Chargement…</p></div>
+
+    <p class="foot-note">Un lieu a par ailleurs été <strong>écarté d'emblée</strong> pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
+  </div>
+
+  <div class="panel" id="panel-docs">
+    <p class="lead">Nos documents de travail, protégés par le login. Dépose ce que tu veux partager avec l'équipe.</p>
+    <div class="doc-drop">
+      <div class="doc-drop-icon" aria-hidden="true">&#8679;</div>
+      <label class="doc-label" for="doc-file">Déposer un fichier</label>
+      <input type="file" id="doc-file" />
+      <p class="doc-drop-hint">Glisse un fichier ici, ou choisis-le depuis ton appareil.</p>
+      <p class="soft" id="doc-status"></p>
+    </div>
+    <div class="doc-list" id="doc-list"><p class="loading">Chargement…</p></div>
+  </div>
+
+</div>
+
+<!-- MODALE DE CONNEXION -->
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="auth-card modal-card">
+    <button class="modal-close" id="auth-modal-close" type="button" aria-label="Fermer">&times;</button>
+    <div class="auth-mark" aria-hidden="true">&#10022;</div>
+    <div class="auth-brand">Lumignis</div>
+    <div class="auth-sub">Espace équipe</div>
+    <div class="auth-rule"></div>
+    <form id="auth-form" novalidate>
+      <div class="field"><label for="email">Email</label><input type="email" id="email" autocomplete="email" required /></div>
+      <div class="field"><label for="password">Mot de passe</label><input type="password" id="password" autocomplete="current-password" minlength="6" required /></div>
+      <button class="btn" id="auth-btn" type="submit">Se connecter</button>
+    </form>
+    <p class="msg" id="auth-msg"></p>
+    <p class="auth-help">Accès sur invitation. Pas encore de compte, ou mot de passe oublié ?<br/>Écris à <a href="mailto:equipe.ignisofficiel@gmail.com">l'équipe</a>.</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+  var SB_URL='https://lsdnwszhdsgwzloxdnyt.supabase.co';
+  var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZG53c3poZHNnd3psb3hkbnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjkyNTgsImV4cCI6MjA5ODcwNTI1OH0.5bidFmPJwIhLi9JQcceI1PSQKXHykKD8rwdgcV2PwFc';
+  var sb=window.supabase.createClient(SB_URL, SB_KEY);
+  var $=function(id){return document.getElementById(id);};
+  var msgEl=$('auth-msg');
+  var ME={email:'',name:''};
+
+  function msg(t,cls){ msgEl.textContent=t||''; msgEl.className='msg'+(cls?' '+cls:''); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  // —— Shell / états d'affichage ——
+  function showVisitor(){
+    $('btn-team').classList.remove('hidden');
+    $('account').classList.add('hidden');
+    $('main-tabs').classList.add('hidden');
+    $('notmember-banner').classList.add('hidden');
+  }
+  function showNotMember(){
+    $('btn-team').classList.add('hidden');
+    $('account').classList.add('hidden');
+    $('main-tabs').classList.add('hidden');
+    $('notmember-banner').classList.remove('hidden');
+  }
+  function revealMember(){
+    $('btn-team').classList.add('hidden');
+    $('account').classList.remove('hidden');
+    $('main-tabs').classList.remove('hidden');
+    $('notmember-banner').classList.add('hidden');
+  }
+
+  // —— Modale de connexion ——
+  function openAuthModal(){ $('auth-modal').classList.remove('hidden'); msg(''); setTimeout(function(){ var e=$('email'); if(e) e.focus(); },10); }
+  function closeAuthModal(){ $('auth-modal').classList.add('hidden'); }
+  $('btn-team').addEventListener('click', openAuthModal);
+  $('auth-modal-close').addEventListener('click', closeAuthModal);
+  $('auth-modal').addEventListener('click', function(e){ if(e.target===$('auth-modal')) closeAuthModal(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !$('auth-modal').classList.contains('hidden')) closeAuthModal(); });
+
+  // —— Marque = retour à l'accueil ——
+  $('brand-home').addEventListener('click', function(){ setPanel('accueil'); });
+
+  // —— Auth ——
+  $('auth-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    $('auth-btn').disabled=true; msg('…');
+    try{
+      var l=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+      if(l.error) throw l.error;
+      closeAuthModal();
+      await onAuthed();
+    }catch(err){
+      var m=(err&&err.message)||'Erreur';
+      if(/Invalid login/i.test(m)) m='Email ou mot de passe incorrect.';
+      else if(/Email not confirmed/i.test(m)) m='Compte pas encore activé — écris à l\'équipe.';
+      msg(m,'err');
+    }finally{ $('auth-btn').disabled=false; }
+  });
+  $('chpw').addEventListener('click', async function(){
+    var np=window.prompt('Nouveau mot de passe (6 caractères minimum) :');
+    if(np===null) return;
+    if(np.length<6){ alert('Trop court : 6 caractères minimum.'); return; }
+    var r=await sb.auth.updateUser({password:np});
+    alert(r.error?('Échec : '+r.error.message):'Mot de passe mis à jour.');
+  });
+  $('logout').addEventListener('click', doLogout);
+  $('nm-logout').addEventListener('click', doLogout);
+  async function doLogout(){ await sb.auth.signOut(); location.reload(); }
+
+  async function isMember(){ var r=await sb.from('members').select('email').maybeSingle(); return !!(r.data&&r.data.email); }
+
+  var tabsSetup=false, actuLoadedOnce=false;
+  async function onAuthed(){
+    if(!(await isMember())){ showNotMember(); return; }
+    var u=(await sb.auth.getUser()).data.user;
+    ME.email=u?u.email:''; ME.name=(u&&u.user_metadata&&u.user_metadata.name)||ME.email;
+    $('tb-user').textContent=ME.email;
+    revealMember();
+    if(!tabsSetup){ tabsSetup=true; setupTabs(); }
+    if(!actuLoadedOnce){ actuLoadedOnce=true; loadActu(); }
+    setPanel('actu');
+  }
+
+  // —— Panneaux / onglets ——
+  function setupTabs(){
+    document.querySelectorAll('.tab').forEach(function(t){
+      t.addEventListener('click', function(){ setPanel(t.dataset.panel); });
+    });
+  }
+  function setPanel(name){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('is-active', t.dataset.panel===name); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('is-active'); });
+    var p=$('panel-'+name); if(p) p.classList.add('is-active');
+    if(name==='lieux') buildLieux();
+    if(name==='docs') loadDocs();
+  }
+  function frDate(s){ try{ return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T00:00:00')); }catch(e){ return s; } }
+
+  // —— Fil d'actu ——
+  async function loadActu(){
+    var r=await sb.from('journal').select('*').order('sort',{ascending:false});
+    var box=$('actu-list');
+    if(r.error){ box.innerHTML='<p class="loading">Impossible de charger le fil.</p>'; return; }
+    if(!r.data.length){ box.innerHTML='<p class="loading">Rien pour le moment.</p>'; return; }
+    box.innerHTML=r.data.map(function(p){
+      return '<article class="post"><p class="post-date">'+frDate(p.date)+'</p><h3>'+esc(p.title)+'</h3>'+p.body_html+'</article>';
+    }).join('')+'<p class="center soft" style="font-size:.9rem;font-style:italic;">Les prochaines nouvelles s\'ajouteront ici.</p>';
+  }
+
+  // —— Le projet (legacy, non câblé à un onglet) ——
+  var projetLoaded=false;
+  async function loadProjet(){
+    if(projetLoaded) return; projetLoaded=true;
+    var r=await sb.from('pages').select('*').order('sort');
+    var box=$('projet-body');
+    if(r.error||!r.data.length){ box.innerHTML='<p class="loading">Contenu à venir.</p>'; projetLoaded=false; return; }
+    var nav='<div class="page-nav">'+r.data.map(function(p){return '<a href="#sec-'+esc(p.slug)+'">'+esc(p.title)+'</a>';}).join('')+'</div>';
+    box.innerHTML=nav+r.data.map(function(p){
+      return '<section class="page-sec" id="sec-'+esc(p.slug)+'"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';
+    }).join('');
+  }
+
+  // —— Lieux ——
+  var lieuxLoaded=false, map=null, markers={}, LIEUX=[], curFilter='all';
+  var TIER={1:'#C4501E',2:'#B8862F',3:'#6B7A8F'};
+  var TIER_LABEL={1:'À activer maintenant',2:'Chaudes',3:'Appuis'};
+  var CRIT_LABELS=['Notre projet, à plusieurs familles','Vie spirituelle profonde','Se sentir chez soi','Eucharistie & adoration < 500 m','Messe quotidienne','Familles croyantes proches','Accueillir & rayonner','École catholique sur place','Nature, Ouest, près d\'une ville','Retraites Ignis sur place'];
+
+  var methodeLoaded=false;
+  async function loadMethode(){
+    if(methodeLoaded) return; methodeLoaded=true;
+    var box=document.getElementById('methode-content'); if(!box) return;
+    var r=await sb.from('pages').select('*').order('sort');
+    if(r.error||!r.data){ methodeLoaded=false; return; }
+    var w=r.data.filter(function(p){return p.slug==='methode'||p.slug==='criteres';});
+    box.innerHTML = w.length ? w.map(function(p){return '<section class="page-sec"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';}).join('') : '<p class="loading">—</p>';
+  }
+  async function buildLieux(){
+    if(lieuxLoaded){ if(map) setTimeout(function(){map.invalidateSize();},30); return; }
+    lieuxLoaded=true;
+    var r=await sb.from('lieux').select('*').order('sort');
+    if(r.error||!r.data){ $('cards').innerHTML='<p class="loading">Impossible de charger les lieux.</p>'; return; }
+    LIEUX=r.data;
+    renderCards();
+    loadMethode();
+    map=L.map('map',{scrollWheelZoom:true}).setView([46.6,2.4],5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+    LIEUX.forEach(function(l){
+      if(l.lat==null||l.lng==null) return;
+      var m=L.circleMarker([l.lat,l.lng],{radius:9,color:'#fff',weight:2,fillColor:TIER[l.tier]||'#888',fillOpacity:.92});
+      var pu=''; try{ var ph=Array.isArray(l.photos)?l.photos:(l.photos?JSON.parse(l.photos):[]); if(ph[0]&&ph[0].url) pu='<img src="'+esc(ph[0].url)+'" alt="" style="width:100%;height:92px;object-fit:cover;border-radius:5px;margin:0 0 .4rem;display:block">'; }catch(e){}
+      m.addTo(map); m.bindPopup('<div style="width:190px">'+pu+'<span style="font-family:Fraunces,serif;font-weight:560">'+esc(l.nom)+'</span><br><span style="color:#8A8177;font-size:.85em">'+esc(l.zone||'')+' · '+esc(l.angle||'')+'</span></div>');
+      m.on('click', function(){ select(l.id,false); });
+      markers[l.id]={marker:m,lat:l.lat,lng:l.lng,tier:l.tier};
+    });
+    resetMapView();
+    setTimeout(function(){ map.invalidateSize(); },60);
+    $('map-reset').addEventListener('click', resetMapView);
+    // filtres
+    $('filters').querySelectorAll('.chip').forEach(function(ch){
+      ch.addEventListener('click', function(){
+        $('filters').querySelectorAll('.chip').forEach(function(x){x.classList.remove('is-on');});
+        ch.classList.add('is-on'); curFilter=ch.dataset.f; applyFilter();
+      });
+    });
+  }
+
+  function resetMapView(){
+    if(!map) return;
+    var pts=Object.keys(markers).map(function(k){return markers[k];}).filter(function(m){return m.lat!=null&&m.lng!=null;});
+    if(pts.length){
+      map.fitBounds(L.latLngBounds(pts.map(function(m){return [m.lat,m.lng];})),{padding:[30,30],maxZoom:7});
+    }else{
+      map.setView([46.6,2.4],5);
+    }
+  }
+
+  function renderCards(){
+    var box=$('cards'); box.innerHTML='';
+    if(!LIEUX.length){ box.innerHTML='<p class="loading">Aucun lieu pour le moment.</p>'; return; }
+    [1,2,3].forEach(function(tier){
+      var items=LIEUX.filter(function(l){return Number(l.tier)===tier;});
+      if(!items.length) return;
+      var group=document.createElement('div');
+      group.className='lieu-group'; group.dataset.tier=String(tier);
+      var title=document.createElement('h3');
+      title.className='lieu-group-title';
+      title.innerHTML='<span class="dot t'+tier+'"></span>'+esc(TIER_LABEL[tier])+'<span class="lieu-group-count">('+items.length+')</span>';
+      group.appendChild(title);
+      var rows=document.createElement('div'); rows.className='lieu-rows';
+      items.forEach(function(l){
+        var row=document.createElement('div');
+        row.className='lrow t'+l.tier; row.id='card-'+l.id;
+        row.innerHTML='<button class="lrow-main" type="button" aria-expanded="false">'+
+            '<span class="lrow-name">'+esc(l.nom)+'</span>'+
+            '<span class="lrow-badge">'+esc(l.statut||'à contacter')+'</span>'+
+            '<span class="lrow-meta">'+esc(l.zone||'')+(l.angle?' · '+esc(l.angle):'')+'</span>'+
+          '</button>'+
+          '<div class="detail" id="detail-'+l.id+'"></div>';
+        row.querySelector('.lrow-main').addEventListener('click', function(){ select(l.id,true); });
+        rows.appendChild(row);
+      });
+      group.appendChild(rows);
+      box.appendChild(group);
+    });
+  }
+
+  function applyFilter(){
+    document.querySelectorAll('.lieu-group').forEach(function(g){
+      g.style.display=(curFilter==='all'||g.dataset.tier===curFilter)?'':'none';
+    });
+    LIEUX.forEach(function(l){
+      var showIt=(curFilter==='all')||(String(l.tier)===curFilter);
+      var mk=markers[l.id]; if(mk){ if(showIt){ mk.marker.addTo(map);} else { map.removeLayer(mk.marker); } }
+    });
+  }
+
+  function fillDetail(l){
+    var d=$('detail-'+l.id); if(!d || d.dataset.filled) return; d.dataset.filled='1';
+    var html='';
+    var photos=[];
+    try{ photos=Array.isArray(l.photos)?l.photos:(l.photos?JSON.parse(l.photos):[]); }catch(e){ photos=[]; }
+    if(photos.length && photos[0] && photos[0].url){
+      html+='<figure class="lieu-photo"><img src="'+esc(photos[0].url)+'" alt="'+esc(l.nom)+'" loading="lazy">'+
+        (photos[0].credit?('<figcaption>'+esc(photos[0].credit)+'</figcaption>'):'')+'</figure>';
+    }
+    html+='<span class="badge">'+esc(l.statut||'à contacter')+'</span>';
+    var meta=[];
+    if(l.diocese) meta.push('<span class="meta"><b>Diocèse</b> '+esc(l.diocese)+'</span>');
+    if(l.surface) meta.push('<span class="meta"><b>Bâti</b> '+esc(l.surface)+'</span>');
+    if(l.prix) meta.push('<span class="meta"><b>Prix</b> '+esc(l.prix)+'</span>');
+    if(meta.length) html+='<div style="margin:.6rem 0">'+meta.join(' &nbsp; ')+'</div>';
+    // Points forts (ce qui ferait venir des gens)
+    var pf=l.points_forts; try{ if(typeof pf==='string') pf=JSON.parse(pf); }catch(e){ pf=[]; } pf=pf||[];
+    if(pf.length){
+      html+='<div class="forts"><h4>Points forts</h4><ul>'+pf.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+    }
+    // Réponses aux 10 critères (aperçu rapide)
+    var cr=l.criteres; try{ if(typeof cr==='string') cr=JSON.parse(cr); }catch(e){ cr=[]; } cr=cr||[];
+    if(cr.length){
+      var byN={}; cr.forEach(function(c){ byN[c.n]=c; });
+      var VS={oui:['oui','✓'],partiel:['partiel','~'],non:['non','✗']};
+      html+='<details class="crit-block" open><summary>Face à nos 10 critères</summary><div class="crit-grid">';
+      for(var i=1;i<=10;i++){
+        var c=byN[i]||{v:'?',note:''};
+        var vk=VS[c.v]?c.v:'inconnu', sym=VS[c.v]?VS[c.v][1]:'?';
+        var kind=i<=7?'elim':(i===8?'indisp':'sacri');
+        html+='<div class="crit crit-'+vk+' '+kind+'"><span class="crit-v" aria-hidden="true">'+sym+'</span>'+
+              '<span class="crit-lbl"><b>'+i+'.</b> '+esc(CRIT_LABELS[i-1])+'</span>'+
+              (c.note?'<span class="crit-note">'+esc(c.note)+'</span>':'')+'</div>';
+      }
+      html+='</div><p class="crit-legend"><span class="crit-v crit-oui">✓</span> oui &nbsp; <span class="crit-v crit-partiel">~</span> partiel &nbsp; <span class="crit-v crit-non">✗</span> non &nbsp; <span class="crit-v crit-inconnu">?</span> à vérifier — <b>1-7</b> éliminatoires, <b>8</b> indispensable à terme, <b>9-10</b> sacrifiables</p></details>';
+    }
+    if(l.ecole_proche) html+='<p class="ecole"><b>École catholique la plus proche</b><br>'+esc(l.ecole_proche)+'</p>';
+    if(l.descr) html+='<p style="font-size:.95rem;color:var(--ink-soft)">'+esc(l.descr)+'</p>';
+    if(l.contenu) html+=String(l.contenu).split(/\n\n+/).map(function(p){return '<p style="font-size:.95rem">'+esc(p)+'</p>';}).join('');
+    var pour=(l.pour||[]), contre=(l.contre||[]);
+    if(pour.length||contre.length){
+      html+='<div class="pc">';
+      html+='<div class="pour"><h4>Atouts</h4><ul>'+pour.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+      html+='<div class="contre"><h4>Réserves</h4><ul>'+contre.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+      html+='</div>';
+    }
+    if(l.prochaine_action) html+='<div class="next"><b style="font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint)">Prochaine action</b><br>'+esc(l.prochaine_action)+'</div>';
+    if((l.sources||[]).length) html+='<p class="srcs">Sources : '+l.sources.map(esc).join(' · ')+'</p>';
+    var lk=(l.links||[]).filter(function(x){return x&&x.url&&/^https?:\/\//.test(x.url);});
+    if(lk.length) html+='<p class="srcs">Liens : '+lk.map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}).join(' &nbsp;·&nbsp; ')+'</p>';
+    html+='<div class="comments" id="cmts-'+l.id+'"><h4>Commentaires</h4><div class="cmt-box">…</div>'+
+          '<div class="cmt-form"><textarea placeholder="Ajouter un mot…" id="cmt-in-'+l.id+'"></textarea><button type="button" data-lieu="'+l.id+'">Publier</button></div></div>';
+    d.innerHTML=html;
+    d.querySelector('.cmt-form button').addEventListener('click', function(){ addComment(l.id); });
+    loadComments(l.id);
+  }
+
+  function select(id, fromRow){
+    var row=$('card-'+id); if(!row) return;
+    var wasSel=row.classList.contains('is-sel');
+    document.querySelectorAll('.lrow').forEach(function(r){
+      r.classList.remove('is-sel');
+      var b=r.querySelector('.lrow-main'); if(b) b.setAttribute('aria-expanded','false');
+    });
+    if(!wasSel){
+      row.classList.add('is-sel');
+      var btn=row.querySelector('.lrow-main'); if(btn) btn.setAttribute('aria-expanded','true');
+      var l=LIEUX.filter(function(x){return x.id===id;})[0]; if(l) fillDetail(l);
+    }
+    var mk=markers[id];
+    if(mk&&map){ map.setView([mk.lat,mk.lng],Math.max(map.getZoom(),9),{animate:true}); mk.marker.openPopup(); }
+    if(fromRow&&row&&!wasSel) row.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  async function loadComments(id){
+    var box=document.querySelector('#cmts-'+id+' .cmt-box'); if(!box) return;
+    var r=await sb.from('comments').select('*').eq('lieu_id',id).order('created_at');
+    if(r.error){ box.innerHTML='<p class="soft" style="font-size:.85rem">—</p>'; return; }
+    if(!r.data.length){ box.innerHTML='<p class="soft" style="font-size:.85rem;font-style:italic">Aucun commentaire.</p>'; return; }
+    box.innerHTML=r.data.map(function(c){
+      return '<div class="cmt"><span class="who">'+esc(c.author_name||c.author_email)+'</span> — '+esc(c.body)+'</div>';
+    }).join('');
+  }
+  async function addComment(id){
+    var ta=$('cmt-in-'+id); var body=(ta.value||'').trim(); if(!body) return;
+    ta.disabled=true;
+    var r=await sb.from('comments').insert({lieu_id:id,author_email:ME.email,author_name:ME.name,body:body});
+    ta.disabled=false;
+    if(r.error){ alert('Échec : '+r.error.message); return; }
+    ta.value=''; loadComments(id);
+  }
+
+  // —— Documents ——
+  var docsInit=false;
+  function loadDocs(){
+    if(!docsInit){ docsInit=true; $('doc-file').addEventListener('change', uploadDoc); }
+    listDocs();
+  }
+  async function listDocs(){
+    var box=$('doc-list');
+    var r=await sb.storage.from('documents').list('',{limit:200,sortBy:{column:'created_at',order:'desc'}});
+    if(r.error){ box.innerHTML='<p class="loading">Impossible de lister les documents.</p>'; return; }
+    var files=(r.data||[]).filter(function(f){ return f.id!==null && f.name!=='.emptyFolderPlaceholder'; });
+    if(!files.length){ box.innerHTML='<p class="loading">Aucun document déposé.</p>'; return; }
+    box.innerHTML='';
+    files.forEach(function(f){
+      var kb=f.metadata&&f.metadata.size?Math.max(1,Math.round(f.metadata.size/1024))+' Ko':'';
+      var el=document.createElement('div'); el.className='doc';
+      el.innerHTML='<span class="dn">'+esc(f.name)+' <span class="dmeta">'+kb+'</span></span>'+
+                   '<span class="dact"><button data-dl="'+esc(f.name)+'">Ouvrir</button><button data-rm="'+esc(f.name)+'">Suppr.</button></span>';
+      el.querySelector('[data-dl]').addEventListener('click', function(){ openDoc(f.name); });
+      el.querySelector('[data-rm]').addEventListener('click', function(){ removeDoc(f.name); });
+      box.appendChild(el);
+    });
+  }
+  async function uploadDoc(e){
+    var file=e.target.files&&e.target.files[0]; if(!file) return;
+    $('doc-status').textContent='Envoi de « '+file.name+' »…';
+    var safe=file.name.replace(/[^\w.\- ()À-ÿ]/g,'_');
+    var r=await sb.storage.from('documents').upload(safe,file,{upsert:true});
+    $('doc-file').value='';
+    if(r.error){ $('doc-status').textContent='Échec : '+r.error.message; return; }
+    $('doc-status').textContent='« '+file.name+' » déposé.';
+    listDocs();
+  }
+  async function openDoc(name){
+    var r=await sb.storage.from('documents').createSignedUrl(name,120);
+    if(r.error){ alert('Échec : '+r.error.message); return; }
+    window.open(r.data.signedUrl,'_blank','noopener');
+  }
+  async function removeDoc(name){
+    if(!window.confirm('Supprimer « '+name+' » ?')) return;
+    var r=await sb.storage.from('documents').remove([name]);
+    if(r.error){ alert('Échec : '+r.error.message); return; }
+    listDocs();
+  }
+
+  // —— Démarrage ——
+  (async function(){
+    var s=await sb.auth.getSession();
+    if(s.data.session){ await onAuthed(); } else { showVisitor(); }
+  })();
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var acc=document.getElementById('account');
+  var trigger=document.getElementById('account-trigger');
+  var menu=document.getElementById('account-menu');
+  var avatar=document.getElementById('account-avatar');
+  var userLabel=document.getElementById('tb-user');
+  if(!acc||!trigger||!menu) return;
+
+  function openMenu(){ acc.classList.add('is-open'); trigger.setAttribute('aria-expanded','true'); }
+  function closeMenu(){ acc.classList.remove('is-open'); trigger.setAttribute('aria-expanded','false'); }
+  function isOpen(){ return acc.classList.contains('is-open'); }
+
+  trigger.addEventListener('click', function(e){ e.stopPropagation(); isOpen()?closeMenu():openMenu(); });
+  document.addEventListener('click', function(e){ if(isOpen() && !acc.contains(e.target)) closeMenu(); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && isOpen()){ closeMenu(); trigger.focus(); } });
+  menu.querySelectorAll('.account-menu-item').forEach(function(btn){
+    btn.addEventListener('click', function(){ closeMenu(); });
+  });
+
+  // Monogramme discret dérivé de l'email affiché (purement cosmétique, ne touche pas à la logique existante)
+  if(avatar && userLabel){
+    function refreshAvatar(){
+      var t=(userLabel.textContent||'').trim();
+      avatar.textContent = t ? t.charAt(0).toUpperCase() : '';
+    }
+    refreshAvatar();
+    new MutationObserver(refreshAvatar).observe(userLabel,{childList:true,characterData:true,subtree:true});
+  }
+})();
+</script>
 </body>
 </html>
