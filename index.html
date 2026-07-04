@@ -59,7 +59,7 @@
   .auth-help a{color:var(--gold-deep);text-decoration:none;border-bottom:1px solid rgba(154,111,34,.35);}
   .auth-help a:hover{border-color:var(--gold-deep);}
 
-  .btn-ghost{font-family:var(--f-label);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.55rem 1.1rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s;}
+  .btn-ghost{font-family:var(--f-label);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.55rem 1.1rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s,background-color .2s;}
   .btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep);}
 
   /* ===== Modale de connexion ===== */
@@ -69,33 +69,75 @@
   .modal-close:hover{background:var(--paper-warm);color:var(--ink);}
 
   /* ===== Topbar ===== */
-  .topbar{background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:500;}
+  .topbar{background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:500;transition:background .3s var(--ease),box-shadow .3s var(--ease);}
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:wrap;row-gap:.5rem;}
   html{overflow-x:hidden;}
   .topbar .topbar-inner{max-width:72rem;}
-  /* Accueil : barre du haut dorée qui fond avec l'image du hero */
-  body.on-accueil .topbar{background:linear-gradient(180deg,#D9BE82 0%,#C9A85E 100%);border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 8px 20px rgba(120,85,25,.14);}
-  body.on-accueil .tb-brand,body.on-accueil .tb-brand small{color:#3a2a0e;}
-  body.on-accueil .tb-mark{color:#7a5716;}
-  body.on-accueil #btn-team{border-color:rgba(58,42,14,.45);color:#3a2a0e;background:rgba(255,251,240,.35);}
-  body.on-accueil #btn-team:hover{background:rgba(255,251,240,.6);border-color:rgba(58,42,14,.7);}
-  body.on-accueil .account-trigger{border-color:rgba(58,42,14,.4);}
-  body.on-accueil .tb-user{color:#4a3512;}
-  .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;}
+
+  /* ===== Accueil : le header se fond dans la photo du hero ===== */
+  /* #site-head enveloppe topbar + onglets + bandeau "pas encore autorisé".
+     Sur l'accueil, il devient un bandeau transparent, fixe, posé sur la photo,
+     avec un léger voile sombre en haut pour la lisibilité — pas un aplat de couleur.
+     Ailleurs (vues internes), #site-head n'a aucun style propre : chaque enfant
+     garde exactement son apparence actuelle (topbar sticky claire, etc.). */
+  #site-head{ }
+  body.on-accueil #site-head{
+    position:fixed;top:0;left:0;right:0;z-index:520;
+    background:linear-gradient(180deg,rgba(15,10,5,.58) 0%,rgba(15,10,5,.22) 60%,rgba(15,10,5,0) 100%);
+    transition:background .4s var(--ease),box-shadow .4s var(--ease),border-color .4s var(--ease);
+  }
+  body.on-accueil .topbar{background:none;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;}
+  body.on-accueil #main-tabs{border-bottom-color:transparent;}
+  body.on-accueil .notmember-banner{background:none;border-bottom-color:transparent;}
+
+  body.on-accueil .tb-brand,body.on-accueil .tb-brand small{color:#FFFDF8;text-shadow:0 1px 10px rgba(0,0,0,.32);}
+  body.on-accueil .tb-mark{color:#F0C879;}
+  body.on-accueil #site-head .btn-ghost{border-color:rgba(255,253,248,.55);color:#FFFDF8;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);text-shadow:0 1px 6px rgba(0,0,0,.3);}
+  body.on-accueil #site-head .btn-ghost:hover{background:rgba(255,255,255,.26);border-color:rgba(255,255,255,.85);color:#FFFDF8;}
+  body.on-accueil .account-trigger{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.13);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  body.on-accueil .tb-user{color:#FFFDF8;text-shadow:0 1px 6px rgba(0,0,0,.3);}
+  body.on-accueil .account-caret{color:#FFFDF8;}
+  body.on-accueil .notmember-banner p{color:#FFFDF8;text-shadow:0 1px 6px rgba(0,0,0,.3);}
+  body.on-accueil #main-tabs .tab{color:rgba(255,253,248,.75);text-shadow:0 1px 6px rgba(0,0,0,.3);}
+  body.on-accueil #main-tabs .tab:hover{color:#FFFDF8;}
+  body.on-accueil #main-tabs .tab.is-active{color:#FFFDF8;}
+  body.on-accueil #main-tabs .tab.is-active::after{background:#FFFDF8;}
+
+  /* Au scroll (hors zone de la photo) : le header redevient un bandeau clair, net, comme sur les vues internes */
+  body.on-accueil.scrolled #site-head{
+    background:rgba(255,255,255,.94);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);
+    border-bottom:1px solid var(--line);box-shadow:var(--sh-s);
+  }
+  body.on-accueil.scrolled .tb-brand,body.on-accueil.scrolled .tb-brand small{color:var(--ink);text-shadow:none;}
+  body.on-accueil.scrolled .tb-mark{color:var(--gold);}
+  body.on-accueil.scrolled #site-head .btn-ghost{border-color:var(--line-strong);color:var(--ink-soft);background:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:none;}
+  body.on-accueil.scrolled #site-head .btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep);background:var(--paper-warm);}
+  body.on-accueil.scrolled .account-trigger{border-color:var(--line-strong);background:var(--paper);backdrop-filter:none;-webkit-backdrop-filter:none;}
+  body.on-accueil.scrolled .tb-user{color:var(--ink-soft);text-shadow:none;}
+  body.on-accueil.scrolled .account-caret{color:var(--ink-faint);}
+  body.on-accueil.scrolled .notmember-banner{background:var(--paper-warm);border-bottom-color:var(--line-strong);}
+  body.on-accueil.scrolled .notmember-banner p{color:var(--ink-soft);text-shadow:none;}
+  body.on-accueil.scrolled #main-tabs{border-bottom-color:var(--line);}
+  body.on-accueil.scrolled #main-tabs .tab{color:var(--ink-faint);text-shadow:none;}
+  body.on-accueil.scrolled #main-tabs .tab:hover{color:var(--ink-soft);}
+  body.on-accueil.scrolled #main-tabs .tab.is-active{color:var(--ink);}
+  body.on-accueil.scrolled #main-tabs .tab.is-active::after{background:var(--ember);}
+
+  .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;transition:color .2s;}
   .tb-brand:hover{color:var(--gold-deep);}
   .ecole{font-size:.9rem;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--r-s);padding:.5rem .7rem;margin:.7rem 0;}
   .ecole b{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);}
-  .tb-mark{color:var(--gold);font-size:.8em;}
+  .tb-mark{color:var(--gold);font-size:.8em;transition:color .2s;}
   .topbar-actions{display:flex;align-items:center;gap:.7rem;}
 
   /* Menu compte */
   .account{position:relative;}
-  .account-trigger{display:flex;align-items:center;gap:.55rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.3rem .8rem .3rem .3rem;cursor:pointer;color:var(--ink-soft);transition:border-color .15s,box-shadow .15s;}
+  .account-trigger{display:flex;align-items:center;gap:.55rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.3rem .8rem .3rem .3rem;cursor:pointer;color:var(--ink-soft);transition:border-color .15s,box-shadow .15s,background-color .2s;}
   .account-trigger:hover{border-color:var(--gold);box-shadow:var(--sh-s);}
   .account-trigger[aria-expanded="true"]{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,47,.14);}
   .account-avatar{display:flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:50%;background:linear-gradient(155deg,var(--gold),var(--ember));color:#fff;font-family:var(--f-display);font-weight:600;font-size:.78rem;flex-shrink:0;}
-  .tb-user{font-family:var(--f-label);font-size:.76rem;color:var(--ink-soft);max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .account-caret{color:var(--ink-faint);transition:transform .18s var(--ease);flex-shrink:0;}
+  .tb-user{font-family:var(--f-label);font-size:.76rem;color:var(--ink-soft);max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s;}
+  .account-caret{color:var(--ink-faint);transition:transform .18s var(--ease),color .2s;flex-shrink:0;}
   .account-trigger[aria-expanded="true"] .account-caret{transform:rotate(180deg);}
   .account-menu{position:absolute;top:calc(100% + .55rem);right:0;min-width:14rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:var(--sh-l);padding:.4rem;
     opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:top right;transition:opacity .16s var(--ease),transform .16s var(--ease),visibility .16s;z-index:600;}
@@ -106,15 +148,15 @@
   .account-menu-sep{height:1px;background:var(--line);margin:.35rem .2rem;}
 
   /* ===== Bandeau "compte pas encore autorisé" ===== */
-  .notmember-banner{background:var(--paper-warm);border-bottom:1px solid var(--line-strong);}
+  .notmember-banner{background:var(--paper-warm);border-bottom:1px solid var(--line-strong);transition:background .3s var(--ease),border-color .3s var(--ease);}
   .notmember-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.7rem 0;}
-  .notmember-inner p{margin:0;font-size:.86rem;color:var(--ink-soft);}
+  .notmember-inner p{margin:0;font-size:.86rem;color:var(--ink-soft);transition:color .2s;}
 
   /* ===== Tabs ===== */
   .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:1.6rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{position:relative;font-family:var(--f-label);font-weight:600;font-size:.9rem;background:none;border:0;padding:.75rem .95rem;margin-bottom:-1px;color:var(--ink-faint);cursor:pointer;white-space:nowrap;transition:color .15s;}
-  .tab::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;background:var(--ember);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform .18s var(--ease);}
+  .tab::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;background:var(--ember);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform .18s var(--ease),background-color .2s;}
   .tab:hover{color:var(--ink-soft);}
   .tab.is-active{color:var(--ink);}
   .tab.is-active::after{transform:scaleX(1);}
@@ -366,6 +408,9 @@
 </head>
 <body>
 
+<!-- BLOC HEADER — sur l'accueil, se fond dans la photo (transparent + voile) ; sur les vues internes, apparence inchangée -->
+<div id="site-head">
+
 <!-- BARRE DU HAUT — toujours visible -->
 <header class="topbar"><div class="wrap topbar-inner">
   <button class="tb-brand" id="brand-home" type="button" title="Retour à l'accueil"><span class="tb-mark" aria-hidden="true">&#10022;</span>Lumignis</button>
@@ -406,6 +451,8 @@
   </div>
 </div>
 
+</div><!-- /#site-head -->
+
 <!-- PANNEAU ACCUEIL — présentation publique du projet -->
 <div class="panel is-active" id="panel-accueil">
 
@@ -421,7 +468,6 @@
 
   <main>
     <div class="accueil-wrap">
-
       <section>
         <p class="lead">Nous sommes des familles et un prêtre. Nous croyons qu'un lieu de l'Église ne se sauve pas en le gardant, mais en y remettant une vie : la prière quotidienne, le travail de nos mains, la fraternité, l'accueil. Nous voulons offrir cette vie à un lieu qui en manque — et le faire humblement, sous l'autorité de l'Église, à laquelle nous remettons ce désir.</p>
       </section>
@@ -572,7 +618,6 @@
     <p class="auth-help">Accès sur invitation. Pas encore de compte, ou mot de passe oublié ?<br/>Écris à <a href="mailto:equipe.ignisofficiel@gmail.com">l'équipe</a>.</p>
   </div>
 </div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -978,5 +1023,45 @@
   }
 })();
 </script>
+<!-- Écouteur de scroll — bascule le header de "posé sur la photo" à "bandeau clair" sur l'accueil.
+     N'ajoute qu'une classe CSS (scrolled) sur body ; ne touche à aucune fonction existante. -->
+<script>
+(function(){
+  "use strict";
+  var body=document.body;
+  var thresholdPx=60;
+
+  function refreshThreshold(){
+    var hero=document.querySelector('#panel-accueil .hero');
+    var head=document.getElementById('site-head');
+    if(hero && head){
+      thresholdPx=Math.max(40, hero.offsetHeight - head.offsetHeight);
+    }else{
+      thresholdPx=60;
+    }
+  }
+
+  function check(){
+    if(!body.classList.contains('on-accueil')){ body.classList.remove('scrolled'); return; }
+    var y=window.scrollY||window.pageYOffset||0;
+    body.classList.toggle('scrolled', y>thresholdPx);
+  }
+
+  window.addEventListener('scroll', check, {passive:true});
+  window.addEventListener('resize', function(){ refreshThreshold(); check(); });
+  window.addEventListener('load', function(){ refreshThreshold(); check(); });
+
+  // Filet de sécurité : si on-accueil est ajouté/retiré sans passer par un scroll
+  // (ex. retour sur l'onglet Accueil alors que la page était déjà défilée),
+  // on resynchronise l'état sans jamais modifier la logique existante.
+  new MutationObserver(function(){ refreshThreshold(); check(); }).observe(body,{attributes:true,attributeFilter:['class']});
+
+  refreshThreshold();
+  check();
+})();
+</script>
 </body>
 </html>
+
+
+
