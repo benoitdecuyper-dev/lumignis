@@ -71,6 +71,8 @@
   /* ===== Topbar ===== */
   .topbar{background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:500;}
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:wrap;row-gap:.5rem;}
+  html{overflow-x:hidden;}
+  .topbar .topbar-inner{max-width:72rem;}
   .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;}
   .tb-brand:hover{color:var(--gold-deep);}
   .ecole{font-size:.9rem;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--r-s);padding:.5rem .7rem;margin:.7rem 0;}
@@ -195,6 +197,8 @@
   .crit-lbl b{color:var(--ink-faint);font-weight:600;}
   .crit.sacri .crit-lbl{color:var(--ink-soft);}
   .crit-note{color:var(--ink-faint);font-size:.8rem;text-align:right;}
+  .crit-ecole{padding:.1rem .3rem .5rem 1.7rem;font-size:.83rem;color:var(--gold-deep);}
+  .crit-ecole strong{color:var(--ink);}
   .crit-legend{font-size:.7rem;color:var(--ink-faint);margin:.2rem 0 .5rem;line-height:1.5;}
   .crit-legend .crit-v{font-weight:700;}
   @media (max-width:520px){ .crit{grid-template-columns:1.3rem 1fr;} .crit-note{grid-column:2;text-align:left;} }
@@ -813,10 +817,10 @@
         html+='<div class="crit crit-'+vk+' '+kind+'"><span class="crit-v" aria-hidden="true">'+sym+'</span>'+
               '<span class="crit-lbl"><b>'+i+'.</b> '+esc(CRIT_LABELS[i-1])+'</span>'+
               (c.note?'<span class="crit-note">'+esc(c.note)+'</span>':'')+'</div>';
+        if(i===8 && l.ecole_proche) html+='<div class="crit-ecole">↳ École catholique la plus proche&nbsp;: <strong>'+esc(l.ecole_proche)+'</strong></div>';
       }
       html+='</div><p class="crit-legend"><span class="crit-v crit-oui">✓</span> oui &nbsp; <span class="crit-v crit-partiel">~</span> partiel &nbsp; <span class="crit-v crit-non">✗</span> non &nbsp; <span class="crit-v crit-inconnu">?</span> à vérifier — <b>1-7</b> éliminatoires, <b>8</b> indispensable à terme, <b>9-10</b> sacrifiables</p></details>';
     }
-    if(l.ecole_proche) html+='<p class="ecole"><b>École catholique la plus proche</b><br>'+esc(l.ecole_proche)+'</p>';
     if(l.descr) html+='<p style="font-size:.95rem;color:var(--ink-soft)">'+esc(l.descr)+'</p>';
     if(l.contenu) html+=String(l.contenu).split(/\n\n+/).map(function(p){return '<p style="font-size:.95rem">'+esc(p)+'</p>';}).join('');
     var pour=(l.pour||[]), contre=(l.contre||[]);
