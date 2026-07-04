@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lumignis — Espace équipe</title>
 <meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0M0NTAxRSIgZD0iTTEyIDJjMyA1IDYgNyA2IDEyYTYgNiAwIDAgMS0xMiAwYzAtMyAyLTUgMy03IDAgMiAxIDMgMiAzIDEtMy0xLTYgMS04eiIvPjxwYXRoIGZpbGw9IiNFQkE5M0MiIGQ9Ik0xMiAxMC41YzEuNiAyIDMgMy4xIDMgNS4yYTMgMyAwIDAgMS02IDBjMC0yIDEuNC0zLjIgMy01LjJ6Ii8+PC9zdmc+" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,560;9..144,600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
@@ -96,6 +97,15 @@
   .tab:hover{color:var(--ink-soft);}
   .tab.is-active{color:var(--ink);}
   .tab.is-active::after{transform:scaleX(1);}
+  .tab-home{align-self:center;font-family:var(--f-label);font-size:.8rem;color:var(--ink-faint);text-decoration:none;padding:.5rem .7rem .5rem 0;margin-right:.4rem;border-right:1px solid var(--line);white-space:nowrap;}
+  .tab-home:hover{color:var(--gold-deep);}
+  .methode-box{border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper);margin:0 0 1.4rem;padding:.2rem .9rem;}
+  .methode-box>summary{font-family:var(--f-label);font-size:.8rem;letter-spacing:.03em;color:var(--ink-soft);cursor:pointer;padding:.7rem .1rem;list-style:none;}
+  .methode-box>summary::-webkit-details-marker{display:none;}
+  .methode-box>summary::before{content:"▸";color:var(--gold);margin-right:.5rem;display:inline-block;transition:transform .15s;}
+  .methode-box[open]>summary::before{transform:rotate(90deg);}
+  .methode-box .page-sec{border:0;border-top:1px solid var(--line);border-radius:0;padding:1.2rem .1rem;margin:0;background:none;}
+  .methode-box .page-sec:first-child{border-top:0;}
   .panel{display:none;padding-bottom:4.5rem;} .panel.is-active{display:block;animation:fadein .25s var(--ease);}
   @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
   .lead{font-size:1.12rem;color:var(--ink);}
@@ -291,9 +301,9 @@
 
   <div class="wrap">
     <nav class="tabs" aria-label="Sections">
+      <a class="tab-home" href="../" title="Retour au projet (accueil)">&#8592; Accueil</a>
       <button class="tab is-active" data-panel="actu" type="button">Fil d'actu</button>
       <button class="tab" data-panel="lieux" type="button">Les lieux</button>
-      <button class="tab" data-panel="projet" type="button">Le projet</button>
       <button class="tab" data-panel="docs" type="button">Documents</button>
     </nav>
 
@@ -303,6 +313,7 @@
 
     <div class="panel" id="panel-lieux">
       <p class="lead">Les lieux repérés. Rien n'est décidé : ce sont des pistes à activer par le contact humain. Filtre les catégories, clique un point sur la carte ou une ligne dans la liste pour ouvrir le détail.</p>
+      <details class="methode-box"><summary>Notre méthode &amp; nos 10 critères</summary><div id="methode-content"><p class="loading">Chargement…</p></div></details>
 
       <div class="filters" id="filters">
         <button class="chip is-on" data-f="all" type="button">Tous</button>
@@ -327,10 +338,6 @@
       <div id="cards" class="cards"><p class="loading">Chargement…</p></div>
 
       <p class="foot-note">Un lieu a par ailleurs été <strong>écarté d'emblée</strong> pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
-    </div>
-
-    <div class="panel" id="panel-projet">
-      <div id="projet-body"><p class="loading">Chargement…</p></div>
     </div>
 
     <div class="panel" id="panel-docs">
@@ -411,7 +418,6 @@
         document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('is-active');});
         $('panel-'+t.dataset.panel).classList.add('is-active');
         if(t.dataset.panel==='lieux') buildLieux();
-        if(t.dataset.panel==='projet') loadProjet();
         if(t.dataset.panel==='docs') loadDocs();
       });
     });
@@ -448,6 +454,15 @@
   var TIER_LABEL={1:'À activer maintenant',2:'Chaudes',3:'Appuis'};
   var CRIT_LABELS=['Notre projet, à plusieurs familles','Vie spirituelle profonde','Se sentir chez soi','Eucharistie & adoration < 500 m','Messe quotidienne','Familles croyantes proches','Accueillir & rayonner','École catholique sur place','Nature, Ouest, près d\'une ville','Retraites Ignis sur place'];
 
+  var methodeLoaded=false;
+  async function loadMethode(){
+    if(methodeLoaded) return; methodeLoaded=true;
+    var box=document.getElementById('methode-content'); if(!box) return;
+    var r=await sb.from('pages').select('*').order('sort');
+    if(r.error||!r.data){ methodeLoaded=false; return; }
+    var w=r.data.filter(function(p){return p.slug==='methode'||p.slug==='criteres';});
+    box.innerHTML = w.length ? w.map(function(p){return '<section class="page-sec"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';}).join('') : '<p class="loading">—</p>';
+  }
   async function buildLieux(){
     if(lieuxLoaded){ if(map) setTimeout(function(){map.invalidateSize();},30); return; }
     lieuxLoaded=true;
@@ -455,6 +470,7 @@
     if(r.error||!r.data){ $('cards').innerHTML='<p class="loading">Impossible de charger les lieux.</p>'; return; }
     LIEUX=r.data;
     renderCards();
+    loadMethode();
     map=L.map('map',{scrollWheelZoom:true}).setView([46.6,2.4],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
     LIEUX.forEach(function(l){
