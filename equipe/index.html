@@ -64,7 +64,10 @@
   /* ===== Topbar ===== */
   .topbar{background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(6px);-webkit-backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:500;}
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:wrap;row-gap:.5rem;}
-  .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;}
+  .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);text-decoration:none;cursor:pointer;}
+  .tb-brand:hover{color:var(--gold-deep);}
+  .ecole{font-size:.9rem;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--r-s);padding:.5rem .7rem;margin:.7rem 0;}
+  .ecole b{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);}
   .tb-mark{color:var(--gold);font-size:.8em;}
   .tb-brand small{display:block;font-family:var(--f-label);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-deep);margin-top:.15rem;}
 
@@ -270,7 +273,7 @@
 <!-- APP -->
 <div id="app" class="hidden">
   <header class="topbar"><div class="wrap topbar-inner">
-    <span class="tb-brand"><span class="tb-mark" aria-hidden="true">&#10022;</span>Lumignis<small>Espace équipe</small></span>
+    <a class="tb-brand" href="../" title="Retour à l'accueil"><span class="tb-mark" aria-hidden="true">&#10022;</span>Lumignis<small>Espace équipe</small></a>
 
     <div class="account" id="account">
       <button class="account-trigger" id="account-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-menu">
@@ -457,7 +460,8 @@
     LIEUX.forEach(function(l){
       if(l.lat==null||l.lng==null) return;
       var m=L.circleMarker([l.lat,l.lng],{radius:9,color:'#fff',weight:2,fillColor:TIER[l.tier]||'#888',fillOpacity:.92});
-      m.addTo(map); m.bindPopup('<span style="font-family:Fraunces,serif;font-weight:560">'+esc(l.nom)+'</span><br>'+esc(l.zone||'')+' · '+esc(l.angle||''));
+      var pu=''; try{ var ph=Array.isArray(l.photos)?l.photos:(l.photos?JSON.parse(l.photos):[]); if(ph[0]&&ph[0].url) pu='<img src="'+esc(ph[0].url)+'" alt="" style="width:100%;height:92px;object-fit:cover;border-radius:5px;margin:0 0 .4rem;display:block">'; }catch(e){}
+      m.addTo(map); m.bindPopup('<div style="width:190px">'+pu+'<span style="font-family:Fraunces,serif;font-weight:560">'+esc(l.nom)+'</span><br><span style="color:#8A8177;font-size:.85em">'+esc(l.zone||'')+' · '+esc(l.angle||'')+'</span></div>');
       m.on('click', function(){ select(l.id,false); });
       markers[l.id]={marker:m,lat:l.lat,lng:l.lng,tier:l.tier};
     });
@@ -559,6 +563,7 @@
       }
       html+='</div><p class="crit-legend"><span class="crit-v crit-oui">✓</span> oui &nbsp; <span class="crit-v crit-partiel">~</span> partiel &nbsp; <span class="crit-v crit-non">✗</span> non &nbsp; <span class="crit-v crit-inconnu">?</span> à vérifier — <b>1-7</b> éliminatoires, <b>8</b> indispensable à terme, <b>9-10</b> sacrifiables</p></details>';
     }
+    if(l.ecole_proche) html+='<p class="ecole"><b>École catholique la plus proche</b><br>'+esc(l.ecole_proche)+'</p>';
     if(l.descr) html+='<p style="font-size:.95rem;color:var(--ink-soft)">'+esc(l.descr)+'</p>';
     if(l.contenu) html+=String(l.contenu).split(/\n\n+/).map(function(p){return '<p style="font-size:.95rem">'+esc(p)+'</p>';}).join('');
     var pour=(l.pour||[]), contre=(l.contre||[]);
