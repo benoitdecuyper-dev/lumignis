@@ -73,6 +73,14 @@
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:wrap;row-gap:.5rem;}
   html{overflow-x:hidden;}
   .topbar .topbar-inner{max-width:72rem;}
+  /* Accueil : barre du haut dorée qui fond avec l'image du hero */
+  body.on-accueil .topbar{background:linear-gradient(180deg,#D9BE82 0%,#C9A85E 100%);border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 8px 20px rgba(120,85,25,.14);}
+  body.on-accueil .tb-brand,body.on-accueil .tb-brand small{color:#3a2a0e;}
+  body.on-accueil .tb-mark{color:#7a5716;}
+  body.on-accueil #btn-team{border-color:rgba(58,42,14,.45);color:#3a2a0e;background:rgba(255,251,240,.35);}
+  body.on-accueil #btn-team:hover{background:rgba(255,251,240,.6);border-color:rgba(58,42,14,.7);}
+  body.on-accueil .account-trigger{border-color:rgba(58,42,14,.4);}
+  body.on-accueil .tb-user{color:#4a3512;}
   .tb-brand{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-display);font-weight:600;font-size:1.28rem;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;}
   .tb-brand:hover{color:var(--gold-deep);}
   .ecole{font-size:.9rem;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--r-s);padding:.5rem .7rem;margin:.7rem 0;}
@@ -197,8 +205,10 @@
   .crit-lbl b{color:var(--ink-faint);font-weight:600;}
   .crit.sacri .crit-lbl{color:var(--ink-soft);}
   .crit-note{color:var(--ink-faint);font-size:.8rem;text-align:right;}
-  .crit-ecole{padding:.1rem .3rem .5rem 1.7rem;font-size:.83rem;color:var(--gold-deep);}
-  .crit-ecole strong{color:var(--ink);}
+  .crit-ecole{margin:.3rem 0 .1rem;padding:.65rem .1rem .2rem;border-top:1px dashed var(--line-strong);font-size:.9rem;}
+  .crit-ecole .ce-label{display:block;font-family:var(--f-label);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.2rem;}
+  .crit-ecole a{color:var(--gold-deep);font-weight:600;text-decoration:none;border-bottom:1px solid rgba(154,111,34,.4);}
+  .crit-ecole a:hover{border-color:var(--gold-deep);}
   .crit-legend{font-size:.7rem;color:var(--ink-faint);margin:.2rem 0 .5rem;line-height:1.5;}
   .crit-legend .crit-v{font-weight:700;}
   @media (max-width:520px){ .crit{grid-template-columns:1.3rem 1fr;} .crit-note{grid-column:2;text-align:left;} }
@@ -584,12 +594,14 @@
     $('account').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('notmember-banner').classList.add('hidden');
+    document.body.classList.add('on-accueil');
   }
   function showNotMember(){
     $('btn-team').classList.add('hidden');
     $('account').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('notmember-banner').classList.remove('hidden');
+    document.body.classList.add('on-accueil');
   }
   function revealMember(){
     $('btn-team').classList.add('hidden');
@@ -660,6 +672,7 @@
     document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('is-active', t.dataset.panel===name); });
     document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('is-active'); });
     var p=$('panel-'+name); if(p) p.classList.add('is-active');
+    document.body.classList.toggle('on-accueil', name==='accueil');
     if(name==='lieux') buildLieux();
     if(name==='docs') loadDocs();
   }
@@ -817,9 +830,14 @@
         html+='<div class="crit crit-'+vk+' '+kind+'"><span class="crit-v" aria-hidden="true">'+sym+'</span>'+
               '<span class="crit-lbl"><b>'+i+'.</b> '+esc(CRIT_LABELS[i-1])+'</span>'+
               (c.note?'<span class="crit-note">'+esc(c.note)+'</span>':'')+'</div>';
-        if(i===8 && l.ecole_proche) html+='<div class="crit-ecole">↳ École catholique la plus proche&nbsp;: <strong>'+esc(l.ecole_proche)+'</strong></div>';
       }
-      html+='</div><p class="crit-legend"><span class="crit-v crit-oui">✓</span> oui &nbsp; <span class="crit-v crit-partiel">~</span> partiel &nbsp; <span class="crit-v crit-non">✗</span> non &nbsp; <span class="crit-v crit-inconnu">?</span> à vérifier — <b>1-7</b> éliminatoires, <b>8</b> indispensable à terme, <b>9-10</b> sacrifiables</p></details>';
+      var ecoleHtml='';
+      if(l.ecole_proche){
+        var eq=encodeURIComponent(String(l.ecole_proche).replace(/\s*\(~[^)]*\)\s*$/,'').trim());
+        var eurl=(l.ecole_url&&/^https?:\/\//.test(l.ecole_url))?l.ecole_url:'https://www.google.com/maps/search/?api=1&query='+eq;
+        ecoleHtml='<div class="crit-ecole"><span class="ce-label">École catholique la plus proche</span><a href="'+esc(eurl)+'" target="_blank" rel="noopener">'+esc(l.ecole_proche)+'</a></div>';
+      }
+      html+='</div>'+ecoleHtml+'<p class="crit-legend"><span class="crit-v crit-oui">✓</span> oui &nbsp; <span class="crit-v crit-partiel">~</span> partiel &nbsp; <span class="crit-v crit-non">✗</span> non &nbsp; <span class="crit-v crit-inconnu">?</span> à vérifier — <b>1-7</b> éliminatoires, <b>8</b> indispensable à terme, <b>9-10</b> sacrifiables</p></details>';
     }
     if(l.descr) html+='<p style="font-size:.95rem;color:var(--ink-soft)">'+esc(l.descr)+'</p>';
     if(l.contenu) html+=String(l.contenu).split(/\n\n+/).map(function(p){return '<p style="font-size:.95rem">'+esc(p)+'</p>';}).join('');
