@@ -362,6 +362,7 @@
     if(l.prix) meta.push('<span class="meta"><b>Prix</b> '+esc(l.prix)+'</span>');
     if(meta.length) html+='<div style="margin:.6rem 0">'+meta.join(' &nbsp; ')+'</div>';
     if(l.descr) html+='<p style="font-size:.95rem;color:var(--ink-soft)">'+esc(l.descr)+'</p>';
+    if(l.contenu) html+=String(l.contenu).split(/\n\n+/).map(function(p){return '<p style="font-size:.95rem">'+esc(p)+'</p>';}).join('');
     var pour=(l.pour||[]), contre=(l.contre||[]);
     if(pour.length||contre.length){
       html+='<div class="pc">';
@@ -371,6 +372,8 @@
     }
     if(l.prochaine_action) html+='<div class="next"><b style="font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint)">Prochaine action</b><br>'+esc(l.prochaine_action)+'</div>';
     if((l.sources||[]).length) html+='<p class="srcs">Sources : '+l.sources.map(esc).join(' · ')+'</p>';
+    var lk=(l.links||[]).filter(function(x){return x&&x.url&&/^https?:\/\//.test(x.url);});
+    if(lk.length) html+='<p class="srcs">Liens : '+lk.map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}).join(' &nbsp;·&nbsp; ')+'</p>';
     html+='<div class="comments" id="cmts-'+l.id+'"><h4>Commentaires</h4><div class="cmt-box">…</div>'+
           '<div class="cmt-form"><textarea placeholder="Ajouter un mot…" id="cmt-in-'+l.id+'"></textarea><button type="button" data-lieu="'+l.id+'">Publier</button></div></div>';
     d.innerHTML=html;
