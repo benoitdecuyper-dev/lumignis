@@ -1,0 +1,403 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumignis — Carte des sanctuaires, abbayes et lieux à reprendre</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c140f'/%3E%3Cpath d='M16 5c2.5 4-3 5.5-3 9.5 0 1.6 1 2.8 2.2 3.3-.5-1.2-.1-2.6 1-3.4.2 2 1.6 2.6 2.7 4 1.6 2 .9 5.2-1.4 6.4a6 6 0 0 0 4.8-5.9C24 12.5 18.5 10 16 5z' fill='%23c4561f'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--creme:#f7f1e6;--feu:#c4561f;--bleu:#2f6d9e;--or:#bd8a3e;--brun:#1c140f;--brun2:#3a2c20;--vert:#5f6b3e;--ligne:#e0d4bd;--acc:#c4561f;}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--brun)}
+body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#map{order:2;flex:1 1 auto;min-height:0;position:relative;background:#e9e3d6}
+.leaflet-tooltip.s-tip{background:#fffdf8;border:1px solid var(--ligne);border-radius:10px;box-shadow:0 6px 18px rgba(28,20,15,.18);padding:0;width:auto;max-width:230px;white-space:normal}
+.tip-min{padding:8px 11px}.tip-min .tip-line{margin-top:3px}
+.tip-in{padding:10px 12px}.tip-in img{height:170px;object-fit:cover;border-radius:8px 8px 0 0;display:block;margin:-10px -12px 10px;max-width:none;width:calc(100% + 24px)}
+.tip-nm{font-weight:700;font-size:15px;line-height:1.25}.tip-sub{font-size:12.5px;font-weight:600;margin-top:2px}
+.tip-line{font-size:12.5px;color:var(--brun2);margin-top:5px;line-height:1.45}
+@media(max-width:600px){.leaflet-tooltip.s-tip{max-width:200px}}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;border-radius:20px;padding:1px 8px;margin-top:5px}
+#topbar{order:1;flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:linear-gradient(135deg,#1c140f,#3a2c20);color:var(--creme);padding:9px 14px;box-shadow:0 2px 10px rgba(28,20,15,.2);z-index:1000}
+#topbar .k{letter-spacing:.12em;text-transform:uppercase;font-size:11px;font-weight:700;color:var(--or);white-space:nowrap}
+#search{flex:1 1 200px;min-width:150px;border:0;border-radius:8px;padding:7px 11px;font-size:13px}
+#count{font-size:11.5px;color:#cdbb9b;white-space:nowrap}
+#fav-line{font-size:11.5px;color:#cdbb9b;white-space:nowrap}
+#filters{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px}
+#filters label{display:flex;align-items:center;gap:5px;cursor:pointer;color:#e4d8c0}
+#recenter{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;background:rgba(255,255,255,.12);color:var(--creme);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600}
+#recenter:hover{background:rgba(255,255,255,.22)}
+#legend{order:3;flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:5px 15px;background:#fffdf8;border-top:1px solid var(--ligne);padding:8px 14px;font-size:12px;z-index:1000}
+#legend .lg-item{display:inline-flex;align-items:center;gap:6px;color:var(--brun2)}
+#legend .lg-lab{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;font-weight:700;color:#8a6a1f}
+#legend .lg-note{color:#8c7a63;font-size:11px}
+#legend .ldot{width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);flex:none}
+#panel{position:absolute;z-index:1001;top:0;right:0;height:100%;width:400px;max-width:92vw;background:#fffdf8;box-shadow:none;transform:translateX(101%);transition:transform .28s ease;overflow-y:auto}
+#panel.open{transform:translateX(0);box-shadow:-8px 0 22px rgba(28,20,15,.14)}
+#panel .hero{position:relative;height:220px;background:#2e231a;overflow:hidden}
+#panel .hero img{width:100%;height:100%;object-fit:cover;display:block}
+#panel .hero .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#8c7a63;font-size:13px}
+#panel .close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer}
+#panel .body{padding:16px 20px 40px}
+#panel h2{margin:0 0 2px;font-size:20px}#panel .loc{color:var(--acc);font-weight:600;font-size:13px;margin-bottom:10px}
+#panel .pot{display:inline-block;font-weight:700;border-radius:6px;padding:2px 9px;font-size:12px;margin-bottom:12px}
+.kv{font-size:13.5px;margin:8px 0;line-height:1.45}.kv b{text-transform:uppercase;font-size:11px;letter-spacing:.04em;display:block;color:var(--vert)}
+.anl{background:#fbf5ea;border:1px solid var(--ligne);border-radius:10px;padding:10px 12px;margin:12px 0;font-size:13px}
+.anl h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em}.anl.pf h4{color:var(--vert)}.anl.lm h4{color:#a23b2b}
+.anl ul{margin:0;padding-left:18px}.anl li{margin:2px 0}
+#wx{font-size:13px;color:var(--brun2);line-height:1.5;margin-top:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btns a{background:var(--acc);color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:600;font-size:12.5px}
+.btns a.alt{background:#2e231a}.btns a.gr{background:var(--vert)}
+.pnav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:24px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center}
+.pnav:hover{background:rgba(0,0,0,.7)}
+#ph-prev{left:10px}#ph-next{right:10px}
+#ph-count{position:absolute;bottom:8px;right:12px;z-index:6;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:12px;padding:2px 9px;display:none}
+@media(max-width:520px){#panel{width:100%}#topbar{max-width:82vw}}
+#filters .fav-toggle{color:#f0d9a8;font-weight:700}
+#fav-line{margin-top:5px;font-size:11px;color:#cdbb9b}
+.fav-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--or);background:#fff;color:var(--or);border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;margin:2px 0 12px;transition:background .15s,color .15s}
+.fav-btn:hover{background:#fbf3e1}
+.fav-btn.on{background:var(--or);color:#fff}
+.fav-btn .st{font-size:15px;line-height:1}
+.fav-who{font-size:11.5px;color:#8c7a63;margin:-6px 0 12px}
+.leaflet-tooltip.s-tip .fav-tag{display:inline-block;font-size:10px;font-weight:700;color:#8a6a1f;background:#f3e3bd;border-radius:10px;padding:0 7px;margin-top:4px}
+</style></head><body>
+<div id="map"></div>
+<div id="topbar">
+ <span class="k">◆ Lumignis · Lieux</span>
+ <input id="search" type="text" placeholder="Rechercher un lieu, une commune, un ordre…">
+ <div id="filters">
+  <label><input type="checkbox" id="cb-s" checked> Sanctuaires</label>
+  <label><input type="checkbox" id="cb-a" checked> Abbayes</label>
+  <label><input type="checkbox" id="cb-v" checked> À vendre</label>
+  <label><input type="checkbox" id="cb-p" checked> <b style="color:#e7c98a">◆ Pistes équipe</b></label>
+  <label class="fav-toggle"><input type="checkbox" id="cb-fav"> ★ Short-list</label>
+ </div>
+ <button id="recenter" type="button" title="Recentrer sur toute la France">
+  <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  Toute la France
+ </button>
+ <span id="count"></span>
+ <span id="fav-line"></span>
+</div>
+<div id="legend">
+ <span class="lg-item"><span class="ldot" style="background:#c4561f"></span>Sanctuaire</span>
+ <span class="lg-item"><span class="ldot" style="background:#2f6d9e"></span>Abbaye active</span>
+ <span class="lg-item"><span class="ldot" style="background:#3c7a4e"></span>À reprendre</span>
+ <span class="lg-lab">◆ Pistes équipe</span>
+ <span class="lg-item"><span class="ldot" style="background:#C4501E"></span>À activer</span>
+ <span class="lg-item"><span class="ldot" style="background:#B8862F"></span>Chaude</span>
+ <span class="lg-item"><span class="ldot" style="background:#6B7A8F"></span>Appui</span>
+ <span class="lg-note">Taille du cercle = importance (1 à 5)</span>
+</div>
+<div id="panel"><div class="hero"><button class="close" onclick="closePanel()">&times;</button><button class="pnav" id="ph-prev" onclick="phMove(-1)">&#8249;</button><button class="pnav" id="ph-next" onclick="phMove(1)">&#8250;</button><span id="ph-count"></span><div id="hero-img"></div></div>
+ <div class="body" id="panel-body"></div></div>
+<script>
+var DATA = [];
+var COLS = { s:"#c4561f", a:"#2f6d9e", v:"#3c7a4e" };
+function rad(imp){ return 5 + imp*1.7; }
+var map=L.map('map',{zoomControl:true}).setView([46.9,2.2],6);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+ attribution:'&copy; OpenStreetMap, &copy; CARTO',maxZoom:19,subdomains:'abcd'}).addTo(map);
+
+var wikiCache={};
+function wikiFetch(title,commune){
+ if(!title) return Promise.resolve(null);
+ var key=title+'|'+commune;
+ if(wikiCache[key]) return wikiCache[key];
+ var base='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages%7Cextracts&piprop=thumbnail&pithumbsize=700&exintro=1&explaintext=1&redirects=1';
+ function parse(j){try{var pg=j.query.pages;var k=Object.keys(pg)[0];if(k==='-1')return null;var p=pg[k];return{title:p.title,thumb:p.thumbnail?p.thumbnail.source:null,extract:p.extract||''};}catch(e){return null;}}
+ var p=fetch(base+'&titles='+encodeURIComponent(title)).then(r=>r.json()).then(parse)
+  .then(res=>{ if(res&&res.thumb) return res;
+     var q=encodeURIComponent(title+' '+(commune||''));
+     return fetch(base+'&generator=search&gsrlimit=1&gsrsearch='+q).then(r=>r.json()).then(parse).then(r2=>r2||res); })
+  .catch(()=>null);
+ wikiCache[key]=p; return p;
+}
+function trim(t,n){ if(!t) return ''; t=t.trim(); return t.length>n? t.slice(0,n).replace(/\s+\S*$/,'')+'…':t; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+var CAD={v:'en ville',b:'village / bourg',c:'pleine campagne'};
+var CADL={v:'En ville',b:'Dans un village / bourg',c:'En pleine campagne'};
+function inf(x){return x && x.toLowerCase().indexOf('non précisé')!==0;}
+
+/* ---- Carrousel photos du panneau ---- */
+var PH={list:[],i:0,key:null};
+function showPh(msg){
+ var hero=document.getElementById('hero-img');
+ var pc=document.getElementById('ph-count'), pv=document.getElementById('ph-prev'), nx=document.getElementById('ph-next');
+ if(!PH.list.length){ hero.innerHTML='<div class="ph">'+(msg||'Chargement des photos…')+'</div>'; pc.style.display='none'; pv.style.display='none'; nx.style.display='none'; return; }
+ hero.innerHTML='<img src="'+PH.list[PH.i]+'" alt="" onerror="phErr()">';
+ var multi=PH.list.length>1;
+ pc.textContent=(PH.i+1)+' / '+PH.list.length; pc.style.display=multi?'block':'none';
+ pv.style.display=multi?'flex':'none'; nx.style.display=multi?'flex':'none';
+ if(multi){ var pre=new Image(); pre.src=PH.list[(PH.i+1)%PH.list.length]; }
+}
+function phMove(d){ if(PH.list.length<2) return; PH.i=(PH.i+d+PH.list.length)%PH.list.length; showPh(); }
+function phErr(){ if(!PH.list.length) return; PH.list.splice(PH.i,1); if(PH.i>=PH.list.length) PH.i=0; showPh('Pas de photo disponible — voir « Source »'); }
+function hideImg(el){ el.style.display='none'; }
+var photoCache={};
+function photosFor(it){
+ if(photoCache[it.n]) return photoCache[it.n];
+ var out=[];
+ if(it.img) out.push(it.img);
+ var p=wikiFetch(it.w,it.c).then(function(w){
+   if(w&&w.thumb&&out.indexOf(w.thumb)<0) out.push(w.thumb);
+   var t=(w&&w.title)?w.title:it.w;
+   var u1='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=images&gimlimit=25&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&titles='+encodeURIComponent(t);
+   var u2='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord='+it.lat+'%7C'+it.lng+'&ggsradius=800&ggslimit=25&ggsnamespace=6&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900';
+   function pull(j){ var r=[]; try{ Object.keys(j.query.pages).forEach(function(k){ var pg=j.query.pages[k]; var ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii||ii.mime!=='image/jpeg') return; var n=(pg.title||'').toLowerCase(); if(/blason|logo|carte |map|drapeau|flag|icon|wappen|plan de/.test(n)) return; r.push(ii.thumburl||ii.url); }); }catch(e){} return r; }
+   var u3='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&gsrsearch='+encodeURIComponent(it.n+' '+it.c);
+   var reqs=[fetch(u1).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];})];
+   if(it.t!=='v') reqs.push(fetch(u3).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
+   if(it.cad!=='v'&&it.t!=='v') reqs.push(fetch(u2).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
+   return Promise.all(reqs).then(function(ar){
+     ar.forEach(function(l){ l.forEach(function(u){ if(out.indexOf(u)<0) out.push(u); }); });
+     return out.slice(0,20);
+   });
+ })['catch'](function(){ return out; });
+ photoCache[it.n]=p; return p;
+}
+function loadPhotos(it){
+ PH={list:it.img?[it.img]:(it._thumb?[it._thumb]:[]),i:0,key:it.n};
+ showPh();
+ photosFor(it).then(function(urls){
+   if(PH.key!==it.n) return;
+   urls.forEach(function(u){ if(PH.list.indexOf(u)<0) PH.list.push(u); });
+   if(!PH.list.length) showPh('Pas de photo trouvée — voir « Plus de photos »');
+   else showPh();
+ });
+}
+
+/* ---- Préchargement des vignettes de survol (par lots de 50) ---- */
+function applyThumb(it,src){ it._thumb=src; it._m.setTooltipContent(tipHtml(it,src)); var im=new Image(); im.src=src; }
+function fallbackThumb(it){ wikiFetch(it.w,it.c).then(function(w){ if(w&&w.thumb&&!it._thumb) applyThumb(it,w.thumb); }); }
+function prefetchThumbs(){
+ var byTitle={};
+ DATA.forEach(function(it){ (byTitle[it.w]=byTitle[it.w]||[]).push(it); });
+ var titles=Object.keys(byTitle), chunks=[];
+ for(var i=0;i<titles.length;i+=50) chunks.push(titles.slice(i,i+50));
+ var base='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=700&redirects=1';
+ chunks.reduce(function(seq,ch){ return seq.then(function(){
+   return fetch(base+'&titles='+encodeURIComponent(ch.join('|'))).then(function(r){return r.json();}).then(function(j){
+     var norm={},red={},byT={};
+     (j.query.normalized||[]).forEach(function(x){norm[x.from]=x.to;});
+     (j.query.redirects||[]).forEach(function(x){red[x.from]=x.to;});
+     Object.keys(j.query.pages).forEach(function(k){ var p=j.query.pages[k]; byT[p.title]=p; });
+     ch.forEach(function(t){ var f=norm[t]||t; f=red[f]||f; var p=byT[f];
+       var th=(p&&p.thumbnail)?p.thumbnail.source:null;
+       byTitle[t].forEach(function(it){
+         if(it.img){ if(!it._thumb) applyThumb(it,it.img); }
+         else if(th){ applyThumb(it,th); }
+         else { fallbackThumb(it); }
+       });
+     });
+   })['catch'](function(){});
+ });}, Promise.resolve());
+}
+
+// Infobulle légère au survol : nom + commune + type. Le détail complet (photo, communauté,
+// fréquentation, notes…) s'ouvre au CLIC dans la fiche latérale — évite les grosses cartes empilées.
+function tipHtml(it, img){
+ var col=COLS[it.t];
+ var typ = it.t==='v' ? 'Lieu à reprendre' : (it.t==='a' ? 'Abbaye / monastère actif' : 'Sanctuaire / pèlerinage');
+ return '<div class="tip-in tip-min">'+
+   '<div class="tip-nm">'+esc(it.n)+'</div>'+
+   '<div class="tip-sub" style="color:'+col+'">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+'</div>'+
+   '<div class="tip-line" style="color:'+col+';font-weight:600">'+typ+'</div>'+
+   '<div class="tip-line" style="color:#9a8f7c;font-size:11px">Cliquez pour la fiche complète</div>'+
+   '</div>';
+}
+
+var PTIER={1:'#C4501E',2:'#B8862F',3:'#6B7A8F'};
+var PTIER_L={1:'À activer maintenant',2:'Chaude — un appel pour trancher',3:'Appui — pas un lieu à prendre'};
+function openPiste(p){
+ CUR=p;
+ var panel=document.getElementById('panel'); panel.style.setProperty('--acc','#a06a1f');
+ document.getElementById('hero-img').innerHTML='<div class="ph">◆ Piste repérée par l\'équipe — '+esc(p.zone)+'</div>';
+ var pc=document.getElementById('ph-count'), pv=document.getElementById('ph-prev'), nx=document.getElementById('ph-next');
+ if(pc)pc.style.display='none'; if(pv)pv.style.display='none'; if(nx)nx.style.display='none';
+ var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.nom+' '+p.zone);
+ var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p.nom);
+ document.getElementById('panel-body').innerHTML=
+   '<h2>'+esc(p.nom)+'</h2><div class="loc">'+esc(p.zone)+' · '+esc(p.angle)+'</div>'+
+   '<div id="fav-slot">'+favBtnHtml(p)+'</div>'+
+   '<span class="pot" style="background:#bd8a3e22;color:#a06a1f">◆ Piste équipe · '+PTIER_L[p.tier]+'</span>'+
+   '<div class="anl pf"><h4>Note de l\'équipe</h4>'+esc(p.desc)+'</div>'+
+   '<div class="btns"><a class="gr" href="'+gmaps+'" target="_blank" rel="noopener">Google Maps</a>'+
+   '<a href="'+gimg+'" target="_blank" rel="noopener">Photos</a></div>';
+ panel.classList.add('open');
+}
+function openPanel(it){
+ if(it&&it.t==='p'){ openPiste(it); return; }
+ CUR=it;
+ var col=COLS[it.t];
+ var panel=document.getElementById('panel');
+ panel.style.setProperty('--acc',col);
+ loadPhotos(it);
+ var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(it.n+' '+it.c+' '+it.d);
+ var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(it.n+' '+it.c);
+ var stars='●'.repeat(it.imp)+'○'.repeat(5-it.imp);
+ var body;
+ if(it.t==='v'){
+   var pf=inf(it.pts)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4>'+esc(it.pts)+'</div>':'';
+   var lm=inf(it.lim)?'<div class="anl lm"><h4>À vérifier / limites</h4>'+esc(it.lim)+'</div>':'';
+   body='<span class="pot" style="background:'+col+'22;color:'+col+'">Lieu à vendre · adéquation '+stars+'</span>'+
+   '<div class="kv"><b>Cadre</b>'+CADL[it.cad]+'</div>'+
+   '<div class="kv"><b>Prix</b>'+esc(it.prix)+'</div>'+
+   '<div class="kv"><b>Bâti</b>'+esc(it.ba)+'</div>'+
+   '<div class="kv"><b>Terrain</b>'+esc(it.ter)+'</div>'+
+   '<div class="kv"><b>Capacité / bâtiments</b>'+esc(it.cap)+'</div>'+
+   '<div class="kv"><b>Chapelle</b>'+esc(it.chap)+'</div>'+pf+lm+
+   '<div class="kv" style="color:#8c7a63;font-size:12px">Photos : commune / environs (ou photo fournie) — voir l\'annonce via « Source » pour les photos du bien. Données du dossier de prospection Lumignis (juin 2026), disponibilité à reconfirmer.</div>';
+ } else if(it.t==='a'){
+   body='<span class="pot" style="background:'+col+'22;color:'+col+'">Abbaye / monastère · importance '+stars+'</span>'+
+   '<div class="kv"><b>Cadre</b>'+CADL[it.cad]+'</div>'+
+   '<div class="kv"><b>Ordre / famille religieuse</b>'+esc(it.o)+'</div>'+
+   '<div class="kv"><b>Effectif de la communauté</b>'+esc(it.nb)+'</div>'+
+   '<div class="kv"><b>Tendance</b>'+esc(it.td)+'</div>'+
+   '<div class="kv"><b>Lieu & accueil</b>'+esc(it.tl)+'</div>'+
+   '<div class="kv"><b>Activités</b>'+esc(it.ac)+'</div>';
+ } else {
+   var forts=(it.forts&&it.forts.length)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4><ul>'+it.forts.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>':'';
+   var lims=(it.lims&&it.lims.length)?'<div class="anl lm"><h4>À vérifier / limites</h4><ul>'+it.lims.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>':'';
+   var potTxt=(it.p && it.p!=="—")?('Sanctuaire · potentiel de reprise : '+it.p+' · importance '+stars):('Sanctuaire · importance '+stars);
+   body='<span class="pot" style="background:'+col+'22;color:'+col+'">'+potTxt+'</span>'+
+   '<div class="kv"><b>Cadre</b>'+CADL[it.cad]+'</div>'+
+   '<div class="kv"><b>Statut</b>'+esc(it.st)+'</div>'+
+   '<div class="kv"><b>Communauté sur place ?</b>'+esc(it.co)+'</div>'+
+   '<div class="kv"><b>Fréquentation</b>'+esc(it.fr)+'</div>'+
+   '<div class="kv"><b>Bâti / accueil</b>'+esc(it.ba)+'</div>'+forts+lims;
+ }
+ document.getElementById('panel-body').innerHTML=
+   '<h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c)+' ('+it.d+') · '+esc(it.r)+'</div>'+
+   '<div id="fav-slot">'+favBtnHtml(it)+'</div>'+body+
+   '<div id="wx"></div>'+
+   '<div class="btns"><a href="'+it.u+'" target="_blank" rel="noopener">Source</a>'+
+   '<a class="alt" id="wlink" href="'+gimg+'" target="_blank" rel="noopener">Wikipédia</a>'+
+   '<a class="gr" href="'+gmaps+'" target="_blank" rel="noopener">Google Maps</a>'+
+   '<a href="'+gimg+'" target="_blank" rel="noopener">Plus de photos</a></div>';
+ panel.classList.add('open');
+ wikiFetch(it.w,it.c).then(function(w){
+   if(w){ document.getElementById('wx').textContent=trim(w.extract,520);
+     var wl=document.getElementById('wlink'); if(wl) wl.href='https://fr.wikipedia.org/wiki/'+encodeURIComponent(w.title); }
+ });
+}
+function closePanel(){ document.getElementById('panel').classList.remove('open'); }
+document.addEventListener('keydown',function(e){
+ if(e.key==='Escape') closePanel();
+ else if(e.key==='ArrowLeft') phMove(-1);
+ else if(e.key==='ArrowRight') phMove(1);
+});
+
+/* ===== Favoris — short-list d'équipe (Supabase partagé, repli localStorage) ===== */
+var SB_URL='https://lsdnwszhdsgwzloxdnyt.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZG53c3poZHNnd3psb3hkbnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjkyNTgsImV4cCI6MjA5ODcwNTI1OH0.5bidFmPJwIhLi9JQcceI1PSQKXHykKD8rwdgcV2PwFc';
+var sbFav=null; try{ sbFav=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY); }catch(e){}
+var ME=null, FAV={}, FAV_MODE='local', LS_KEY='lumignis_favoris_v1', CUR=null;
+function favKey(it){ return (it.n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90); }
+function favEmails(it){ return FAV[favKey(it)]||[]; }
+function isFav(it){ return favEmails(it).length>0; }
+function mineFav(it){ return !!(ME && favEmails(it).indexOf(ME)>=0); }
+function loadLocal(){ FAV={}; try{ (JSON.parse(localStorage.getItem(LS_KEY)||'[]')||[]).forEach(function(k){FAV[k]=['local'];}); }catch(e){} }
+async function loadFav(){
+  if(sbFav){
+    try{
+      var s=await sbFav.auth.getSession();
+      ME=(s&&s.data&&s.data.session&&s.data.session.user&&s.data.session.user.email)||null;
+      if(ME){
+        var r=await sbFav.from('favoris').select('lieu,email');
+        if(!r.error && r.data){ FAV={}; r.data.forEach(function(row){ (FAV[row.lieu]=FAV[row.lieu]||[]).push(row.email); }); FAV_MODE='supabase'; return; }
+      }
+    }catch(e){}
+  }
+  FAV_MODE='local'; loadLocal();
+}
+async function toggleFav(it){
+  if(!it) return; var k=favKey(it);
+  if(FAV_MODE==='supabase'){
+    if(mineFav(it)){ FAV[k]=favEmails(it).filter(function(e){return e!==ME;}); try{ await sbFav.from('favoris').delete().eq('lieu',k).eq('email',ME); }catch(e){} }
+    else { FAV[k]=favEmails(it).concat([ME]); try{ await sbFav.from('favoris').insert({lieu:k,email:ME,nom:it.n}); }catch(e){} }
+  } else {
+    if(isFav(it)) delete FAV[k]; else FAV[k]=['local'];
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(Object.keys(FAV))); }catch(e){}
+  }
+  styleMarker(it); if(CUR && favKey(CUR)===k) syncPanelStar(it); refresh();
+}
+function styleMarker(it){ if(!it||it._piste) return; var m=it._m; if(!m) return; if(isFav(it)) m.setStyle({color:'#bd8a3e',weight:3.2}); else m.setStyle({color:'#fff',weight:1.5}); }
+function favBtnHtml(it){
+  var mine=mineFav(it), any=isFav(it), n=favEmails(it).length;
+  var label = FAV_MODE==='local'
+    ? (any?'★ Favori':'☆ Ajouter aux favoris')
+    : (mine?'★ Dans la short-list':(any?'☆ +1 (retenu par l\'équipe)':'☆ Ajouter à la short-list'));
+  var who = (FAV_MODE!=='local' && any) ? '<div class="fav-who">Retenu par '+n+' membre'+(n>1?'s':'')+(mine?', dont toi':'')+'.</div>' : '';
+  var on = mine || (FAV_MODE==='local'&&any);
+  return '<button class="fav-btn'+(on?' on':'')+'" id="fav-btn" type="button" onclick="toggleFav(CUR)"><span class="st">'+(any?'★':'☆')+'</span> <span>'+label+'</span></button>'+who;
+}
+function syncPanelStar(it){ var el=document.getElementById('fav-slot'); if(el) el.innerHTML=favBtnHtml(it); }
+
+var PISTES=[];
+var markers=[], pisteMarkers=[];
+function buildAll(){
+ DATA.forEach(function(it){
+  if(it.lat==null||it.lng==null) return;
+  var m=L.circleMarker([it.lat,it.lng],{radius:rad(it.imp),color:"#fff",weight:1.5,fillColor:COLS[it.t],fillOpacity:.88});
+  it._m=m; m._it=it;
+  m.bindTooltip(tipHtml(it,null),{className:'s-tip',sticky:true,direction:'top',opacity:1});
+  m.on('click',function(){ openPanel(it); });
+  m.addTo(map); markers.push(m);
+ });
+ PISTES.forEach(function(p){
+  if(p.lat==null||p.lng==null) return;
+  p.t='p'; p._piste=true; p.n=p.nom; p.c=p.zone; p.d=''; p.r=p.zone;
+  var m=L.circleMarker([p.lat,p.lng],{radius:9,color:'#fff',weight:2,fillColor:PTIER[p.tier]||'#888',fillOpacity:1});
+  p._m=m; m._it=p;
+  m.bindTooltip('<div class="tip-in tip-min"><div class="tip-nm">'+esc(p.nom)+'</div><div class="tip-sub" style="color:#a06a1f">\u25c6 Piste \u00e9quipe \u00b7 '+PTIER_L[p.tier]+'</div><div class="tip-line">'+esc(p.zone)+' \u00b7 '+esc(p.angle)+'</div></div>',{className:'s-tip',sticky:true,direction:'top',opacity:1});
+  m.on('click',function(){ openPiste(p); });
+  m.addTo(map); markers.push(m); pisteMarkers.push(p);
+ });
+}
+var search=document.getElementById('search'), count=document.getElementById('count');
+var cbS=document.getElementById('cb-s'), cbA=document.getElementById('cb-a'), cbV=document.getElementById('cb-v');
+var cbP=document.getElementById('cb-p');
+var cbFav=document.getElementById('cb-fav'), favLine=document.getElementById('fav-line');
+function refresh(){
+ var q=(search.value||'').toLowerCase().trim(); var ns=0, na=0, nv=0, np=0; var onlyFav=cbFav&&cbFav.checked;
+ markers.forEach(function(m){ var it=m._it;
+   var typeOk=(it.t==='s'?cbS.checked:(it.t==='a'?cbA.checked:(it.t==='v'?cbV.checked:(cbP?cbP.checked:true))));
+   var favOk=(!onlyFav || isFav(it));
+   var hay=it.n+' '+it.c+' '+it.d+' '+it.r+(it.o?' '+it.o:'')+(it.prix?' '+it.prix+' \u00e0 vendre':'')+(it.desc?' '+it.desc:'');
+   var hit=typeOk && favOk && (!q || hay.toLowerCase().indexOf(q)>=0);
+   if(hit){ if(!map.hasLayer(m)) m.addTo(map); if(it.t==='s')ns++; else if(it.t==='a')na++; else if(it.t==='v')nv++; else np++; }
+   else { if(map.hasLayer(m)) map.removeLayer(m); }
+ });
+ count.textContent = markers.length ? (ns+' sanctuaires \u00b7 '+na+' abbayes \u00b7 '+nv+' \u00e0 vendre \u00b7 '+np+' pistes') : '';
+ if(favLine){
+   var total=Object.keys(FAV).filter(function(k){return (FAV[k]||[]).length;}).length;
+   var tag = FAV_MODE==='supabase' ? '\u2605 '+total+' en short-list d\'\u00e9quipe'+(ME?' \u00b7 '+ME:'') : (total?'\u2605 '+total+' favori'+(total>1?'s':'')+' (perso)':'');
+   favLine.textContent=tag;
+ }
+}
+function fitAll(){
+ var pts=markers.map(function(m){return m._it;}).filter(function(it){return it&&it.lat!=null&&it.lng!=null;}).map(function(it){return [it.lat,it.lng];});
+ if(pts.length){ map.fitBounds(L.latLngBounds(pts),{padding:[24,24],maxZoom:7}); } else { map.setView([46.7,2.4],6); }
+}
+search.addEventListener('input',refresh); cbS.addEventListener('change',refresh); cbA.addEventListener('change',refresh); cbV.addEventListener('change',refresh);
+if(cbFav) cbFav.addEventListener('change',refresh);
+if(cbP) cbP.addEventListener('change',refresh);
+var rc=document.getElementById('recenter'); if(rc) rc.addEventListener('click',fitAll);
+window.addEventListener('resize',function(){ map.invalidateSize(); });
+async function loadData(){
+ DATA.length=0; PISTES.length=0;
+ try{
+   if(sbFav){ try{ await sbFav.auth.getSession(); }catch(e){} }
+   var r = sbFav ? await sbFav.from('carte_lieux').select('t,data').order('sort') : {data:null};
+   if(r && !r.error && r.data){ r.data.forEach(function(row){ var o=row.data||{}; if(row.t==='p') PISTES.push(o); else DATA.push(o); }); }
+ }catch(e){}
+}
+loadData().then(function(){ buildAll(); return loadFav(); }).then(function(){
+ markers.forEach(function(m){ styleMarker(m._it); });
+ refresh();
+ if(!markers.length){ count.textContent='Connecte-toi \u00e0 l\'espace \u00e9quipe pour afficher les lieux.'; }
+ setTimeout(function(){ map.invalidateSize(); if(markers.length) fitAll(); },90);
+});
+</script></body></html>

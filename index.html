@@ -205,6 +205,9 @@
   .filters-help strong{color:var(--ink);font-weight:600;}
   .map-frame{position:relative;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:.5rem;margin:.9rem 0 1.6rem;box-shadow:var(--sh-s);}
   .map{height:min(56vh,440px);width:100%;border-radius:calc(var(--r-m) - .3rem);}
+  .carte-embed{margin:1rem 0 1.2rem;border:1px solid var(--line-strong);border-radius:var(--r-m);overflow:hidden;background:#e9e3d6;box-shadow:var(--sh-s);}
+  #carte-frame{display:block;width:100%;height:min(88vh,900px);border:0;background:#e9e3d6;}
+  @media(max-width:640px){#carte-frame{height:86vh;}}
   .map-reset{position:absolute;top:1.35rem;right:1.35rem;z-index:650;display:flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.72rem;font-weight:600;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.45rem .85rem;color:var(--ink-soft);cursor:pointer;box-shadow:var(--sh-s);transition:border-color .15s,color .15s,box-shadow .15s;}
   .map-reset:hover{border-color:var(--gold);color:var(--gold-deep);box-shadow:var(--sh-m);}
   .map-reset svg{flex-shrink:0;}
@@ -559,32 +562,14 @@
   </div>
 
   <div class="panel" id="panel-lieux">
-    <p class="lead">Les lieux repérés. Rien n'est décidé : ce sont des pistes à activer par le contact humain. Filtre les catégories, clique un point sur la carte ou une ligne dans la liste pour ouvrir le détail.</p>
+    <p class="lead">Panorama de prospection : sanctuaires, abbayes actives et lieux à reprendre en France, plus nos <strong>pistes prioritaires</strong> (avec leurs notes). Rien n'est décidé : ce sont des pistes à activer par le contact humain. Survole un point, clique pour la fiche complète.</p>
     <details class="methode-box"><summary>Notre méthode &amp; nos 10 critères</summary><div id="methode-content"><p class="loading">Chargement…</p></div></details>
 
-    <div class="filters" id="filters">
-      <button class="chip is-on" data-f="all" type="button">Tous</button>
-      <button class="chip chip-t1" data-f="1" type="button" title="Opportunités vivantes, les plus actionnables tout de suite."><span class="chip-dot"></span>À activer</button>
-      <button class="chip chip-t2" data-f="2" type="button" title="Pistes sérieuses, à trancher par un appel ou une visite."><span class="chip-dot"></span>Chaudes</button>
-      <button class="chip chip-t3" data-f="3" type="button" title="Pas des lieux à acquérir : des relais (diocèses, partenaires) qui peuvent ouvrir des portes."><span class="chip-dot"></span>Appuis</button>
-    </div>
-    <p class="filters-help">
-      <strong>À activer maintenant</strong> : opportunités vivantes, les plus actionnables tout de suite. &nbsp;·&nbsp;
-      <strong>Chaudes</strong> : pistes sérieuses, mais à trancher par un appel ou une visite. &nbsp;·&nbsp;
-      <strong>Appuis</strong> : pas des lieux à acquérir, mais des relais — diocèses, partenaires — qui peuvent ouvrir des portes.
-    </p>
-
-    <div class="map-frame">
-      <div id="map" class="map"></div>
-      <button class="map-reset" id="map-reset" type="button" title="Recentrer sur la France entière">
-        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Toute la France</span>
-      </button>
+    <div class="carte-embed">
+      <iframe id="carte-frame" title="Carte des lieux Lumignis" referrerpolicy="no-referrer"></iframe>
     </div>
 
-    <div id="cards" class="cards"><p class="loading">Chargement…</p></div>
-
-    <p class="foot-note">Un lieu a par ailleurs été <strong>écarté d'emblée</strong> pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
+    <p class="foot-note">Certains lieux ont été <strong>écartés d'emblée</strong> : un pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
   </div>
 
   <div class="panel" id="panel-docs">
@@ -762,34 +747,14 @@
     var w=r.data.filter(function(p){return p.slug==='methode'||p.slug==='criteres';});
     box.innerHTML = w.length ? w.map(function(p){return '<section class="page-sec"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';}).join('') : '<p class="loading">—</p>';
   }
+  // La carte des lieux est un afficheur autonome (carte.html) qui lit ses données depuis
+  // Supabase APRÈS connexion (rien de sensible dans le fichier public). Chargée en lazy dans une iframe.
   async function buildLieux(){
-    if(lieuxLoaded){ if(map) setTimeout(function(){map.invalidateSize();},30); return; }
+    if(lieuxLoaded) return;
     lieuxLoaded=true;
-    var r=await sb.from('lieux').select('*').order('sort');
-    if(r.error||!r.data){ $('cards').innerHTML='<p class="loading">Impossible de charger les lieux.</p>'; return; }
-    LIEUX=r.data;
-    renderCards();
+    var fr=$('carte-frame');
+    if(fr && !fr.getAttribute('src')) fr.setAttribute('src','carte.html');
     loadMethode();
-    map=L.map('map',{scrollWheelZoom:true}).setView([46.6,2.4],5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
-    LIEUX.forEach(function(l){
-      if(l.lat==null||l.lng==null) return;
-      var m=L.circleMarker([l.lat,l.lng],{radius:9,color:'#fff',weight:2,fillColor:TIER[l.tier]||'#888',fillOpacity:.92});
-      var pu=''; try{ var ph=Array.isArray(l.photos)?l.photos:(l.photos?JSON.parse(l.photos):[]); if(ph[0]&&ph[0].url) pu='<img src="'+esc(ph[0].url)+'" alt="" style="width:100%;height:92px;object-fit:cover;border-radius:5px;margin:0 0 .4rem;display:block">'; }catch(e){}
-      m.addTo(map); m.bindPopup('<div style="width:190px">'+pu+'<span style="font-family:Fraunces,serif;font-weight:560">'+esc(l.nom)+'</span><br><span style="color:#8A8177;font-size:.85em">'+esc(l.zone||'')+' · '+esc(l.angle||'')+'</span></div>');
-      m.on('click', function(){ select(l.id,false); });
-      markers[l.id]={marker:m,lat:l.lat,lng:l.lng,tier:l.tier};
-    });
-    resetMapView();
-    setTimeout(function(){ map.invalidateSize(); },60);
-    $('map-reset').addEventListener('click', resetMapView);
-    // filtres
-    $('filters').querySelectorAll('.chip').forEach(function(ch){
-      ch.addEventListener('click', function(){
-        $('filters').querySelectorAll('.chip').forEach(function(x){x.classList.remove('is-on');});
-        ch.classList.add('is-on'); curFilter=ch.dataset.f; applyFilter();
-      });
-    });
   }
 
   function resetMapView(){
