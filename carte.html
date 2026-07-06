@@ -70,8 +70,7 @@ body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
   <label><input type="checkbox" id="cb-s" checked> Sanctuaires</label>
   <label><input type="checkbox" id="cb-a" checked> Abbayes</label>
   <label><input type="checkbox" id="cb-v" checked> À vendre</label>
-  <label><input type="checkbox" id="cb-p" checked> <b style="color:#e7c98a">◆ Pistes équipe</b></label>
-  <label class="fav-toggle"><input type="checkbox" id="cb-fav"> ★ Short-list</label>
+  <label class="fav-toggle"><input type="checkbox" id="cb-fav"> ★ Favoris</label>
  </div>
  <button id="recenter" type="button" title="Recentrer sur toute la France">
   <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -83,11 +82,7 @@ body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
 <div id="legend">
  <span class="lg-item"><span class="ldot" style="background:#c4561f"></span>Sanctuaire</span>
  <span class="lg-item"><span class="ldot" style="background:#2f6d9e"></span>Abbaye active</span>
- <span class="lg-item"><span class="ldot" style="background:#3c7a4e"></span>À reprendre</span>
- <span class="lg-lab">◆ Pistes équipe</span>
- <span class="lg-item"><span class="ldot" style="background:#C4501E"></span>À activer</span>
- <span class="lg-item"><span class="ldot" style="background:#B8862F"></span>Chaude</span>
- <span class="lg-item"><span class="ldot" style="background:#6B7A8F"></span>Appui</span>
+ <span class="lg-item"><span class="ldot" style="background:#3c7a4e"></span>À reprendre / à vendre</span>
  <span class="lg-note">Taille du cercle = importance (1 à 5)</span>
 </div>
 <div id="panel"><div class="hero"><button class="close" onclick="closePanel()">&times;</button><button class="pnav" id="ph-prev" onclick="phMove(-1)">&#8249;</button><button class="pnav" id="ph-next" onclick="phMove(1)">&#8250;</button><span id="ph-count"></span><div id="hero-img"></div></div>
@@ -361,16 +356,16 @@ var cbS=document.getElementById('cb-s'), cbA=document.getElementById('cb-a'), cb
 var cbP=document.getElementById('cb-p');
 var cbFav=document.getElementById('cb-fav'), favLine=document.getElementById('fav-line');
 function refresh(){
- var q=(search.value||'').toLowerCase().trim(); var ns=0, na=0, nv=0, np=0; var onlyFav=cbFav&&cbFav.checked;
+ var q=(search.value||'').toLowerCase().trim(); var ns=0, na=0, nv=0; var onlyFav=cbFav&&cbFav.checked;
  markers.forEach(function(m){ var it=m._it;
-   var typeOk=(it.t==='s'?cbS.checked:(it.t==='a'?cbA.checked:(it.t==='v'?cbV.checked:(cbP?cbP.checked:true))));
+   var typeOk=(it.t==='s'?cbS.checked:(it.t==='a'?cbA.checked:cbV.checked));
    var favOk=(!onlyFav || isFav(it));
    var hay=it.n+' '+it.c+' '+it.d+' '+it.r+(it.o?' '+it.o:'')+(it.prix?' '+it.prix+' \u00e0 vendre':'')+(it.desc?' '+it.desc:'');
    var hit=typeOk && favOk && (!q || hay.toLowerCase().indexOf(q)>=0);
-   if(hit){ if(!map.hasLayer(m)) m.addTo(map); if(it.t==='s')ns++; else if(it.t==='a')na++; else if(it.t==='v')nv++; else np++; }
+   if(hit){ if(!map.hasLayer(m)) m.addTo(map); if(it.t==='s')ns++; else if(it.t==='a')na++; else nv++; }
    else { if(map.hasLayer(m)) map.removeLayer(m); }
  });
- count.textContent = markers.length ? (ns+' sanctuaires \u00b7 '+na+' abbayes \u00b7 '+nv+' \u00e0 vendre \u00b7 '+np+' pistes') : '';
+ count.textContent = markers.length ? (ns+' sanctuaires \u00b7 '+na+' abbayes \u00b7 '+nv+' \u00e0 reprendre') : '';
  if(favLine){
    var total=Object.keys(FAV).filter(function(k){return (FAV[k]||[]).length;}).length;
    var tag = FAV_MODE==='supabase' ? '\u2605 '+total+' en short-list d\'\u00e9quipe'+(ME?' \u00b7 '+ME:'') : (total?'\u2605 '+total+' favori'+(total>1?'s':'')+' (perso)':'');
