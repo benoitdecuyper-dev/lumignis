@@ -600,7 +600,7 @@
       <button class="btn" id="auth-btn" type="submit">Se connecter</button>
     </form>
     <p class="msg" id="auth-msg"></p>
-    <p class="auth-help">Accès sur invitation. Pas encore de compte, ou mot de passe oublié ?<br/>Écris à <a href="mailto:equipe.ignisofficiel@gmail.com">l'équipe</a>.</p>
+    <p class="auth-help">Mot de passe oublié ? <a href="#" id="forgot">Réinitialiser par email</a>.<br/>Accès sur invitation — pas encore de compte ? Écris à <a href="mailto:equipe.ignisofficiel@gmail.com">l'équipe</a>.</p>
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -673,6 +673,29 @@
     if(np.length<6){ alert('Trop court : 6 caractères minimum.'); return; }
     var r=await sb.auth.updateUser({password:np});
     alert(r.error?('Échec : '+r.error.message):'Mot de passe mis à jour.');
+  });
+  // —— Mot de passe oublié : envoi d'un email de réinitialisation ——
+  $('forgot').addEventListener('click', async function(e){
+    e.preventDefault();
+    var email=(($('email').value||'').trim()) || (window.prompt('Ton email :')||'').trim();
+    if(!email){ return; }
+    msg('Envoi du lien de réinitialisation…');
+    var r=await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    if(r.error){ msg('Échec : '+r.error.message, 'err'); }
+    else { msg('Email envoyé à '+email+'. Clique le lien qu\'il contient pour choisir un nouveau mot de passe.', 'ok'); }
+  });
+  // —— Retour du lien de réinitialisation : on demande le nouveau mot de passe ——
+  sb.auth.onAuthStateChange(function(event){
+    if(event==='PASSWORD_RECOVERY'){
+      openAuthModal();
+      var np=window.prompt('Réinitialisation — choisis un nouveau mot de passe (6 caractères minimum) :');
+      if(np===null){ return; }
+      if(np.length<6){ alert('Trop court : 6 caractères minimum.'); return; }
+      sb.auth.updateUser({password:np}).then(function(r){
+        if(r.error){ alert('Échec : '+r.error.message); }
+        else { alert('Mot de passe mis à jour — tu es connecté.'); closeAuthModal(); onAuthed(); }
+      });
+    }
   });
   $('logout').addEventListener('click', doLogout);
   $('nm-logout').addEventListener('click', doLogout);
