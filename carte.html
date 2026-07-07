@@ -10,12 +10,12 @@
 *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--brun)}
 body{height:100vh;display:flex;flex-direction:column;overflow:hidden}
 #map{order:2;flex:1 1 auto;min-height:0;position:relative;background:#e9e3d6}
-.leaflet-tooltip.s-tip{background:#fffdf8;border:1px solid var(--ligne);border-radius:10px;box-shadow:0 6px 18px rgba(28,20,15,.18);padding:0;width:auto;max-width:230px;white-space:normal}
+.leaflet-tooltip.s-tip{background:#fffdf8;border:1px solid var(--ligne);border-radius:10px;box-shadow:0 6px 18px rgba(28,20,15,.18);padding:0;width:300px;max-width:min(340px,82vw);white-space:normal}
 .tip-min{padding:8px 11px}.tip-min .tip-line{margin-top:3px}
 .tip-in{padding:10px 12px}.tip-in img{height:170px;object-fit:cover;border-radius:8px 8px 0 0;display:block;margin:-10px -12px 10px;max-width:none;width:calc(100% + 24px)}
 .tip-nm{font-weight:700;font-size:15px;line-height:1.25}.tip-sub{font-size:12.5px;font-weight:600;margin-top:2px}
 .tip-line{font-size:12.5px;color:var(--brun2);margin-top:5px;line-height:1.45}
-@media(max-width:600px){.leaflet-tooltip.s-tip{max-width:200px}}
+@media(max-width:600px){.leaflet-tooltip.s-tip{width:260px;max-width:82vw}}
 .pill{display:inline-block;font-size:10.5px;font-weight:700;border-radius:20px;padding:1px 8px;margin-top:5px}
 #topbar{order:1;flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:linear-gradient(135deg,#1c140f,#3a2c20);color:var(--creme);padding:9px 14px;box-shadow:0 2px 10px rgba(28,20,15,.2);z-index:1000}
 #topbar .k{letter-spacing:.12em;text-transform:uppercase;font-size:11px;font-weight:700;color:var(--or);white-space:nowrap}
