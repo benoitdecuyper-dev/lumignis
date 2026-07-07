@@ -205,8 +205,10 @@
   .filters-help strong{color:var(--ink);font-weight:600;}
   .map-frame{position:relative;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:.5rem;margin:.9rem 0 1.6rem;box-shadow:var(--sh-s);}
   .map{height:min(56vh,440px);width:100%;border-radius:calc(var(--r-m) - .3rem);}
+  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));}
+  #panel-lieux .lead,#panel-lieux .foot-note{max-width:46rem;margin-left:auto;margin-right:auto;}
   .carte-embed{margin:1rem 0 1.2rem;border:1px solid var(--line-strong);border-radius:var(--r-m);overflow:hidden;background:#e9e3d6;box-shadow:var(--sh-s);}
-  #carte-frame{display:block;width:100%;height:min(88vh,900px);border:0;background:#e9e3d6;}
+  #carte-frame{display:block;width:100%;height:min(82vh,820px);border:0;background:#e9e3d6;}
   @media(max-width:640px){#carte-frame{height:86vh;}}
   .map-reset{position:absolute;top:1.35rem;right:1.35rem;z-index:650;display:flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.72rem;font-weight:600;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.45rem .85rem;color:var(--ink-soft);cursor:pointer;box-shadow:var(--sh-s);transition:border-color .15s,color .15s,box-shadow .15s;}
   .map-reset:hover{border-color:var(--gold);color:var(--gold-deep);box-shadow:var(--sh-m);}
