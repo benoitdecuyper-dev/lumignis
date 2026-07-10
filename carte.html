@@ -34,7 +34,7 @@ body.panel-open{grid-template-columns:minmax(360px,1fr) minmax(360px,460px)}
 #legend .ldot{width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);flex:none}
 #panel{grid-column:2;grid-row:2;position:relative;z-index:900;width:100%;min-width:0;height:100%;max-width:none;background:#fffdf8;box-shadow:none;border-left:1px solid transparent;overflow:hidden;transition:border-color .24s ease,box-shadow .24s ease}
 #panel.open{border-left-color:var(--ligne);box-shadow:-8px 0 22px rgba(28,20,15,.10);overflow-y:auto}
-#panel .hero{position:relative;height:176px;background:#2e231a;overflow:hidden}
+#panel .hero{position:relative;height:250px;background:#2e231a;overflow:hidden}
 #hero-img{height:100%}
 #panel .hero img{width:100%;height:100%;object-fit:contain;display:block;background:#d7e3ef}
 #panel .hero .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#8c7a63;font-size:13px}
@@ -425,7 +425,9 @@ function panelScaffold(it,bodyHtml,linksHtml){
 function openPiste(p){
  CUR=p;
  var panel=document.getElementById('panel'); panel.style.setProperty('--acc','#a06a1f');
- document.getElementById('hero-img').innerHTML='<div class="ph">◆ Piste repérée par l\'équipe — '+esc(p.zone)+'</div>';
+ document.getElementById('hero-img').innerHTML = p.img
+   ? '<img src="'+esc(p.img)+'" alt="'+esc(p.nom)+'" onerror="this.style.display=\'none\'">'
+   : '<div class="ph">◆ Piste repérée par l\'équipe — '+esc(p.zone)+'</div>';
  var pc=document.getElementById('ph-count'), pv=document.getElementById('ph-prev'), nx=document.getElementById('ph-next');
  if(pc)pc.style.display='none'; if(pv)pv.style.display='none'; if(nx)nx.style.display='none';
  var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.nom+' '+p.zone);
