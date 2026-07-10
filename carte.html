@@ -116,6 +116,7 @@ body.panel-open{grid-template-columns:minmax(360px,1fr) minmax(360px,460px)}
   <label><input type="checkbox" id="cb-s" checked> Sanctuaires</label>
   <label><input type="checkbox" id="cb-a" checked> Abbayes</label>
   <label><input type="checkbox" id="cb-v" checked> À vendre</label>
+  <label><input type="checkbox" id="cb-p" checked> ◆ Pistes équipe</label>
   <label class="fav-toggle"><input type="checkbox" id="cb-fav"> ★ Favoris</label>
  </div>
  <button id="recenter" type="button" title="Recentrer sur toute la France">
@@ -311,6 +312,18 @@ function metricsFor(it){
    metricHtml('Ignis',lvl(10),'crit. 10')+
   '</div>';
  }
+ if(it.t==='p' && it.criteres && it.criteres.length){
+  var bp={}; it.criteres.forEach(function(c){bp[c.n]=c;});
+  var pl=function(n){ var v=bp[n]&&bp[n].v; return v==='oui'?3:(v==='partiel'?2:(v==='non'?1:0)); };
+  return '<div class="metrics">'+
+   metricHtml('Spirituel',Math.round((pl(2)+pl(4)+pl(5))/3),'crit. 2/4/5')+
+   metricHtml('Familles',Math.round((pl(1)+pl(3)+pl(6))/3),'crit. 1/3/6')+
+   metricHtml('Accueil',pl(7),'crit. 7')+
+   metricHtml('École',pl(8),'crit. 8')+
+   metricHtml('Territoire',pl(9),'crit. 9')+
+   metricHtml('Ignis',pl(10),'crit. 10')+
+  '</div>';
+ }
  var spiritual=it.t==='v'?levelFromText(it.chap, it.chap&&/oui|chapelle/i.test(it.chap)?3:1):3;
  var families=levelFromText([it.cad,it.cap,it.ba,it.tl].join(' '), it.cad==='v'?2:3);
  var school=it.ecole&&it.ecole.noteCritere8 ? Math.min(3,Math.ceil(it.ecole.noteCritere8/2)) : 0;
@@ -349,6 +362,14 @@ function scoreHtml(it){
  return '<div class="score-card"><div class="score-num">'+esc(label)+'</div><div class="score-copy"><b>Score Benoit & Éléonore</b>'+esc(line)+'</div></div>';
 }
 function criteriaHtml(it){
+ if(it.t==='p' && it.criteres && it.criteres.length){
+  var prows=it.criteres.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+   var cls=c.v==='oui'?'ok':(c.v==='partiel'?'mid':(c.v==='non'?'low':'unknown'));
+   var lbl=c.v==='oui'?'oui':(c.v==='partiel'?'partiel':(c.v==='non'?'non':'?'));
+   return '<div class="criterion"><div class="criterion-num">'+c.n+'</div><div class="criterion-main"><b>'+esc(CRIT_NAMES[c.n]||('Critère '+c.n))+'</b><span>'+esc(c.note||'À qualifier')+'</span></div><div class="criterion-note '+cls+'">'+lbl+'</div></div>';
+  }).join('');
+  return '<div class="section-title">Crible Benoit & Éléonore</div><div class="criteria-list">'+prows+'</div>';
+ }
  if(!it.qualif || !it.qualif.criteresBenoit) return '';
  var rows=it.qualif.criteresBenoit.slice().sort(function(a,b){return a.critere-b.critere;}).map(function(c){
   return '<div class="criterion"><div class="criterion-num">'+c.critere+'</div><div class="criterion-main"><b>'+esc(CRIT_NAMES[c.critere]||('Critère '+c.critere))+'</b><span>'+esc(c.texte||'À qualifier')+'</span></div><div class="criterion-note '+noteClass(c.note)+'">'+noteLabel(c.note)+'</div></div>';
@@ -367,7 +388,7 @@ function practicalFor(it){
    infoLine('Disponibilité',q.disponibilite&&q.disponibilite.statut)+
   '</div>';
  }
- if(it.t==='p') return '<div class="info-grid">'+infoLine('Zone',it.zone)+infoLine('Angle',it.angle)+infoLine('Priorité',PTIER_L[it.tier])+'</div>';
+ if(it.t==='p') return '<div class="info-grid">'+infoLine('Zone',it.zone)+infoLine('Angle',it.angle)+infoLine('Priorité',PTIER_L[it.tier])+infoLine('Diocèse',it.diocese)+infoLine('Bâti / surface',it.surface)+infoLine('Prix',it.prix)+infoLine('Statut',it.statut)+infoLine('École proche',it.ecole_proche)+'</div>';
  if(it.t==='v') return '<div class="info-grid">'+infoLine('Prix',it.prix)+infoLine('Bâti',it.ba)+infoLine('Terrain',it.ter)+infoLine('Capacité',it.cap)+infoLine('Chapelle',it.chap)+infoLine('Source','Annonce / dossier de prospection')+'</div>';
  if(it.t==='a') return '<div class="info-grid">'+infoLine('Ordre',it.o)+infoLine('Communauté',it.nb)+infoLine('Tendance',it.td)+infoLine('Accueil',it.tl)+infoLine('Activités',it.ac)+infoLine('Source','Wikipédia / source liée')+'</div>';
  return '<div class="info-grid">'+infoLine('Statut',it.st)+infoLine('Communauté',it.co)+infoLine('Fréquentation',it.fr)+infoLine('Bâti',it.ba)+infoLine('Potentiel',it.p)+infoLine('Source','Wikipédia / source liée')+'</div>';
@@ -376,7 +397,7 @@ function nextActionFor(it){
  if(it.qualif && it.qualif.scoreBenoit && it.qualif.scoreBenoit.inconnusEliminatoires && it.qualif.scoreBenoit.inconnusEliminatoires.length){
   return 'Lever les critères éliminatoires inconnus : '+it.qualif.scoreBenoit.inconnusEliminatoires.join(', ')+'. Priorité : autonomie, Divine Volonté, logements/familles, messe quotidienne.';
  }
- if(it.t==='p') return 'Qualifier la piste avec les critères Lumignis puis identifier le premier interlocuteur concret.';
+ if(it.t==='p') return it.prochaine || 'Qualifier la piste avec les critères Lumignis puis identifier le premier interlocuteur concret.';
  if(it.t==='v') return 'Vérifier disponibilité, diocèse/localisation spirituelle possible, écoles proches et ordre de grandeur travaux.';
  if(it.t==='a') return 'Identifier la gouvernance du lieu et tester l’existence d’un besoin réel de reprise ou de partenariat.';
  if(it.p && it.p!=='—') return 'Identifier le recteur ou le diocèse, puis vérifier si une présence familiale sur place est imaginable.';
@@ -409,7 +430,13 @@ function openPiste(p){
  if(pc)pc.style.display='none'; if(pv)pv.style.display='none'; if(nx)nx.style.display='none';
  var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.nom+' '+p.zone);
  var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p.nom);
- document.getElementById('panel-body').innerHTML=panelScaffold(p,'',actionLinks(p,gmaps,gimg));
+ var forts=(p.forts&&p.forts.length)?'<div class="anl pf"><h4>Points forts</h4><ul>'+p.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+ var atouts=(p.pour&&p.pour.length)?'<div class="anl pf"><h4>Atouts</h4><ul>'+p.pour.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+ var reserves=(p.contre&&p.contre.length)?'<div class="anl lm"><h4>Réserves</h4><ul>'+p.contre.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+ var detail=p.contenu?'<div class="anl"><h4>En détail</h4><p>'+esc(p.contenu)+'</p></div>':'';
+ var lk=(p.links&&p.links.length)?p.links.filter(function(x){return x&&x.url;}).map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}):[];
+ var srcs=(p.sources&&p.sources.length)?'<div class="kv" style="color:#8c7a63;font-size:12px">Sources : '+p.sources.map(esc).join(' · ')+(lk.length?'<br>Liens : '+lk.join(' · '):'')+'</div>':(lk.length?'<div class="kv" style="color:#8c7a63;font-size:12px">Liens : '+lk.join(' · ')+'</div>':'');
+ document.getElementById('panel-body').innerHTML=panelScaffold(p,forts+atouts+reserves+detail+srcs,actionLinks(p,gmaps,gimg));
  panel.classList.add('open');
  document.body.classList.add('panel-open');
  setTimeout(function(){ map.invalidateSize(); },260);
@@ -624,16 +651,16 @@ var cbS=document.getElementById('cb-s'), cbA=document.getElementById('cb-a'), cb
 var cbP=document.getElementById('cb-p');
 var cbFav=document.getElementById('cb-fav'), favLine=document.getElementById('fav-line');
 function refresh(){
- var q=(search.value||'').toLowerCase().trim(); var ns=0, na=0, nv=0; var onlyFav=cbFav&&cbFav.checked;
+ var q=(search.value||'').toLowerCase().trim(); var ns=0, na=0, nv=0, np=0; var onlyFav=cbFav&&cbFav.checked;
  markers.forEach(function(m){ var it=m._it;
-   var typeOk=(it.t==='s'?cbS.checked:(it.t==='a'?cbA.checked:cbV.checked));
+   var typeOk=(it.t==='p'?(!cbP||cbP.checked):(it.t==='s'?cbS.checked:(it.t==='a'?cbA.checked:cbV.checked)));
    var favOk=(!onlyFav || isFav(it));
    var hay=it.n+' '+it.c+' '+it.d+' '+it.r+(it.o?' '+it.o:'')+(it.prix?' '+it.prix+' \u00e0 vendre':'')+(it.desc?' '+it.desc:'');
    var hit=typeOk && favOk && (!q || hay.toLowerCase().indexOf(q)>=0);
-   if(hit){ if(!map.hasLayer(m)) m.addTo(map); if(it.t==='s')ns++; else if(it.t==='a')na++; else nv++; }
+   if(hit){ if(!map.hasLayer(m)) m.addTo(map); if(it.t==='s')ns++; else if(it.t==='a')na++; else if(it.t==='p')np++; else nv++; }
    else { if(map.hasLayer(m)) map.removeLayer(m); }
  });
- count.textContent = markers.length ? (ns+' sanctuaires \u00b7 '+na+' abbayes \u00b7 '+nv+' \u00e0 reprendre') : '';
+ count.textContent = markers.length ? (ns+' sanctuaires \u00b7 '+na+' abbayes \u00b7 '+nv+' \u00e0 reprendre'+(np?' \u00b7 '+np+' piste'+(np>1?'s':'')+' \u00e9quipe':'')) : '';
  if(favLine){
    var total=Object.keys(FAV).filter(function(k){return (FAV[k]||[]).length;}).length;
    var tag = FAV_MODE==='supabase' ? '\u2605 '+total+' en short-list d\'\u00e9quipe'+(ME?' \u00b7 '+ME:'') : (total?'\u2605 '+total+' favori'+(total>1?'s':'')+' (perso)':'');
