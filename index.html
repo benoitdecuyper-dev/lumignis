@@ -729,7 +729,10 @@
     var p=$('panel-'+name); if(p) p.classList.add('is-active');
     document.body.classList.toggle('on-accueil', name==='accueil');
     if(name==='lieux') buildLieux();
-    if(name!=='lieux') unloadLieux();
+    // NE PAS decharger la carte en quittant l'onglet. Retirer puis reajouter le src de
+    // l'iframe relançait un chargement complet de carte.html qui restait bloque en "Pending"
+    // (la carte chargeait a l'infini au 2e passage). On la charge une fois, puis on la masque
+    // simplement en CSS via .is-active.
     if(name==='docs') loadDocs();
   }
   function frDate(s){ try{ return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T00:00:00')); }catch(e){ return s; } }
