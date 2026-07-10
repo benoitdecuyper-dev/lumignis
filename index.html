@@ -1055,7 +1055,17 @@
   // Filet de sécurité : si on-accueil est ajouté/retiré sans passer par un scroll
   // (ex. retour sur l'onglet Accueil alors que la page était déjà défilée),
   // on resynchronise l'état sans jamais modifier la logique existante.
-  new MutationObserver(function(){ refreshThreshold(); check(); }).observe(body,{attributes:true,attributeFilter:['class']});
+  // IMPORTANT : ne réagir QUE lorsque la présence de 'on-accueil' change réellement.
+  // check() écrit lui-même la classe 'scrolled' sur body ; sans ce garde-fou, cette
+  // écriture re-déclenchait l'observateur en boucle (tempête de microtâches) et figeait
+  // la page au va-et-vient Accueil <-> autres onglets.
+  var wasAccueil = body.classList.contains('on-accueil');
+  new MutationObserver(function(){
+    var isAccueil = body.classList.contains('on-accueil');
+    if(isAccueil === wasAccueil) return;   // ignore nos propres écritures de 'scrolled'
+    wasAccueil = isAccueil;
+    refreshThreshold(); check();
+  }).observe(body,{attributes:true,attributeFilter:['class']});
 
   refreshThreshold();
   check();
