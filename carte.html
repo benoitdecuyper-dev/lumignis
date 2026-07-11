@@ -410,13 +410,15 @@ function actionLinks(it,gmaps,gimg){
 function ecoleLine(lbl,e){
  if(!e||!e.nom) return '<div class="info-line"><b>'+lbl+'</b><span>—</span></div>';
  var d=(e.km!=null?' · ~'+e.km+' km':'');
+ var tr=e.tradition?' · <span style="color:#9a3d25">tradition</span>':'';
  var src=e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" title="source">↗</a>':'';
- return '<div class="info-line"><b>'+lbl+'</b><span>'+esc(e.nom)+(e.commune?' · '+esc(e.commune):'')+d+src+'</span></div>';
+ return '<div class="info-line"><b>'+lbl+'</b><span>'+esc(e.nom)+(e.commune?' · '+esc(e.commune):'')+d+tr+src+'</span></div>';
 }
 function ecolesHtml(it){
- var sc=null,hc=null;
- if(it.ecoles){ sc=it.ecoles.sc; hc=it.ecoles.hc; }
- else if(it.qualif&&it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url}; }
+ var e=it.ecoles||{};
+ var sc=e.sc;
+ if(!sc && it.qualif && it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url}; }
+ var hc=e.hc;
  if(!sc&&!hc) return '';
  return '<div class="section-title">Écoles catholiques</div><div class="info-grid">'+ecoleLine('Sous contrat',sc)+ecoleLine('Hors contrat',hc)+'</div>';
 }
