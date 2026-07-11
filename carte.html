@@ -417,7 +417,7 @@ function ecoleLine(lbl,e){
 function ecolesHtml(it){
  var e=it.ecoles||{};
  var sc=e.sc;
- if(!sc && it.qualif && it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url}; }
+ if(!sc && it.qualif && it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url||b.web}; }
  var hc=e.hc;
  if(!sc&&!hc) return '';
  return '<div class="section-title">Écoles catholiques</div><div class="info-grid">'+ecoleLine('Sous contrat',sc)+ecoleLine('Hors contrat',hc)+'</div>';
