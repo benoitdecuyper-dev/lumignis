@@ -388,7 +388,7 @@ function practicalFor(it){
    infoLine('Disponibilité',q.disponibilite&&q.disponibilite.statut)+
   '</div>';
  }
- if(it.t==='p') return '<div class="info-grid">'+infoLine('Zone',it.zone)+infoLine('Angle',it.angle)+infoLine('Priorité',PTIER_L[it.tier])+infoLine('Diocèse',it.diocese)+infoLine('Bâti / surface',it.surface)+infoLine('Prix',it.prix)+infoLine('Statut',it.statut)+infoLine('École proche',it.ecole_proche)+'</div>';
+ if(it.t==='p') return '<div class="info-grid">'+infoLine('Zone',it.zone)+infoLine('Angle',it.angle)+infoLine('Priorité',PTIER_L[it.tier])+infoLine('Diocèse',it.diocese)+infoLine('Bâti / surface',it.surface)+infoLine('Prix',it.prix)+infoLine('Statut',it.statut)+'</div>';
  if(it.t==='v') return '<div class="info-grid">'+infoLine('Prix',it.prix)+infoLine('Bâti',it.ba)+infoLine('Terrain',it.ter)+infoLine('Capacité',it.cap)+infoLine('Chapelle',it.chap)+infoLine('Source','Annonce / dossier de prospection')+'</div>';
  if(it.t==='a') return '<div class="info-grid">'+infoLine('Ordre',it.o)+infoLine('Communauté',it.nb)+infoLine('Tendance',it.td)+infoLine('Accueil',it.tl)+infoLine('Activités',it.ac)+infoLine('Source','Wikipédia / source liée')+'</div>';
  return '<div class="info-grid">'+infoLine('Statut',it.st)+infoLine('Communauté',it.co)+infoLine('Fréquentation',it.fr)+infoLine('Bâti',it.ba)+infoLine('Potentiel',it.p)+infoLine('Source','Wikipédia / source liée')+'</div>';
@@ -407,6 +407,19 @@ function actionLinks(it,gmaps,gimg){
  var source=it.u?'<a href="'+it.u+'" target="_blank" rel="noopener">Source</a>':'';
  return '<div class="btns">'+source+'<a class="gr" href="'+gmaps+'" target="_blank" rel="noopener">Google Maps</a><a href="'+gimg+'" target="_blank" rel="noopener">Photos</a></div>';
 }
+function ecoleLine(lbl,e){
+ if(!e||!e.nom) return '<div class="info-line"><b>'+lbl+'</b><span>—</span></div>';
+ var d=(e.km!=null?' · ~'+e.km+' km':'');
+ var src=e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" title="source">↗</a>':'';
+ return '<div class="info-line"><b>'+lbl+'</b><span>'+esc(e.nom)+(e.commune?' · '+esc(e.commune):'')+d+src+'</span></div>';
+}
+function ecolesHtml(it){
+ var sc=null,hc=null;
+ if(it.ecoles){ sc=it.ecoles.sc; hc=it.ecoles.hc; }
+ else if(it.qualif&&it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url}; }
+ if(!sc&&!hc) return '';
+ return '<div class="section-title">Écoles catholiques</div><div class="info-grid">'+ecoleLine('Sous contrat',sc)+ecoleLine('Hors contrat',hc)+'</div>';
+}
 function panelScaffold(it,bodyHtml,linksHtml){
  var st=statusFor(it);
  var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Qualification enrichie non chargée sur ce déploiement. Importer <code>site/equipe/sql/import_lieux_qualifications.sql</code> dans Supabase pour afficher évêque, école et crible Benoit.</div>' : '';
@@ -418,7 +431,7 @@ function panelScaffold(it,bodyHtml,linksHtml){
   qualifNote+
   scoreHtml(it)+
   '<div class="section-title">Qualification</div>'+metricsFor(it)+
-  '<div class="section-title">Infos utiles</div>'+practicalFor(it)+
+  '<div class="section-title">Infos utiles</div>'+practicalFor(it)+ecolesHtml(it)+
   '<div class="next-action"><b>Prochaine action</b>'+esc(nextActionFor(it))+'</div>'+
   criteriaHtml(it)+bodyHtml+linksHtml+threadHtml(it);
 }
