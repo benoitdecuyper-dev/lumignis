@@ -607,12 +607,12 @@
   <!-- Classement (tout en bas) -->
   <section id="sec-classement">
     <h2 class="sec">Classe tes critères</h2>
-    <p class="sec-note">Tout ce que tu as coché arrive ici. Du plus important (en haut) au moins important&nbsp;: attrape la poignée &#9776; pour glisser, ou utilise les flèches.</p>
+    <p class="sec-note">Tout ce que tu as coché arrive ici. Du plus important (en haut) au moins important&nbsp;: attrape une pastille et glisse-la (au doigt, par la poignée &#9776;). La poubelle retire un critère du classement — et le décoche dans la liste.</p>
     <div class="esprit"><b>L'esprit du classement&nbsp;:</b> chaque critère compte plus que <b>tous</b> ceux qui le suivent. Concrètement, si un lieu n'offre pas ton n°&nbsp;6, les n°&nbsp;7, 8, 9&hellip; peuvent sauter avec lui — ils sont moins importants que ce qui manque déjà. Classe-toi donc en te demandant&nbsp;: «&nbsp;qu'est-ce que je refuse de sacrifier en premier&nbsp;?&nbsp;»</div>
 
     <ol class="chips" id="chips"></ol>
     <div class="chips-empty" id="chipsEmpty">Coche des critères plus haut&nbsp;— ils apparaîtront ici pour être classés.</div>
-    <p class="drag-hint" id="dragHint" hidden>&#8597; Glisser-déposer, ou flèches &#9650; &#9660; — le n° 1 est ta priorité absolue.</p>
+    <p class="drag-hint" id="dragHint" hidden>&#8597; Glisser-déposer pour classer — le n° 1 est ta priorité absolue.</p>
 
     <div class="publish-bar">
       <div><p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p>
@@ -1116,6 +1116,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     font-family:var(--f-label);font-size:.8rem;font-weight:400;color:var(--ink-soft);line-height:1.5;}
 #panel-quest .chip.show-desc .chip-desc{display:block;}
 #panel-quest .chip .mv button[data-info]{font-family:var(--f-display);font-style:italic;font-weight:600;}
+#panel-quest .chip .mv button[data-del]:hover{border-color:var(--ember);color:var(--ember);}
 #panel-quest .chip.show-desc .mv button[data-info]{border-color:var(--gold);color:var(--gold-deep);background:var(--tint-gold);}
 #panel-quest .chip:hover{box-shadow:var(--sh-m);}
 #panel-quest .chip-ghost{position:fixed;z-index:120;pointer-events:none;opacity:.97;margin:0;list-style:none;
@@ -1166,7 +1167,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .q-locked .drag-hint{pointer-events:none;opacity:.55;}
 #panel-quest .q-locked ol.chips{opacity:.85;}
 #panel-quest .q-locked ol.chips .chip{cursor:default;}
-#panel-quest .q-locked ol.chips .mv button[data-mv],
+#panel-quest .q-locked ol.chips .mv button[data-del],
 #panel-quest .q-locked ol.chips .grip{display:none;}
 #panel-quest .save-note{font-family:var(--f-label);font-size:.76rem;color:var(--muted);margin:0 0 .3rem;line-height:1.5;}
 #panel-quest .reset-link{margin:0 0 1.6rem;}
@@ -1486,16 +1487,21 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
         '<span class="lbl">'+esc(c.label)+'</span>'+
         '<span class="mv">'+
           '<button type="button" data-info aria-label="Voir la description" title="Voir la description">i</button>'+
-          '<button type="button" data-mv="-1" aria-label="Monter" '+(idx===0?"disabled":"")+'>&#9650;</button>'+
-          '<button type="button" data-mv="1" aria-label="Descendre" '+(idx===state.order.length-1?"disabled":"")+'>&#9660;</button>'+
+          '<button type="button" data-del aria-label="Retirer ce critère" title="Retirer du classement (décoche le critère)">'+
+            '<svg width="12" height="13" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 3.5h12M5.5 1h3M2.5 3.5l.8 10.5a1 1 0 0 0 1 .9h5.4a1 1 0 0 0 1-.9l.8-10.5M5.5 6.5v5M8.5 6.5v5"/></svg>'+
+          '</button>'+
         '</span>'+
         '<span class="grip" aria-hidden="true" title="Glisser pour réordonner">&#9776;</span>'+
         '<small class="chip-desc">'+esc(c.desc||"")+'</small>';
       li.addEventListener("click",function(e){
         var inf=e.target.closest("[data-info]");
         if(inf){ li.classList.toggle("show-desc"); return; }
-        var b=e.target.closest("[data-mv]"); if(!b) return;
-        move(idx, idx+parseInt(b.getAttribute("data-mv"),10));
+        var del=e.target.closest("[data-del]");
+        if(del){
+          if(isLocked()){ toast("Réponse publiée — dépublie-la pour la modifier"); return; }
+          toggle(id);
+          toast("« "+c.label+" » retiré — décoché dans la liste des critères");
+        }
       });
       li.addEventListener("pointerdown",function(e){
         if(isLocked()) return;                                 // publié = figé
@@ -1507,16 +1513,6 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       chipsEl.appendChild(li);
     });
     renderRecap();
-  }
-  function move(from,to){
-    if(isLocked()) return;
-    if(to<0||to>=state.order.length) return;
-    var it=state.order.splice(from,1)[0];
-    state.order.splice(to,0,it);
-    markDirty(); renderChips();
-    // la pastille déplacée reste visible à l'écran (défilement auto si besoin)
-    var el=chipItems()[to];
-    if(el&&el.scrollIntoView){ el.scrollIntoView({block:"nearest",behavior:"smooth"}); }
   }
 
   /* ——— Réponses publiées de l'équipe (Supabase) ——— */
