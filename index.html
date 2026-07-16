@@ -529,6 +529,7 @@
     <div>
       <p class="autosave" id="autosave">&#10003; Enregistré automatiquement</p>
       <p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p>
+      <button type="button" class="unpub js-unpub" hidden>Dépublier — retirer ma réponse de la vue équipe</button>
     </div>
     <button class="q-btn js-publish" type="button">Publier</button>
   </div>
@@ -571,10 +572,13 @@
     <h2 class="sec">Coche ce qui compte pour toi</h2>
     <p class="sec-note">Les dix premiers sont les repères posés par Éléonore &amp; Benoît&nbsp;— reprends-les librement. Les suivants sont des pistes qui reviennent souvent. Et tu peux ajouter les tiens. Tout ce que tu coches apparaît dans le classement, en bas de page.</p>
     <div class="pick-grid" id="pickGrid"></div>
-    <div class="add-box">
-      <input type="text" id="customInput" placeholder="Il manque quelque chose ? Ex. Une rivière à proximité" maxlength="70" />
-      <input type="text" id="customDesc" placeholder="Une description rapide (facultatif)" maxlength="140" />
-      <button class="q-btn-ghost" id="addBtn" type="button">Ajouter mon critère</button>
+    <div class="add-card">
+      <span class="field-label">Il manque quelque chose&nbsp;? Ajoute ton critère</span>
+      <div class="add-box">
+        <input type="text" id="customInput" placeholder="Ex. Une rivière à proximité" maxlength="70" />
+        <input type="text" id="customDesc" placeholder="Une description rapide (facultatif)" maxlength="140" />
+        <button class="q-btn-ghost" id="addBtn" type="button">Ajouter mon critère</button>
+      </div>
     </div>
   </section>
 
@@ -611,7 +615,8 @@
     <p class="drag-hint" id="dragHint" hidden>&#8597; Glisser-déposer, ou flèches &#9650; &#9660; — le n° 1 est ta priorité absolue.</p>
 
     <div class="publish-bar">
-      <div><p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p></div>
+      <div><p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p>
+      <button type="button" class="unpub js-unpub" hidden>Dépublier — retirer ma réponse de la vue équipe</button></div>
       <button class="q-btn js-publish" type="button">Publier</button>
     </div>
 
@@ -1062,7 +1067,9 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .pick .rm{position:absolute;top:.4rem;right:.55rem;background:none;border:none;color:var(--muted);
     font-family:var(--f-label);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:.15rem;}
 #panel-quest .pick .rm:hover{color:var(--gold-deep);}
-#panel-quest .add-box{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:.9rem;}
+#panel-quest .add-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);
+    padding:1rem 1.15rem 1.1rem;box-shadow:var(--sh-s);margin-top:.9rem;}
+#panel-quest .add-box{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:.55rem;}
 #panel-quest .add-box input{flex:1 1 16rem;}
 #panel-quest .map-grid{display:grid;grid-template-columns:minmax(0,1.25fr) 1fr;gap:1.4rem;align-items:start;}
 #panel-quest .map-box{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:1rem;box-shadow:var(--sh-s);}
@@ -1093,14 +1100,18 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     transition:background .18s var(--ease),transform .12s var(--ease),box-shadow .18s var(--ease),opacity .18s var(--ease);}
 #panel-quest .q-btn:hover:not(:disabled){background:var(--gold);transform:translateY(-1px);box-shadow:var(--sh-m);}
 #panel-quest .q-btn:disabled{opacity:.45;cursor:not-allowed;}
-#panel-quest .q-btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line-strong);
-    border-radius:var(--r-full);text-transform:uppercase;font-size:.74rem;box-shadow:none;padding:.6rem 1.15rem;}
+#panel-quest .q-btn-ghost{font-family:var(--f-label);font-weight:600;letter-spacing:.04em;cursor:pointer;
+    background:transparent;color:var(--ink-soft);border:1px solid var(--line-strong);
+    border-radius:var(--r-full);text-transform:uppercase;font-size:.74rem;box-shadow:none;padding:.6rem 1.15rem;
+    transition:border-color .15s var(--ease),color .15s var(--ease);}
+#panel-quest .q-btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep);}
 #panel-quest .q-btn-ghost:hover:not(:disabled){border-color:var(--gold);color:var(--gold-deep);background:transparent;transform:none;box-shadow:none;}
 #panel-quest ol.chips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
 #panel-quest .chips-empty{border:1px dashed var(--line-strong);border-radius:var(--r-m);padding:1.1rem 1.3rem;
     color:var(--muted);font-size:.92rem;background:var(--paper-warm);}
 #panel-quest .chip{display:flex;align-items:center;flex-wrap:wrap;gap:.75rem;background:var(--paper);border:1px solid var(--line);
     border-radius:var(--r-m);padding:.5rem .6rem .5rem .5rem;box-shadow:var(--sh-s);cursor:grab;
+    -webkit-user-select:none;user-select:none;
     transition:box-shadow .15s var(--ease),border-color .15s var(--ease);}
 #panel-quest .chip .chip-desc{display:none;flex-basis:100%;margin:0;padding:.05rem .6rem .3rem 2.55rem;
     font-family:var(--f-label);font-size:.8rem;font-weight:400;color:var(--ink-soft);line-height:1.5;}
@@ -1145,6 +1156,10 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .autosave{margin:0 0 .15rem;font-family:var(--f-label);font-size:.74rem;color:var(--success);}
 #panel-quest .pub-state{margin:0;color:var(--ink-soft);font-size:.9rem;}
 #panel-quest .pub-state b{color:var(--ink);}
+#panel-quest .unpub{background:none;border:none;padding:0;margin:.3rem 0 0;cursor:pointer;
+    font-family:var(--f-label);font-size:.74rem;color:var(--muted);
+    text-decoration:underline;text-underline-offset:3px;}
+#panel-quest .unpub:hover{color:var(--gold-deep);}
 #panel-quest .save-note{font-family:var(--f-label);font-size:.76rem;color:var(--muted);margin:0 0 .3rem;line-height:1.5;}
 #panel-quest .reset-link{margin:0 0 1.6rem;}
 #panel-quest .reset-link button{background:none;border:none;padding:0;cursor:pointer;
@@ -1375,8 +1390,20 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   /* ——— Classement (chips, en bas de page) ——— */
   var chipsEl=$("#chips");
 
-  /* — drag « tenu dans la souris » : ghost fixe + trou + auto-scroll aux bords — */
-  var drag=null;
+  /* — drag « tenu dans la souris » : ghost fixe + trou + auto-scroll aux bords —
+     Saisie possible PARTOUT sur la pastille (souris) ; au tactile, seule la poignée ☰
+     déclenche le drag pour ne pas casser le défilement de la page au doigt.
+     Un seuil de 5 px distingue le clic (boutons, dépliage) du vrai déplacement. */
+  var drag=null, pending=null;
+  function armDrag(e, li){ pending={li:li, x:e.clientX, y:e.clientY}; }
+  document.addEventListener("pointermove",function(e){
+    if(pending && !drag &&
+       Math.abs(e.clientX-pending.x)+Math.abs(e.clientY-pending.y)>5){
+      var li=pending.li; pending=null;
+      startDrag(e, li);
+    }
+  });
+  document.addEventListener("pointerup",function(){ pending=null; });
   function chipItems(){
     return [].filter.call(chipsEl.children,function(el){ return !el.classList.contains("chip-ghost"); });
   }
@@ -1457,7 +1484,12 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
         var b=e.target.closest("[data-mv]"); if(!b) return;
         move(idx, idx+parseInt(b.getAttribute("data-mv"),10));
       });
-      li.querySelector(".grip").addEventListener("pointerdown",function(e){ startDrag(e, li); });
+      li.addEventListener("pointerdown",function(e){
+        if(e.button) return;                                   // clic gauche uniquement
+        if(e.target.closest("button")) return;                 // i / flèches restent des clics
+        if(e.pointerType==="touch" && !e.target.closest(".grip")) return; // au doigt : poignée seule
+        armDrag(e, li);
+      });
       chipsEl.appendChild(li);
     });
     renderRecap();
@@ -1566,6 +1598,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     pill.classList.add(pillCls); pill.textContent=pillTxt;
     [].forEach.call(hints,function(h){ h.innerHTML=hintHtml; });
     [].forEach.call(pubs,function(b){ b.textContent=pubTxt; });
+    [].forEach.call(document.querySelectorAll(".js-unpub"),function(b){ b.hidden=(state.statut!=="publie"); });
   }
 
   /* ——— Publier (l'enregistrement, lui, est automatique) ——— */
@@ -1601,6 +1634,22 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       lastSaved=sig(cs);
       renderRecap(); loadTeam(true);
       toast("Publié — l'équipe est prévenue au fil d'actu");
+    });
+  });
+
+  /* ——— Dépublier : la réponse redevient privée, rien n'est perdu ——— */
+  [].forEach.call(document.querySelectorAll(".js-unpub"),function(btn){
+    btn.addEventListener("click",async function(){
+      if(!window.confirm("Dépublier ? Ta réponse ne sera plus visible de l'équipe ni prise en compte dans la recherche de lieux. Elle reste enregistrée pour toi.")) return;
+      var now=new Date().toISOString();
+      var r=await QSB.from("questionnaire_reponses").upsert(
+        {user_id:QME.id,qui:state.prenom,brouillon:clientState(),publication:null,statut:"brouillon",maj_brouillon:now,maj_publication:null},
+        {onConflict:"user_id"});
+      if(r.error){ toast("Dépublication impossible — réessaie"); return; }
+      state.statut="brouillon"; state.dirty=false; state._publication=null; state.maj=now;
+      lastSaved=sig(clientState());
+      renderRecap(); loadTeam(true);
+      toast("Dépublié — tes réponses restent enregistrées, visibles de toi seul");
     });
   });
 
