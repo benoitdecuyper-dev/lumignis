@@ -573,6 +573,7 @@
     <div class="pick-grid" id="pickGrid"></div>
     <div class="add-box">
       <input type="text" id="customInput" placeholder="Il manque quelque chose ? Ex. Une rivière à proximité" maxlength="70" />
+      <input type="text" id="customDesc" placeholder="Une description rapide (facultatif)" maxlength="140" />
       <button class="q-btn-ghost" id="addBtn" type="button">Ajouter mon critère</button>
     </div>
   </section>
@@ -1098,12 +1099,20 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest ol.chips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
 #panel-quest .chips-empty{border:1px dashed var(--line-strong);border-radius:var(--r-m);padding:1.1rem 1.3rem;
     color:var(--muted);font-size:.92rem;background:var(--paper-warm);}
-#panel-quest .chip{display:flex;align-items:center;gap:.75rem;background:var(--paper);border:1px solid var(--line);
-    border-radius:var(--r-full);padding:.5rem .6rem .5rem .5rem;box-shadow:var(--sh-s);cursor:grab;
+#panel-quest .chip{display:flex;align-items:center;flex-wrap:wrap;gap:.75rem;background:var(--paper);border:1px solid var(--line);
+    border-radius:var(--r-m);padding:.5rem .6rem .5rem .5rem;box-shadow:var(--sh-s);cursor:grab;
     transition:box-shadow .15s var(--ease),border-color .15s var(--ease);}
+#panel-quest .chip .chip-desc{display:none;flex-basis:100%;margin:0;padding:.05rem .6rem .3rem 2.55rem;
+    font-family:var(--f-label);font-size:.8rem;font-weight:400;color:var(--ink-soft);line-height:1.5;}
+#panel-quest .chip.show-desc .chip-desc{display:block;}
+#panel-quest .chip .mv button[data-info]{font-family:var(--f-display);font-style:italic;font-weight:600;}
+#panel-quest .chip.show-desc .mv button[data-info]{border-color:var(--gold);color:var(--gold-deep);background:var(--tint-gold);}
 #panel-quest .chip:hover{box-shadow:var(--sh-m);}
-#panel-quest .chip.dragging{opacity:.5;}
-#panel-quest .chip.drop-hint{border-color:var(--gold);box-shadow:0 0 0 3px var(--tint-gold);}
+#panel-quest .chip-ghost{position:fixed;z-index:120;pointer-events:none;opacity:.97;margin:0;list-style:none;
+    transform:rotate(1.5deg) scale(1.02);box-shadow:0 18px 44px rgba(32,24,14,.28);
+    background:var(--paper);border:1px solid var(--gold);}
+#panel-quest .chip.chip-hole{opacity:.35;border-style:dashed;border-color:var(--gold);}
+#panel-quest body.chip-dragging{cursor:grabbing;-webkit-user-select:none;user-select:none;}
 #panel-quest .chip .rk{flex:0 0 auto;width:1.8rem;height:1.8rem;border-radius:50%;
     background:var(--paper-warm);border:1px solid var(--line-strong);
     display:flex;align-items:center;justify-content:center;
@@ -1114,7 +1123,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .chip .lbl{flex:1 1 auto;min-width:0;font-family:var(--f-label);font-weight:600;font-size:.9rem;color:var(--ink);
     overflow-wrap:anywhere;}
 #panel-quest .chip .grip{flex:0 0 auto;color:var(--muted);font-size:1.05rem;line-height:1;padding:.15rem .45rem .15rem .2rem;
-    cursor:grab;-webkit-user-select:none;user-select:none;transition:color .12s var(--ease);}
+    cursor:grab;-webkit-user-select:none;user-select:none;touch-action:none;transition:color .12s var(--ease);}
 #panel-quest .chip .grip:hover{color:var(--gold-deep);}
 #panel-quest .chip:active .grip{cursor:grabbing;}
 #panel-quest .chip .mv{display:flex;gap:.25rem;}
@@ -1284,10 +1293,11 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   function addCustom(){
     var input=$("#customInput"), val=(input.value||"").trim();
     if(!val){ input.focus(); return; }
+    var descIn=$("#customDesc"), desc=(descIn.value||"").trim();
     var id="c"+(state.custom.length+1)+"_"+Date.now().toString(36);
-    state.custom.push({id:id,label:val,desc:"Ton critère personnel."});
+    state.custom.push({id:id,label:val,desc:desc||"Critère ajouté à la main."});
     state.selected.push(id); state.order.push(id);
-    input.value=""; markDirty(); renderPicks();
+    input.value=""; descIn.value=""; markDirty(); renderPicks();
   }
   function removeCustom(id){
     state.custom=state.custom.filter(function(c){return c.id!==id;});
@@ -1364,7 +1374,63 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 
   /* ——— Classement (chips, en bas de page) ——— */
   var chipsEl=$("#chips");
-  var dragIdx=null;
+
+  /* — drag « tenu dans la souris » : ghost fixe + trou + auto-scroll aux bords — */
+  var drag=null;
+  function chipItems(){
+    return [].filter.call(chipsEl.children,function(el){ return !el.classList.contains("chip-ghost"); });
+  }
+  function startDrag(e, li){
+    e.preventDefault();
+    var rect=li.getBoundingClientRect();
+    var ghost=li.cloneNode(true);
+    ghost.classList.add("chip-ghost");
+    ghost.classList.remove("chip-hole","show-desc");
+    ghost.style.width=rect.width+"px";
+    ghost.style.left=rect.left+"px";
+    ghost.style.top=rect.top+"px";
+    chipsEl.parentNode.appendChild(ghost);
+    li.classList.add("chip-hole");
+    document.body.classList.add("chip-dragging");
+    drag={li:li, ghost:ghost, dy:e.clientY-rect.top, x:rect.left, y:e.clientY, raf:null};
+    document.addEventListener("pointermove",dragMove);
+    document.addEventListener("pointerup",dragEnd);
+    dragLoop();
+  }
+  function dragMove(e){ if(drag){ drag.y=e.clientY; } }
+  function dragLoop(){
+    if(!drag) return;
+    // le ghost suit le curseur
+    drag.ghost.style.top=(drag.y-drag.dy)+"px";
+    drag.ghost.style.left=drag.x+"px";
+    // auto-scroll quand on approche des bords du viewport
+    var M=90, v=0;
+    if(drag.y<M){ v=-(M-drag.y)*0.35; }
+    else if(drag.y>window.innerHeight-M){ v=(drag.y-(window.innerHeight-M))*0.35; }
+    if(v){ window.scrollBy(0,v); }
+    // le trou se repositionne en direct sous le curseur
+    var items=chipItems(), placed=false;
+    for(var i=0;i<items.length;i++){
+      var it=items[i]; if(it===drag.li) continue;
+      var r=it.getBoundingClientRect();
+      if(drag.y < r.top + r.height/2){ if(it.previousElementSibling!==drag.li){ chipsEl.insertBefore(drag.li,it); } placed=true; break; }
+    }
+    if(!placed && chipsEl.lastElementChild!==drag.li){ chipsEl.appendChild(drag.li); }
+    drag.raf=requestAnimationFrame(dragLoop);
+  }
+  function dragEnd(){
+    if(!drag) return;
+    cancelAnimationFrame(drag.raf);
+    drag.ghost.remove();
+    drag.li.classList.remove("chip-hole");
+    document.body.classList.remove("chip-dragging");
+    document.removeEventListener("pointermove",dragMove);
+    document.removeEventListener("pointerup",dragEnd);
+    drag=null;
+    // l'ordre final = l'ordre du DOM
+    state.order=chipItems().map(function(el){ return el.dataset.id; });
+    markDirty(); renderChips();
+  }
   function renderChips(){
     state.order=state.order.filter(function(id){return state.selected.indexOf(id)>=0;});
     state.selected.forEach(function(id){ if(state.order.indexOf(id)<0) state.order.push(id); });
@@ -1375,26 +1441,23 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     state.order.forEach(function(id,idx){
       var c=critById(id); if(!c) return;
       var li=document.createElement("li");
-      li.className="chip"; li.draggable=true; li.dataset.idx=idx;
+      li.className="chip"; li.dataset.id=id; li.dataset.idx=idx;
       li.innerHTML='<span class="rk">'+(idx+1)+'</span>'+
         '<span class="lbl">'+esc(c.label)+'</span>'+
         '<span class="mv">'+
+          '<button type="button" data-info aria-label="Voir la description" title="Voir la description">i</button>'+
           '<button type="button" data-mv="-1" aria-label="Monter" '+(idx===0?"disabled":"")+'>&#9650;</button>'+
           '<button type="button" data-mv="1" aria-label="Descendre" '+(idx===state.order.length-1?"disabled":"")+'>&#9660;</button>'+
         '</span>'+
-        '<span class="grip" aria-hidden="true" title="Glisser pour réordonner">&#9776;</span>';
+        '<span class="grip" aria-hidden="true" title="Glisser pour réordonner">&#9776;</span>'+
+        '<small class="chip-desc">'+esc(c.desc||"")+'</small>';
       li.addEventListener("click",function(e){
+        var inf=e.target.closest("[data-info]");
+        if(inf){ li.classList.toggle("show-desc"); return; }
         var b=e.target.closest("[data-mv]"); if(!b) return;
         move(idx, idx+parseInt(b.getAttribute("data-mv"),10));
       });
-      li.addEventListener("dragstart",function(){ dragIdx=idx; li.classList.add("dragging"); });
-      li.addEventListener("dragend",function(){ dragIdx=null; li.classList.remove("dragging");
-        [].forEach.call(chipsEl.children,function(x){x.classList.remove("drop-hint");}); });
-      li.addEventListener("dragover",function(e){ e.preventDefault();
-        [].forEach.call(chipsEl.children,function(x){x.classList.remove("drop-hint");});
-        li.classList.add("drop-hint"); });
-      li.addEventListener("drop",function(e){ e.preventDefault();
-        if(dragIdx!==null && dragIdx!==idx){ move(dragIdx, idx); } });
+      li.querySelector(".grip").addEventListener("pointerdown",function(e){ startDrag(e, li); });
       chipsEl.appendChild(li);
     });
     renderRecap();
@@ -1404,6 +1467,9 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     var it=state.order.splice(from,1)[0];
     state.order.splice(to,0,it);
     markDirty(); renderChips();
+    // la pastille déplacée reste visible à l'écran (défilement auto si besoin)
+    var el=chipItems()[to];
+    if(el&&el.scrollIntoView){ el.scrollIntoView({block:"nearest",behavior:"smooth"}); }
   }
 
   /* ——— Réponses publiées de l'équipe (Supabase) ——— */
@@ -1579,6 +1645,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 
   $("#addBtn").addEventListener("click",addCustom);
   $("#customInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); addCustom(); } });
+  $("#customDesc").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); addCustom(); } });
   $("#prenom").addEventListener("input",function(){ state.prenom=$("#prenom").value.trim(); markDirty(); renderRecap(); });
   [].forEach.call(document.querySelectorAll('input[name="horizon"]'),function(r){
     r.addEventListener("change",function(){ state.horizon=r.value; markDirty(); renderRecap(); });
