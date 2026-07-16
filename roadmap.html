@@ -19,8 +19,9 @@
      Lumignis — Feuille de route (Gantt vivant) · espace privé
      Afficheur autonome : AUCUNE donnée en dur — le contenu vit
      dans la table Supabase `roadmap` (lecture réservée membres).
-     UX alignée sur le site lumignis.fr : clair par défaut,
-     Literata / Work Sans, palette crème & or, braise en accent.
+     Plusieurs scénarios (une ligne par scénario), sélecteur
+     intégré. UX alignée sur le site lumignis.fr : clair par
+     défaut, Literata / Work Sans, crème & or, braise en accent.
      ============================================================ */
 
   :root{
@@ -99,6 +100,22 @@
   .hero-lede b{color:var(--ink);}
   .fire-rule{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));}
 
+  /* ——— Sélecteur de scénario (même vocabulaire que les cartes du questionnaire) ——— */
+  .rm-switch{display:flex;justify-content:flex-start;gap:.55rem;flex-wrap:wrap;margin-top:1.35rem;}
+  .sw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.05rem;text-align:left;
+    font-family:var(--f-label);border:1px solid var(--line-strong);background:var(--paper);
+    border-radius:var(--r-m);padding:.5rem 1.05rem .55rem;cursor:pointer;color:var(--ink-soft);
+    transition:border-color .15s var(--ease),box-shadow .15s var(--ease),background .15s var(--ease);}
+  .sw b{font-weight:600;font-size:.86rem;color:var(--ink);}
+  .sw small{font-size:.68rem;color:var(--ink-faint);}
+  .sw:hover{border-color:var(--gold);}
+  .sw.is-on{border-color:var(--gold-deep);background:color-mix(in srgb,var(--paper) 88%,var(--gold) 12%);box-shadow:0 0 0 3px var(--tint-gold);}
+  .sw.is-on b{color:var(--gold-deep);}
+
+  /* ——— Fondu au changement de scénario ——— */
+  #heroTxt,.gantt-card,.assume,.foot{transition:opacity .18s var(--ease);}
+  body.rm-fading #heroTxt,body.rm-fading .gantt-card,body.rm-fading .assume,body.rm-fading .foot{opacity:0;}
+
   main{padding:2.2rem 0 3.5rem;display:flex;flex-direction:column;gap:1.6rem;}
 
   /* ——— États de chargement / accès ——— */
@@ -137,8 +154,9 @@
     background-size:calc(100%/var(--n)) 100%;
     border:1px solid var(--line);
   }
-  /* frontière d'année (fin décembre) — position portée par --fr */
+  /* frontières d'année (fin décembre) — positions portées par --fr / --fr2 */
   .g-track::before{content:"";position:absolute;top:-2px;bottom:-2px;left:calc(var(--fr)*100%/var(--n));width:2px;background:var(--line-strong);}
+  .gantt.has-fr2 .g-track::after{content:"";position:absolute;top:-2px;bottom:-2px;left:calc(var(--fr2)*100%/var(--n));width:2px;background:var(--line-strong);}
 
   .g-bar{
     position:absolute;top:.42rem;bottom:.42rem;z-index:2;
@@ -219,7 +237,7 @@
     .wrap{padding:0 1.1rem;}
     .gantt-card{padding:1rem .9rem 1.1rem;}
   }
-  @media print{.mast,.theme-btn,.g-hint{display:none !important;}}
+  @media print{.mast,.theme-btn,.g-hint,.rm-switch{display:none !important;}}
 </style>
 
 <header class="mast">
@@ -237,10 +255,13 @@
 
 <section class="hero" id="hero" hidden>
   <div class="wrap hero-in">
-    <p class="hero-eyebrow" id="heroEyebrow"></p>
-    <h1 class="hero-title" id="heroTitle"></h1>
-    <p class="hero-sub" id="heroSub"></p>
-    <p class="hero-lede" id="heroLede"></p>
+    <div id="heroTxt">
+      <p class="hero-eyebrow" id="heroEyebrow"></p>
+      <h1 class="hero-title" id="heroTitle"></h1>
+      <p class="hero-sub" id="heroSub"></p>
+      <p class="hero-lede" id="heroLede"></p>
+    </div>
+    <div class="rm-switch" id="rmSwitch" role="tablist" aria-label="Scénarios de la feuille de route" hidden></div>
   </div>
 </section>
 <div class="fire-rule" aria-hidden="true"></div>
@@ -310,7 +331,7 @@
   var $=function(id){return document.getElementById(id);};
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
-  var RM=null;          // config chargée depuis la base
+  var RM=null;          // scénario actif (chargé depuis la base)
   var Y0=2026, M0=6, N=15;
   var chartStart=null, chartEnd=null;
   function monthDate(k){ return new Date(Y0, M0+(k-1), 1); } // 1er jour du mois k (1-indexé)
@@ -323,6 +344,9 @@
     var gantt=$("gantt");
     gantt.style.setProperty("--n",N);
     gantt.style.setProperty("--fr",g.frontiere!=null?g.frontiere:6);
+    gantt.classList.toggle("has-fr2",g.frontiere2!=null);
+    if(g.frontiere2!=null){ gantt.style.setProperty("--fr2",g.frontiere2); }
+    gantt.style.minWidth=g.minRem?(g.minRem+"rem"):"";
 
     var html='';
     html+='<div class="g-row"><div></div><div class="g-years">';
@@ -358,8 +382,8 @@
       $("assumeTitle").textContent=RM.suppose.titre||'';
       $("assumeList").innerHTML=(RM.suppose.items||[]).map(function(it){return '<li>'+it+'</li>';}).join('');
       $("assume").hidden=false;
-    }
-    if(RM.pied){ $("footText").textContent=RM.pied; $("foot").hidden=false; }
+    } else { $("assume").hidden=true; }
+    if(RM.pied){ $("footText").textContent=RM.pied; $("foot").hidden=false; } else { $("foot").hidden=true; }
     $("rmMsg").hidden=true;
     $("ganttCard").hidden=false;
   }
@@ -403,6 +427,7 @@
 
   function layout(){
     var body=$("gbody"), svg=$("glinks");
+    if(!body||!svg) return;
     var br=body.getBoundingClientRect();
     var tracks=[].slice.call(body.querySelectorAll(".g-track"));
     if(!tracks.length||br.width<10) return;
@@ -470,9 +495,39 @@
     postHeight();
   }
 
-  /* ——— Interactions (après rendu) ——— */
+  /* ——— Popover (singleton — survit aux changements de scénario) ——— */
+  var pop=null, popFor=null;
+  function ensurePop(){
+    if(pop) return;
+    pop=document.createElement("div");
+    pop.className="g-pop";
+    document.body.appendChild(pop);
+    document.addEventListener("click",hidePop);
+    window.addEventListener("scroll",hidePop,true);
+  }
+  function popBlock(f){
+    return '<div class="pop-block"><time>'+esc(f.dataset.date)+'</time><b>'+esc(f.dataset.title)+'</b><p>'+esc(f.dataset.body)+'</p>'+
+      (f.dataset.unlock?'<span class="unlock">'+esc(f.dataset.unlock)+'</span>':'')+'</div>';
+  }
+  function showPopAt(anchor,flags){
+    ensurePop();
+    pop.innerHTML=flags.map(popBlock).join('');
+    pop.classList.add("show");
+    popFor=anchor;
+    var r=anchor.getBoundingClientRect();
+    pop.style.left="0px"; pop.style.top="0px";
+    var pw=pop.offsetWidth, ph=pop.offsetHeight;
+    var x=Math.min(Math.max(8, r.left+r.width/2-pw/2), window.innerWidth-pw-8);
+    var y=r.top-ph-12;
+    if(y<8){ y=r.bottom+12; }
+    pop.style.left=x+"px"; pop.style.top=y+"px";
+  }
+  function hidePop(){ if(pop){ pop.classList.remove("show"); } popFor=null; }
+
+  /* ——— Interactions (re-câblées à chaque rendu) ——— */
   function bind(){
     var body=$("gbody"), svg=$("glinks");
+    ensurePop();
 
     // allumage des dépendances (barres et libellés) ; les éléments chauds passent au-dessus
     function setHot(ids){
@@ -489,30 +544,6 @@
       b.addEventListener("mouseenter",function(){ setHot([b.dataset.bar]); });
       b.addEventListener("mouseleave",function(){ setHot([]); });
     });
-
-    // popover des jalons et des actions (au survol, au focus, au clic pour tactile)
-    var pop=document.createElement("div");
-    pop.className="g-pop";
-    document.body.appendChild(pop);
-    var popFor=null;
-
-    function popBlock(f){
-      return '<div class="pop-block"><time>'+esc(f.dataset.date)+'</time><b>'+esc(f.dataset.title)+'</b><p>'+esc(f.dataset.body)+'</p>'+
-        (f.dataset.unlock?'<span class="unlock">'+esc(f.dataset.unlock)+'</span>':'')+'</div>';
-    }
-    function showPopAt(anchor,flags){
-      pop.innerHTML=flags.map(popBlock).join('');
-      pop.classList.add("show");
-      popFor=anchor;
-      var r=anchor.getBoundingClientRect();
-      pop.style.left="0px"; pop.style.top="0px";
-      var pw=pop.offsetWidth, ph=pop.offsetHeight;
-      var x=Math.min(Math.max(8, r.left+r.width/2-pw/2), window.innerWidth-pw-8);
-      var y=r.top-ph-12;
-      if(y<8){ y=r.bottom+12; }
-      pop.style.left=x+"px"; pop.style.top=y+"px";
-    }
-    function hidePop(){ pop.classList.remove("show"); popFor=null; }
 
     [].forEach.call(body.querySelectorAll(".g-flag"),function(f){
       f.addEventListener("mouseenter",function(){ showPopAt(f,[f]); });
@@ -544,13 +575,79 @@
         if(popFor===lab && pop.classList.contains("show")){ off(); } else { on(); }
       });
     });
+  }
 
-    document.addEventListener("click",hidePop);
-    window.addEventListener("scroll",hidePop,true);
+  /* ——— Scénarios : sélection, mémoire du choix, fondu ——— */
+  var STORE=[], CUR=null;
+
+  function applyScn(id){
+    var row=null;
+    STORE.forEach(function(r){ if(r.id===id) row=r; });
+    row=row||STORE[0];
+    CUR=row.id; RM=row.data;
+    try{ localStorage.setItem("lumignis-roadmap-scn",CUR); }catch(e){}
+    [].forEach.call($("rmSwitch").querySelectorAll(".sw"),function(b){
+      var on=b.dataset.scn===CUR;
+      b.classList.toggle("is-on",on);
+      b.setAttribute("aria-selected",on?"true":"false");
+    });
+    hidePop();
+    render();
+    paintTime();
+    bind();
+    layout();
+  }
+
+  function activate(id,animate){
+    if(!animate){ applyScn(id); return; }
+    if(id===CUR) return;
+    document.body.classList.add("rm-fading");
+    setTimeout(function(){
+      applyScn(id);
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ document.body.classList.remove("rm-fading"); });
+      });
+    },190);
+  }
+
+  function boot(rows){
+    STORE=(rows||[]).filter(function(r){ return r&&r.data&&r.data.chantiers; });
+    STORE.sort(function(a,b){
+      return ((a.data.meta&&a.data.meta.ordre)||99)-((b.data.meta&&b.data.meta.ordre)||99);
+    });
+    if(!STORE.length){ $("rmMsg").textContent="Feuille de route indisponible."; postHeight(); return; }
+
+    var sw=$("rmSwitch");
+    if(STORE.length>1){
+      sw.innerHTML=STORE.map(function(r){
+        var m=r.data.meta||{};
+        return '<button type="button" class="sw" role="tab" aria-selected="false" data-scn="'+esc(r.id)+'">'+
+          '<b>'+esc(m.nom||r.id)+'</b>'+(m.detail?'<small>'+esc(m.detail)+'</small>':'')+'</button>';
+      }).join('');
+      sw.hidden=false;
+      [].forEach.call(sw.querySelectorAll(".sw"),function(b){
+        b.addEventListener("click",function(){ activate(b.dataset.scn,true); });
+      });
+    }
+
+    var want=null;
+    try{ want=localStorage.getItem("lumignis-roadmap-scn"); }catch(e){}
+    var known=false;
+    STORE.forEach(function(r){ if(r.id===want) known=true; });
+    if(!known){
+      var def=null;
+      STORE.forEach(function(r){ if(!def && r.data.meta && r.data.meta.defaut) def=r; });
+      want=(def||STORE[0]).id;
+    }
+    activate(want,false);
+
+    window.addEventListener("resize",function(){ layout(); });
+    window.addEventListener("load",function(){ layout(); });
+    if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ layout(); }); }
   }
 
   /* ===LOADER=== */
-  /* ——— Données : table Supabase `roadmap` (lecture réservée aux membres) ——— */
+  /* ——— Données : table Supabase `roadmap` (lecture réservée aux membres) — une ligne par scénario ——— */
   var SB_URL='https://lsdnwszhdsgwzloxdnyt.supabase.co';
   var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZG53c3poZHNnd3psb3hkbnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjkyNTgsImV4cCI6MjA5ODcwNTI1OH0.5bidFmPJwIhLi9JQcceI1PSQKXHykKD8rwdgcV2PwFc';
   var sb=null; try{ sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY); }catch(e){}
@@ -560,16 +657,9 @@
     try{
       if(!sb) throw new Error("no client");
       try{ await sb.auth.getSession(); }catch(e){}
-      var r=await sb.from("roadmap").select("data").eq("id","equipe").maybeSingle();
-      if(r.error||!r.data||!r.data.data) throw (r.error||new Error("empty"));
-      RM=r.data.data;
-      render();
-      paintTime();
-      bind();
-      layout();
-      window.addEventListener("resize",function(){ layout(); });
-      window.addEventListener("load",function(){ layout(); });
-      if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(function(){ layout(); }); }
+      var r=await sb.from("roadmap").select("id,data");
+      if(r.error||!r.data||!r.data.length) throw (r.error||new Error("empty"));
+      boot(r.data);
     }catch(e){
       $("rmMsg").textContent=fail;
       postHeight();
