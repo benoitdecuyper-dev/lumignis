@@ -1007,7 +1007,6 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .statut.s-brouillon{color:var(--muted);border:1px dashed var(--line-strong);}
 #panel-quest .statut.s-enregistre{color:var(--slate);background:rgba(107,122,143,.13);}
 #panel-quest .statut.s-publie{color:var(--success);background:rgba(92,122,74,.14);}
-#panel-quest .statut.s-dirty{color:var(--gold-deep);background:var(--tint-gold);}
 #panel-quest main{padding:1.6rem 0 3.5rem;}
 #panel-quest #sec-profil,
 #panel-quest #sec-criteres,
@@ -1160,6 +1159,15 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     font-family:var(--f-label);font-size:.74rem;color:var(--muted);
     text-decoration:underline;text-underline-offset:3px;}
 #panel-quest .unpub:hover{color:var(--gold-deep);}
+#panel-quest .q-locked #sec-profil,
+#panel-quest .q-locked #sec-criteres,
+#panel-quest .q-locked #sec-carte,
+#panel-quest .q-locked .reset-link,
+#panel-quest .q-locked .drag-hint{pointer-events:none;opacity:.55;}
+#panel-quest .q-locked ol.chips{opacity:.85;}
+#panel-quest .q-locked ol.chips .chip{cursor:default;}
+#panel-quest .q-locked ol.chips .mv button[data-mv],
+#panel-quest .q-locked ol.chips .grip{display:none;}
 #panel-quest .save-note{font-family:var(--f-label);font-size:.76rem;color:var(--muted);margin:0 0 .3rem;line-height:1.5;}
 #panel-quest .reset-link{margin:0 0 1.6rem;}
 #panel-quest .reset-link button{background:none;border:none;padding:0;cursor:pointer;
@@ -1228,10 +1236,11 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   ];
 
   /* ——— État ——— */
-  var state={prenom:"",horizon:null,interet:null,selected:[],order:[],custom:[],depts:[],statut:"brouillon",maj:null,dirty:false};
+  var state={prenom:"",horizon:null,interet:null,selected:[],order:[],custom:[],depts:[],statut:"brouillon",maj:null};
   var KEY="lumignis-questionnaire-v2";
 
   function allCriteria(){ return BASE.concat(state.custom); }
+  function isLocked(){ return state.statut==="publie"; } // publié = figé
   function critById(id){ return allCriteria().filter(function(c){return c.id===id;})[0]; }
 
   /* ——— Persistance Supabase : brouillon auto-enregistré (strictement privé), publication séparée ——— */
@@ -1273,7 +1282,6 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       state.statut=r.data.statut||"brouillon";
       state.maj=r.data.maj_brouillon;
       state._publication=r.data.publication||null;
-      state.dirty=(state.statut==="publie")&&(sig(clientState())!==sig(state._publication));
       lastSaved=sig(clientState());
     }
   }
@@ -1300,12 +1308,14 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     renderChips();
   }
   function toggle(id){
+    if(isLocked()){ toast("Réponse publiée — dépublie-la pour la modifier"); return; }
     var i=state.selected.indexOf(id);
     if(i>=0){ state.selected.splice(i,1); state.order=state.order.filter(function(x){return x!==id;}); }
     else{ state.selected.push(id); state.order.push(id); }
     markDirty(); renderPicks();
   }
   function addCustom(){
+    if(isLocked()) return;
     var input=$("#customInput"), val=(input.value||"").trim();
     if(!val){ input.focus(); return; }
     var descIn=$("#customDesc"), desc=(descIn.value||"").trim();
@@ -1315,6 +1325,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     input.value=""; descIn.value=""; markDirty(); renderPicks();
   }
   function removeCustom(id){
+    if(isLocked()) return;
     state.custom=state.custom.filter(function(c){return c.id!==id;});
     state.selected=state.selected.filter(function(x){return x!==id;});
     state.order=state.order.filter(function(x){return x!==id;});
@@ -1334,6 +1345,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       p.dataset.code=d.c; p.dataset.nom=d.n;
       if(state.depts.indexOf(d.c)>=0) p.classList.add("sel");
       p.addEventListener("click",function(){
+        if(isLocked()){ toast("Réponse publiée — dépublie-la pour la modifier"); return; }
         var i=state.depts.indexOf(d.c);
         if(i>=0){ state.depts.splice(i,1); p.classList.remove("sel"); }
         else{ state.depts.push(d.c); p.classList.add("sel"); }
@@ -1382,6 +1394,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     renderRecap();
   }
   $("#deptClear").addEventListener("click",function(){
+    if(isLocked()) return;
     state.depts=[];
     [].forEach.call(svg.querySelectorAll("path.sel"),function(p){p.classList.remove("sel");});
     markDirty(); renderDeptSide();
@@ -1485,6 +1498,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
         move(idx, idx+parseInt(b.getAttribute("data-mv"),10));
       });
       li.addEventListener("pointerdown",function(e){
+        if(isLocked()) return;                                 // publié = figé
         if(e.button) return;                                   // clic gauche uniquement
         if(e.target.closest("button")) return;                 // i / flèches restent des clics
         if(e.pointerType==="touch" && !e.target.closest(".grip")) return; // au doigt : poignée seule
@@ -1495,6 +1509,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     renderRecap();
   }
   function move(from,to){
+    if(isLocked()) return;
     if(to<0||to>=state.order.length) return;
     var it=state.order.splice(from,1)[0];
     state.order.splice(to,0,it);
@@ -1564,9 +1579,9 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       var cnt=a.querySelector("[data-count]");
       if(cnt){ cnt.textContent=counts[k]?"("+counts[k]+")":""; }
     });
-    // Publier reste grisé tant que les 4 sections ne sont pas complètes
+    // Publier reste grisé tant que les 4 sections ne sont pas complètes (et une fois publié)
     var complete=checks.qui&&checks.criteres&&checks.depts&&checks.classement;
-    [].forEach.call(document.querySelectorAll(".js-publish"),function(b){ b.disabled=!complete; });
+    [].forEach.call(document.querySelectorAll(".js-publish"),function(b){ b.disabled=!complete||isLocked(); });
   }
 
   /* ——— Statut ——— */
@@ -1581,14 +1596,11 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       $("#autosave").innerHTML="&#10003; Enregistré automatiquement &middot; "+
         t.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
     }
+    var locked=isLocked();
     var pillCls, pillTxt, hintHtml, pubTxt;
-    if(state.statut==="publie" && state.dirty){
-      pillCls="s-dirty"; pillTxt="Publié · modifs non publiées";
-      hintHtml="Tu as des modifications <b>non publiées</b>.";
-      pubTxt="Mettre à jour la publication";
-    } else if(state.statut==="publie"){
+    if(locked){
       pillCls="s-publie"; pillTxt="Publié";
-      hintHtml="<b>Publié</b> — visible de l'équipe, dans la recherche de lieux.";
+      hintHtml="<b>Publié</b> — visible de l'équipe, dans la recherche de lieux. Ta réponse est <b>figée</b>&nbsp;: dépublie-la pour la modifier.";
       pubTxt="Publié ✓";
     } else {
       pillCls="s-brouillon"; pillTxt="Brouillon";
@@ -1598,7 +1610,12 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     pill.classList.add(pillCls); pill.textContent=pillTxt;
     [].forEach.call(hints,function(h){ h.innerHTML=hintHtml; });
     [].forEach.call(pubs,function(b){ b.textContent=pubTxt; });
-    [].forEach.call(document.querySelectorAll(".js-unpub"),function(b){ b.hidden=(state.statut!=="publie"); });
+    [].forEach.call(document.querySelectorAll(".js-unpub"),function(b){ b.hidden=!locked; });
+    // verrouillage : sections grisées + champs désactivés
+    var mine=$("#tab-mine"); if(mine){ mine.classList.toggle("q-locked",locked); }
+    ["prenom","customInput","customDesc"].forEach(function(id){ var el=$("#"+id); if(el){ el.disabled=locked; } });
+    [].forEach.call(document.querySelectorAll('input[name="horizon"],input[name="interet"]'),function(r){ r.disabled=locked; });
+    var ab=$("#addBtn"); if(ab){ ab.disabled=locked; }
   }
 
   /* ——— Publier (l'enregistrement, lui, est automatique) ——— */
@@ -1630,7 +1647,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
         {onConflict:"user_id"});
       btn.disabled=false;
       if(r.error){ toast("Publication impossible — réessaie"); return; }
-      state.statut="publie"; state.dirty=false; state._publication=cs; state.maj=now;
+      state.statut="publie"; state._publication=cs; state.maj=now;
       lastSaved=sig(cs);
       renderRecap(); loadTeam(true);
       toast("Publié — l'équipe est prévenue au fil d'actu");
@@ -1646,7 +1663,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
         {user_id:QME.id,qui:state.prenom,brouillon:clientState(),publication:null,statut:"brouillon",maj_brouillon:now,maj_publication:null},
         {onConflict:"user_id"});
       if(r.error){ toast("Dépublication impossible — réessaie"); return; }
-      state.statut="brouillon"; state.dirty=false; state._publication=null; state.maj=now;
+      state.statut="brouillon"; state._publication=null; state.maj=now;
       lastSaved=sig(clientState());
       renderRecap(); loadTeam(true);
       toast("Dépublié — tes réponses restent enregistrées, visibles de toi seul");
@@ -1680,8 +1697,8 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   });
 
   function markDirty(){
-    if(state.statut==="publie"){ state.dirty=sig(clientState())!==sig(state._publication||{}); }
-    persist(); renderProgress(); renderStatut();
+    if(isLocked()) return; // publié = figé, rien ne s'écrit
+    state.maj=new Date().toISOString(); persist(); renderProgress(); renderStatut();
   }
 
   /* ——— Divers ——— */
