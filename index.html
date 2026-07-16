@@ -886,7 +886,8 @@
   async function uploadDoc(e){
     var file=e.target.files&&e.target.files[0]; if(!file) return;
     $('doc-status').textContent='Envoi de « '+file.name+' »…';
-    var safe=file.name.replace(/[^\w.\- ()À-ÿ]/g,'_');
+    // le stockage refuse les accents dans les clés (InvalidKey) : on translittère avant envoi
+    var safe=file.name.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w.\- ()]/g,'_');
     var r=await sb.storage.from('documents').upload(safe,file,{upsert:true});
     $('doc-file').value='';
     if(r.error){ $('doc-status').textContent='Échec : '+r.error.message; return; }
