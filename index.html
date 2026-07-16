@@ -193,6 +193,10 @@
   #carte-frame{display:block;width:100%;height:min(82vh,820px);border:0;background:#e9e3d6;}
   @media(max-width:640px){#carte-frame{height:86vh;}}
 
+  /* ===== Feuille de route (afficheur autonome roadmap.html, hauteur pilotée par postMessage) ===== */
+  #panel-route{width:min(96vw,72rem);margin-left:calc(50% - min(48vw,36rem));padding-bottom:2rem;}
+  #route-frame{display:block;width:100%;height:1150px;border:0;}
+
   /* ===== Documents ===== */
   .doc-drop{background:var(--paper);border:1.5px dashed var(--line-strong);border-radius:var(--r-m);padding:1.7rem 1.4rem;text-align:center;margin:0 0 1.3rem;transition:border-color .15s,background .15s;}
   .doc-drop:hover{border-color:var(--gold);}
@@ -333,6 +337,7 @@
     <button class="tab" data-panel="actu" type="button">Fil d'actu</button>
     <button class="tab" data-panel="quest" type="button">Questionnaire</button>
     <button class="tab" data-panel="lieux" type="button">Les lieux</button>
+    <button class="tab" data-panel="route" type="button">Feuille de route</button>
     <button class="tab" data-panel="docs" type="button">Documents</button>
   </nav>
 
@@ -480,6 +485,10 @@
     </div>
 
     <p class="foot-note">Certains lieux ont été <strong>écartés d'emblée</strong> : un pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
+  </div>
+
+  <div class="panel" id="panel-route">
+    <iframe id="route-frame" title="Feuille de route Lumignis" referrerpolicy="no-referrer"></iframe>
   </div>
 
   <div class="panel" id="panel-docs">
@@ -794,6 +803,7 @@
     // l'iframe relançait un chargement complet de carte.html qui restait bloque en "Pending"
     // (la carte chargeait a l'infini au 2e passage). On la charge une fois, puis on la masque
     // simplement en CSS via .is-active.
+    if(name==='route') buildRoute();
     if(name==='docs') loadDocs();
     if(name==='quest' && window.initQuest) window.initQuest();
   }
@@ -831,6 +841,23 @@
     if(fr && !fr.getAttribute('src')) fr.setAttribute('src','carte.html');
     loadMethode();
   }
+
+  // —— Feuille de route ——
+  // Même principe que la carte : afficheur autonome (roadmap.html) qui lit son contenu
+  // depuis Supabase APRÈS connexion (rien de sensible dans le fichier public), chargé une
+  // fois en iframe et jamais déchargé. Sa hauteur suit le contenu via postMessage.
+  var routeLoaded=false;
+  function buildRoute(){
+    if(routeLoaded) return;
+    routeLoaded=true;
+    var fr=$('route-frame');
+    if(fr && !fr.getAttribute('src')) fr.setAttribute('src','roadmap.html?embed=1');
+  }
+  window.addEventListener('message', function(e){
+    if(e.origin!==location.origin) return;
+    var h=e.data&&e.data.lumignisRoadmapH;
+    if(h>0){ var fr=$('route-frame'); if(fr) fr.style.height=Math.ceil(h)+'px'; }
+  });
 
   // —— Documents ——
   var docsInit=false;
