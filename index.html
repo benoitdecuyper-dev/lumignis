@@ -497,7 +497,7 @@
 </div>
 
 
-<!-- PANNEAU QUESTIONNAIRE — espace équipe -->
+<!-- ===QUESTIONNAIRE:PANEL=== (généré par site/questionnaire/build.js — ne pas éditer à la main) -->
 <div class="panel" id="panel-quest">
 <!-- ============ BARRE COLLANTE ============ -->
 <div class="stepbar">
@@ -643,6 +643,7 @@
 
 
 </div>
+<!-- ===/QUESTIONNAIRE:PANEL=== -->
 
 <!-- MODALE DE CONNEXION -->
 <div class="modal-overlay hidden" id="auth-modal">
@@ -962,6 +963,7 @@
   check();
 })();
 </script>
+<!-- ===QUESTIONNAIRE:ASSETS=== (généré par site/questionnaire/build.js — ne pas éditer à la main) -->
 <style>
 
 /* onglets dans la topbar, entre le logo et le compte */
@@ -1515,12 +1517,11 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     renderRecap();
   }
 
-  /* ——— Réponses publiées de l'équipe (Supabase) ——— */
+  /* ——— Réponses publiées de l'équipe (Supabase, RPC à colonnes restreintes) ——— */
   var teamRows=null;
   async function loadTeam(force){
     if(!QSB) return;
     if(teamRows&&!force){ renderPublished(); return; }
-    // lecture équipe via RPC à colonnes restreintes (les brouillons restent privés)
     var r=await QSB.rpc("questionnaire_publies");
     if(!r.error){ teamRows=r.data||[]; }
     renderPublished();
@@ -1743,6 +1744,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 })();
 
 </script>
+<!-- ===/QUESTIONNAIRE:ASSETS=== -->
 </body>
 </html>
 
