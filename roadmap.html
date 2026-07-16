@@ -111,8 +111,8 @@
   }
 
   /* ——— Fondu au changement de scénario ——— */
-  .rm-line,.gantt-card,.assume,.foot{transition:opacity .18s var(--ease);}
-  body.rm-fading .rm-line,body.rm-fading .gantt-card,body.rm-fading .assume,body.rm-fading .foot{opacity:0;}
+  .rm-line,.gantt-card,.assume,.pourquoi,.foot{transition:opacity .18s var(--ease);}
+  body.rm-fading .rm-line,body.rm-fading .gantt-card,body.rm-fading .assume,body.rm-fading .pourquoi,body.rm-fading .foot{opacity:0;}
 
   main{padding:2.2rem 0 3.5rem;display:flex;flex-direction:column;gap:1.6rem;}
 
@@ -227,6 +227,13 @@
   .assume li{margin:.4rem 0;}
   .assume b{color:var(--ink);font-weight:600;}
 
+  /* ——— Encadré pédagogique (pourquoi les premières étapes) — même langage, liseré or ——— */
+  .pourquoi{background:var(--paper);border:1px solid var(--line-strong);border-left:4px solid var(--gold-deep);border-radius:var(--r-m);padding:1.15rem 1.35rem 1.2rem;box-shadow:var(--sh-s);}
+  .pourquoi h2{font-size:1.15rem;font-weight:560;margin:0 0 .55rem;}
+  .pourquoi ul{margin:0;padding-left:1.15rem;font-size:.93rem;color:var(--ink-soft);line-height:1.6;}
+  .pourquoi li{margin:.4rem 0;}
+  .pourquoi b{color:var(--ink);font-weight:600;}
+
   .foot{border-top:1px solid var(--line);padding-top:1.2rem;font-family:var(--f-label);font-size:.75rem;color:var(--ink-faint);line-height:1.6;}
 
   @media (max-width:640px){
@@ -281,6 +288,11 @@
   <section class="assume" id="assume" hidden>
     <h2 id="assumeTitle"></h2>
     <ul id="assumeList"></ul>
+  </section>
+
+  <section class="pourquoi" id="pourquoi" hidden>
+    <h2 id="pourquoiTitre"></h2>
+    <ul id="pourquoiList"></ul>
   </section>
 
   <footer class="foot" id="foot" hidden><p id="footText"></p></footer>
@@ -376,6 +388,11 @@
       $("assumeList").innerHTML=(RM.suppose.items||[]).map(function(it){return '<li>'+it+'</li>';}).join('');
       $("assume").hidden=false;
     } else { $("assume").hidden=true; }
+    if(RM.pourquoi){
+      $("pourquoiTitre").textContent=RM.pourquoi.titre||'';
+      $("pourquoiList").innerHTML=(RM.pourquoi.items||[]).map(function(it){return '<li>'+it+'</li>';}).join('');
+      $("pourquoi").hidden=false;
+    } else { $("pourquoi").hidden=true; }
     if(RM.pied){ $("footText").textContent=RM.pied; $("foot").hidden=false; } else { $("foot").hidden=true; }
     $("rmMsg").hidden=true;
     $("ganttCard").hidden=false;
