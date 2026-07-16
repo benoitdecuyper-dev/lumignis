@@ -69,8 +69,8 @@
   :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:3px;}
 
   /* ——— Mode embarqué (iframe du site) : le site fournit déjà topbar + onglets ——— */
-  body.embed .mast{display:none;}
-  body.embed .hero{padding-top:1.4rem;}
+  body.embed .mast,body.embed .fire-rule{display:none;}
+  body.embed main{padding-top:1.2rem;}
 
   /* ——— Masthead (comme la topbar du site) — visible en accès direct uniquement ——— */
   .mast{position:sticky;top:0;z-index:50;background:var(--mast-bg);
@@ -87,34 +87,26 @@
   .i-sun{display:none;} .i-moon{display:inline;}
   :root[data-theme="dark"] .i-sun{display:inline;} :root[data-theme="dark"] .i-moon{display:none;}
 
-  /* ——— Hero ——— */
-  .hero{position:relative;overflow:hidden;padding:2.8rem 0 2.4rem;background:var(--hero-base);}
-  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(90% 130% at 10% -20%,var(--hero-glow1),transparent 55%),
-               radial-gradient(80% 120% at 94% -10%,var(--hero-glow2),transparent 55%);}
-  .hero-in{position:relative;max-width:48rem;}
-  .hero-eyebrow{font-family:var(--f-label);font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 .55rem;}
-  .hero-title{font-weight:600;font-size:clamp(1.9rem,5vw,2.7rem);letter-spacing:-.014em;margin:0 0 .4rem;text-wrap:balance;}
-  .hero-sub{font-family:var(--f-display);font-style:italic;font-weight:500;font-size:clamp(1.05rem,2.6vw,1.35rem);color:var(--gold-deep);margin:0 0 .9rem;}
-  .hero-lede{font-size:1.02rem;color:var(--ink-soft);margin:0;line-height:1.62;}
-  .hero-lede b{color:var(--ink);}
   .fire-rule{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));}
 
-  /* ——— Sélecteur de scénario (même vocabulaire que les cartes du questionnaire) ——— */
-  .rm-switch{display:flex;justify-content:flex-start;gap:.55rem;flex-wrap:wrap;margin-top:1.35rem;}
+  /* ——— Tête compacte : sélecteur de scénario + une ligne de contexte, fondus dans la page ——— */
+  .rm-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem 1.4rem;flex-wrap:wrap;}
+  .rm-switch{display:flex;justify-content:flex-start;gap:.55rem;flex-wrap:wrap;}
   .sw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.05rem;text-align:left;
     font-family:var(--f-label);border:1px solid var(--line-strong);background:var(--paper);
-    border-radius:var(--r-m);padding:.5rem 1.05rem .55rem;cursor:pointer;color:var(--ink-soft);
+    border-radius:var(--r-m);padding:.42rem .9rem .48rem;cursor:pointer;color:var(--ink-soft);
     transition:border-color .15s var(--ease),box-shadow .15s var(--ease),background .15s var(--ease);}
-  .sw b{font-weight:600;font-size:.86rem;color:var(--ink);}
-  .sw small{font-size:.68rem;color:var(--ink-faint);}
+  .sw b{font-weight:600;font-size:.82rem;color:var(--ink);}
+  .sw small{font-size:.66rem;color:var(--ink-faint);}
   .sw:hover{border-color:var(--gold);}
   .sw.is-on{border-color:var(--gold-deep);background:color-mix(in srgb,var(--paper) 88%,var(--gold) 12%);box-shadow:0 0 0 3px var(--tint-gold);}
   .sw.is-on b{color:var(--gold-deep);}
+  .rm-line{margin:0;font-family:var(--f-display);font-style:italic;font-size:.95rem;color:var(--ink-soft);line-height:1.5;}
+  .rm-line b{color:var(--ink);font-weight:600;}
 
   /* ——— Fondu au changement de scénario ——— */
-  #heroTxt,.gantt-card,.assume,.foot{transition:opacity .18s var(--ease);}
-  body.rm-fading #heroTxt,body.rm-fading .gantt-card,body.rm-fading .assume,body.rm-fading .foot{opacity:0;}
+  .rm-line,.gantt-card,.assume,.foot{transition:opacity .18s var(--ease);}
+  body.rm-fading .rm-line,body.rm-fading .gantt-card,body.rm-fading .assume,body.rm-fading .foot{opacity:0;}
 
   main{padding:2.2rem 0 3.5rem;display:flex;flex-direction:column;gap:1.6rem;}
 
@@ -151,12 +143,11 @@
     position:relative;height:2.4rem;border-radius:var(--r-s);
     background-color:var(--paper-warm);
     background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);
-    background-size:calc(100%/var(--n)) 100%;
+    background-size:calc(var(--pas,1)*100%/var(--n)) 100%; /* --pas : trait tous les k mois (grilles longues) */
     border:1px solid var(--line);
   }
-  /* frontières d'année (fin décembre) — positions portées par --fr / --fr2 */
-  .g-track::before{content:"";position:absolute;top:-2px;bottom:-2px;left:calc(var(--fr)*100%/var(--n));width:2px;background:var(--line-strong);}
-  .gantt.has-fr2 .g-track::after{content:"";position:absolute;top:-2px;bottom:-2px;left:calc(var(--fr2)*100%/var(--n));width:2px;background:var(--line-strong);}
+  /* frontières d'année (fin décembre) — une par changement d'année, posées au rendu */
+  .g-yline{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--line-strong);left:calc(var(--x)*100%/var(--n));pointer-events:none;}
 
   .g-bar{
     position:absolute;top:.42rem;bottom:.42rem;z-index:2;
@@ -253,20 +244,14 @@
   </div>
 </header>
 
-<section class="hero" id="hero" hidden>
-  <div class="wrap hero-in">
-    <div id="heroTxt">
-      <p class="hero-eyebrow" id="heroEyebrow"></p>
-      <h1 class="hero-title" id="heroTitle"></h1>
-      <p class="hero-sub" id="heroSub"></p>
-      <p class="hero-lede" id="heroLede"></p>
-    </div>
-    <div class="rm-switch" id="rmSwitch" role="tablist" aria-label="Scénarios de la feuille de route" hidden></div>
-  </div>
-</section>
 <div class="fire-rule" aria-hidden="true"></div>
 
 <main class="wrap">
+
+  <div class="rm-head" id="rmHead" hidden>
+    <div class="rm-switch" id="rmSwitch" role="tablist" aria-label="Scénarios de la feuille de route" hidden></div>
+    <p class="rm-line" id="rmLine"></p>
+  </div>
 
   <p class="rm-msg" id="rmMsg">Chargement de la feuille de route&hellip;</p>
 
@@ -343,10 +328,15 @@
     chartStart=monthDate(1); chartEnd=monthDate(N+1);
     var gantt=$("gantt");
     gantt.style.setProperty("--n",N);
-    gantt.style.setProperty("--fr",g.frontiere!=null?g.frontiere:6);
-    gantt.classList.toggle("has-fr2",g.frontiere2!=null);
-    if(g.frontiere2!=null){ gantt.style.setProperty("--fr2",g.frontiere2); }
+    gantt.style.setProperty("--pas",g.pas||1);
     gantt.style.minWidth=g.minRem?(g.minRem+"rem"):"";
+    // frontières d'année : tableau `frontieres`, ou les anciens champs frontiere/frontiere2
+    var fronts=g.frontieres||[];
+    if(!fronts.length){
+      if(g.frontiere!=null) fronts.push(g.frontiere);
+      if(g.frontiere2!=null) fronts.push(g.frontiere2);
+    }
+    var ylines=fronts.map(function(x){ return '<i class="g-yline" style="--x:'+(+x)+'"></i>'; }).join('');
 
     var html='';
     html+='<div class="g-row"><div></div><div class="g-years">';
@@ -358,7 +348,7 @@
 
     html+='<div class="g-body" id="gbody"><svg class="g-links" id="glinks" aria-hidden="true"></svg>';
     (RM.chantiers||[]).forEach(function(ch){
-      html+='<div class="g-row"><div class="g-label" tabindex="0" role="button" aria-label="Action « '+esc(ch.label)+' » — voir l\'explication"><b>'+esc(ch.label)+'</b><small>'+esc(ch.sub)+'</small></div><div class="g-track">';
+      html+='<div class="g-row"><div class="g-label" tabindex="0" role="button" aria-label="Action « '+esc(ch.label)+' » — voir l\'explication"><b>'+esc(ch.label)+'</b><small>'+esc(ch.sub)+'</small></div><div class="g-track">'+ylines;
       (ch.bars||[]).forEach(function(b){
         var cls='g-bar'+(b.kind==='incomp'?' g-bar--incomp':'')+(b.kind==='cible'?' g-bar--cible':'');
         html+='<span class="'+cls+'" data-bar="'+esc(b.id)+'" style="--m:'+(+b.m)+';--d:'+(+b.d)+'" data-m="'+(+b.m)+'" data-d="'+(+b.d)+'">'+(b.tag?'<span class="tag">'+esc(b.tag)+'</span>':'')+'</span>';
@@ -373,11 +363,8 @@
     html+='<div class="today" id="today" hidden><span class="today-chip" id="todayChip">Aujourd\'hui</span></div></div>';
     gantt.innerHTML=html;
 
-    $("heroEyebrow").textContent=RM.hero.eyebrow||'';
-    $("heroTitle").textContent=RM.hero.titre||'';
-    $("heroSub").textContent=RM.hero.sous||'';
-    $("heroLede").innerHTML=RM.hero.lede||'';
-    $("hero").hidden=false;
+    $("rmLine").innerHTML=RM.ligne||'';
+    $("rmHead").hidden=false;
     if(RM.suppose){
       $("assumeTitle").textContent=RM.suppose.titre||'';
       $("assumeList").innerHTML=(RM.suppose.items||[]).map(function(it){return '<li>'+it+'</li>';}).join('');
