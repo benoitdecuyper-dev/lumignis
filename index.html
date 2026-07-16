@@ -878,9 +878,8 @@
       var kb=f.metadata&&f.metadata.size?Math.max(1,Math.round(f.metadata.size/1024))+' Ko':'';
       var el=document.createElement('div'); el.className='doc';
       el.innerHTML='<span class="dn">'+esc(f.name)+' <span class="dmeta">'+kb+'</span></span>'+
-                   '<span class="dact"><button data-dl="'+esc(f.name)+'">Ouvrir</button><button data-rm="'+esc(f.name)+'">Suppr.</button></span>';
+                   '<span class="dact"><button data-dl="'+esc(f.name)+'">Ouvrir</button></span>';
       el.querySelector('[data-dl]').addEventListener('click', function(){ openDoc(f.name); });
-      el.querySelector('[data-rm]').addEventListener('click', function(){ removeDoc(f.name); });
       box.appendChild(el);
     });
   }
@@ -898,12 +897,6 @@
     var r=await sb.storage.from('documents').createSignedUrl(name,120);
     if(r.error){ alert('Échec : '+r.error.message); return; }
     window.open(r.data.signedUrl,'_blank','noopener');
-  }
-  async function removeDoc(name){
-    if(!window.confirm('Supprimer « '+name+' » ?')) return;
-    var r=await sb.storage.from('documents').remove([name]);
-    if(r.error){ alert('Échec : '+r.error.message); return; }
-    listDocs();
   }
 
   // —— Démarrage ——
@@ -1218,6 +1211,9 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .pub-list li{display:flex;gap:.5rem;align-items:baseline;font-size:.85rem;color:var(--ink-soft);}
 #panel-quest .pub-list .n{font-family:var(--f-label);font-weight:600;font-size:.68rem;color:var(--gold-deep);width:1rem;flex:0 0 auto;text-align:right;}
 #panel-quest .pub-more{font-family:var(--f-label);font-size:.72rem;color:var(--muted);}
+#panel-quest .pub-map{display:block;width:100%;max-width:14rem;height:auto;margin:.2rem 0 .55rem;}
+#panel-quest .pub-map path{fill:var(--paper-warm);stroke:var(--line-strong);stroke-width:.8;}
+#panel-quest .pub-map path.on{fill:var(--gold-deep);stroke:var(--gold-deep);}
 #panel-quest .pub-depts{display:flex;flex-wrap:wrap;gap:.3rem;}
 #panel-quest .pub-depts span{font-family:var(--f-label);font-size:.66rem;font-weight:600;color:var(--ink-soft);
     border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.12rem .5rem;}
@@ -1543,6 +1539,15 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   }
 
   /* ——— Réponses publiées de l'équipe (Supabase, RPC à colonnes restreintes) ——— */
+  // mini-carte de France : les départements retenus, en doré, dans chaque réponse publiée
+  function miniMapHtml(depts){
+    if(!window.DEPTS||!depts||!depts.length) return "";
+    var sel={}; depts.forEach(function(c){ sel[c]=1; });
+    return '<svg class="pub-map" viewBox="0 0 600 575" role="img" aria-label="Départements retenus sur la carte">'+
+      window.DEPTS.depts.map(function(d){
+        return '<path d="'+d.d+'"'+(sel[d.c]?' class="on"':'')+'></path>';
+      }).join("")+'</svg>';
+  }
   var teamRows=null;
   async function loadTeam(force){
     if(!QSB) return;
@@ -1580,6 +1585,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
           top.map(function(c,i){return '<li><span class="n">'+(i+1)+'.</span><span>'+esc(c)+'</span></li>';}).join("")+
         '</ol>'+
         (more>0?'<p class="pub-more">+ '+more+' autre'+(more>1?"s":"")+' critère'+(more>1?"s":"")+'</p>':"")+
+        miniMapHtml(p.depts)+
         '<div class="pub-depts">'+(p.depts||[]).slice().sort().map(function(c){return '<span>'+esc(c+" · "+deptName(c))+'</span>';}).join("")+'</div>';
       grid.appendChild(card);
     });
