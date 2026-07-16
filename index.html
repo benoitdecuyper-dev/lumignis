@@ -153,7 +153,7 @@
   .notmember-inner p{margin:0;font-size:.86rem;color:var(--ink-soft);transition:color .2s;}
 
   /* ===== Tabs ===== */
-  .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:.55rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
+  .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:1.6rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{position:relative;font-family:var(--f-label);font-weight:600;font-size:.9rem;background:none;border:0;padding:.75rem .95rem;margin-bottom:-1px;color:var(--ink-faint);cursor:pointer;white-space:nowrap;transition:color .15s;}
   .tab::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;background:var(--ember);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform .18s var(--ease),background-color .2s;}
@@ -327,6 +327,14 @@
 <!-- BARRE DU HAUT — toujours visible -->
 <header class="topbar"><div class="wrap topbar-inner">
   <button class="tb-brand" id="brand-home" type="button" title="Retour à l'accueil"><span class="tb-mark" aria-hidden="true">&#10022;</span>Lumignis</button>
+  <span class="tb-espace hidden" id="tb-espace">Espace équipe</span>
+  <nav class="tabs hidden" id="main-tabs" aria-label="Sections">
+    <button class="tab" data-panel="accueil" type="button" title="Accueil" aria-label="Accueil"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
+    <button class="tab" data-panel="actu" type="button">Fil d'actu</button>
+    <button class="tab" data-panel="quest" type="button">Questionnaire</button>
+    <button class="tab" data-panel="lieux" type="button">Les lieux</button>
+    <button class="tab" data-panel="docs" type="button">Documents</button>
+  </nav>
 
   <div class="topbar-actions">
     <button class="btn-ghost" id="btn-team" type="button">Espace équipe</button>
@@ -346,16 +354,7 @@
   </div>
 </div></header>
 
-<!-- NAVIGATION — visible uniquement pour les membres connectés -->
-<div class="wrap">
-  <nav class="tabs hidden" id="main-tabs" aria-label="Sections">
-    <button class="tab" data-panel="accueil" type="button" title="Accueil" aria-label="Accueil"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
-    <button class="tab" data-panel="actu" type="button">Fil d'actu</button>
-    <button class="tab" data-panel="quest" type="button">Questionnaire</button>
-    <button class="tab" data-panel="lieux" type="button">Les lieux</button>
-    <button class="tab" data-panel="docs" type="button">Documents</button>
-  </nav>
-</div>
+
 
 <!-- Compte connecté mais pas encore autorisé -->
 <div class="notmember-banner hidden" id="notmember-banner">
@@ -685,6 +684,7 @@
     $('btn-team').classList.remove('hidden');
     $('account').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
+    $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.add('hidden');
     document.body.classList.add('on-accueil');
   }
@@ -692,6 +692,7 @@
     $('btn-team').classList.add('hidden');
     $('account').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
+    $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.remove('hidden');
     document.body.classList.add('on-accueil');
   }
@@ -699,6 +700,7 @@
     $('btn-team').classList.add('hidden');
     $('account').classList.remove('hidden');
     $('main-tabs').classList.remove('hidden');
+    $('tb-espace').classList.remove('hidden');
     $('notmember-banner').classList.add('hidden');
   }
 
@@ -963,6 +965,16 @@
 })();
 </script>
 <style>
+
+/* onglets dans la topbar, entre le logo et le compte */
+.topbar #main-tabs{margin:0;border-bottom:none;flex:1 1 auto;justify-content:center;min-width:0;}
+.topbar #main-tabs .tab{padding:.55rem .85rem;}
+.tb-espace{font-family:var(--f-label);font-size:.6rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold-deep);border:1px solid var(--gold);border-radius:999px;padding:.24rem .65rem;white-space:nowrap;}
+body.on-accueil .tb-espace{color:#FFFDF8;border-color:rgba(255,253,248,.55);}
+body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--gold);}
+@media (max-width:760px){ .tb-espace{display:none;} .topbar #main-tabs{justify-content:flex-start;} }
+
 #panel-quest{
   --qmax:78rem;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
   --tint-gold:rgba(184,134,47,.14);--cream:#FFFDF8;--bg:var(--paper-warm);
@@ -1468,6 +1480,9 @@
       var cnt=a.querySelector("[data-count]");
       if(cnt){ cnt.textContent=counts[k]?"("+counts[k]+")":""; }
     });
+    // Publier reste grisé tant que les 4 sections ne sont pas complètes
+    var complete=checks.qui&&checks.criteres&&checks.depts&&checks.classement;
+    [].forEach.call(document.querySelectorAll(".js-publish"),function(b){ b.disabled=!complete; });
   }
 
   /* ——— Statut ——— */
