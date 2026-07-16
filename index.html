@@ -153,7 +153,7 @@
   .notmember-inner p{margin:0;font-size:.86rem;color:var(--ink-soft);transition:color .2s;}
 
   /* ===== Tabs ===== */
-  .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:1.6rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
+  .tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--line);margin:.55rem 0 1.8rem;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none;}
   .tabs::-webkit-scrollbar{display:none;}
   .tab{position:relative;font-family:var(--f-label);font-weight:600;font-size:.9rem;background:none;border:0;padding:.75rem .95rem;margin-bottom:-1px;color:var(--ink-faint);cursor:pointer;white-space:nowrap;transition:color .15s;}
   .tab::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;background:var(--ember);border-radius:2px 2px 0 0;transform:scaleX(0);transition:transform .18s var(--ease),background-color .2s;}
@@ -349,8 +349,9 @@
 <!-- NAVIGATION — visible uniquement pour les membres connectés -->
 <div class="wrap">
   <nav class="tabs hidden" id="main-tabs" aria-label="Sections">
-    <button class="tab" data-panel="accueil" type="button">Accueil</button>
+    <button class="tab" data-panel="accueil" type="button" title="Accueil" aria-label="Accueil"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></button>
     <button class="tab" data-panel="actu" type="button">Fil d'actu</button>
+    <button class="tab" data-panel="quest" type="button">Questionnaire</button>
     <button class="tab" data-panel="lieux" type="button">Les lieux</button>
     <button class="tab" data-panel="docs" type="button">Documents</button>
   </nav>
@@ -496,6 +497,156 @@
 
 </div>
 
+
+<!-- PANNEAU QUESTIONNAIRE — espace équipe -->
+<div class="panel" id="panel-quest">
+<!-- ============ TITRE ============ -->
+<header class="page-head">
+  <div class="q-wrap">
+    <p class="kicker"><span class="star">&#10022;</span> Lumignis &middot; Espace équipe</p>
+    <h1 class="page-title">Le questionnaire des critères</h1>
+  </div>
+</header>
+
+<!-- ============ BARRE COLLANTE ============ -->
+<div class="stepbar">
+  <div class="stepbar-in">
+    <span class="sb-title"><span class="star">&#10022;</span> Questionnaire des critères</span>
+    <nav class="prog" id="prog">
+      <a href="#sec-profil" data-prog="qui"><span class="pk" data-pk></span> Profil</a>
+      <a href="#sec-criteres" data-prog="criteres"><span class="pk" data-pk></span> Critères <span data-count></span></a>
+      <a href="#sec-carte" data-prog="depts"><span class="pk" data-pk></span> Départements <span data-count></span></a>
+      <a href="#sec-classement" data-prog="classement"><span class="pk" data-pk></span> Classement</a>
+    </nav>
+    <span class="statut s-brouillon" id="statutPill">Brouillon</span>
+  </div>
+</div>
+
+<main class="q-wrap">
+
+  <div class="q-subtabs" role="tablist">
+    <button class="q-subtab is-on" id="tabMineBtn" type="button">Ma réponse</button>
+    <button class="q-subtab" id="tabTeamBtn" type="button">Les réponses de l'équipe <span class="cnt" id="teamCount"></span></button>
+  </div>
+
+  <div id="tab-mine">
+
+  <p class="intro">On cherche un lieu à habiter ensemble. Dis-nous ce qui est important pour ta famille, où vous êtes ouverts à vous installer, et dans quel ordre ça compte. Tes réponses s'enregistrent toutes seules&nbsp;— et quand c'est prêt, tu publies&nbsp;: elles entrent alors dans la recherche de lieux.</p>
+
+  <!-- Publication (en haut, à côté de la remise à zéro) -->
+  <div class="publish-bar">
+    <div>
+      <p class="autosave" id="autosave">&#10003; Enregistré automatiquement</p>
+      <p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p>
+    </div>
+    <button class="q-btn js-publish" type="button">Publier</button>
+  </div>
+  <p class="save-note">Tes réponses s'enregistrent toutes seules, à chaque modification. <b>Publier</b> les partage à l'équipe&nbsp;: elles apparaissent dans l'onglet «&nbsp;Les réponses de l'équipe&nbsp;», entrent dans la recherche de lieux, et Benoit en est prévenu automatiquement.</p>
+  <p class="reset-link"><button type="button" id="resetBtn">&#8634; Tout remettre à zéro</button></p>
+
+  <!-- Identité -->
+  <section id="sec-profil">
+    <div class="card">
+      <div class="id-grid">
+        <div>
+          <label class="field-label" for="prenom">Qui répond&nbsp;? — prénom ou famille</label>
+          <input type="text" id="prenom" placeholder="Ex. Marie — ou Famille Dupont" />
+        </div>
+        <div>
+          <span class="field-label">Ton horizon — quand aimerais-tu emménager&nbsp;?</span>
+          <div class="hz-row">
+            <div class="hz"><input type="radio" name="horizon" id="hz1" value="dans 1 an"><label for="hz1"><b>Dans un an</b><small>dès la rentrée prochaine si le lieu est là</small></label></div>
+            <div class="hz"><input type="radio" name="horizon" id="hz2" value="dans 2-3 ans"><label for="hz2"><b>Dans 2-3 ans</b><small>le temps de préparer notre transition</small></label></div>
+            <div class="hz"><input type="radio" name="horizon" id="hz3" value="plus tard / selon le lieu"><label for="hz3"><b>Plus tard</b><small>selon le lieu et notre situation</small></label></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1.1rem;">
+        <span class="field-label">Ton niveau d'intérêt pour le projet</span>
+        <div class="hz-row">
+          <div class="hz"><input type="radio" name="interet" id="in1" value="juste curieux"><label for="in1"><b>Juste curieux</b><small>je regarde ce que ça devient</small></label></div>
+          <div class="hz"><input type="radio" name="interet" id="in2" value="intéressé"><label for="in2"><b>Intéressé</b><small>j'y pense sérieusement</small></label></div>
+          <div class="hz"><input type="radio" name="interet" id="in3" value="motivé"><label for="in3"><b>Motivé</b><small>je veux en être</small></label></div>
+          <div class="hz"><input type="radio" name="interet" id="in4" value="très très bouillant"><label for="in4"><b>Très très bouillant</b><small>prêt à partir demain</small></label></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ornament"><span>&#10022;</span></div>
+
+  <!-- Critères -->
+  <section id="sec-criteres">
+    <h2 class="sec">Coche ce qui compte pour toi</h2>
+    <p class="sec-note">Les dix premiers sont les repères posés par Éléonore &amp; Benoît&nbsp;— reprends-les librement. Les suivants sont des pistes qui reviennent souvent. Et tu peux ajouter les tiens. Tout ce que tu coches apparaît dans le classement, en bas de page.</p>
+    <div class="pick-grid" id="pickGrid"></div>
+    <div class="add-box">
+      <input type="text" id="customInput" placeholder="Il manque quelque chose ? Ex. Une rivière à proximité" maxlength="70" />
+      <button class="q-btn-ghost" id="addBtn" type="button">Ajouter mon critère</button>
+    </div>
+  </section>
+
+  <div class="ornament"><span>&#10022;</span></div>
+
+  <!-- Carte -->
+  <section id="sec-carte">
+    <h2 class="sec">Où êtes-vous ouverts à vous installer&nbsp;?</h2>
+    <p class="sec-note">Clique sur les départements où ta famille se projette. Plusieurs choix possibles&nbsp;— sois large si tu hésites, ça sert à orienter la recherche, pas à t'enfermer.</p>
+    <div class="map-grid">
+      <div class="map-box">
+        <svg class="fr" id="frMap" viewBox="0 0 600 575" role="group" aria-label="Carte de France par départements"></svg>
+      </div>
+      <div class="map-side">
+        <p class="map-count"><b id="deptCount">0</b> département<span id="deptPlural">s</span> sélectionné<span id="deptPlural2">s</span></p>
+        <div class="dept-chips" id="deptChips"></div>
+        <div class="map-actions">
+          <button class="q-btn-ghost" id="deptClear" type="button">Tout effacer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ornament"><span>&#10022;</span></div>
+
+  <!-- Classement (tout en bas) -->
+  <section id="sec-classement">
+    <h2 class="sec">Classe tes critères</h2>
+    <p class="sec-note">Tout ce que tu as coché arrive ici. Du plus important (en haut) au moins important&nbsp;: attrape la poignée &#9776; pour glisser, ou utilise les flèches.</p>
+    <div class="esprit"><b>L'esprit du classement&nbsp;:</b> chaque critère compte plus que <b>tous</b> ceux qui le suivent. Concrètement, si un lieu n'offre pas ton n°&nbsp;6, les n°&nbsp;7, 8, 9&hellip; peuvent sauter avec lui — ils sont moins importants que ce qui manque déjà. Classe-toi donc en te demandant&nbsp;: «&nbsp;qu'est-ce que je refuse de sacrifier en premier&nbsp;?&nbsp;»</div>
+
+    <ol class="chips" id="chips"></ol>
+    <div class="chips-empty" id="chipsEmpty">Coche des critères plus haut&nbsp;— ils apparaîtront ici pour être classés.</div>
+    <p class="drag-hint" id="dragHint" hidden>&#8597; Glisser-déposer, ou flèches &#9650; &#9660; — le n° 1 est ta priorité absolue.</p>
+
+    <div class="publish-bar">
+      <div><p class="pub-state js-pub-state">Pas encore publié — visible de toi seul.</p></div>
+      <button class="q-btn js-publish" type="button">Publier</button>
+    </div>
+
+  </section>
+
+  </div><!-- /tab-mine -->
+
+  <!-- Réponses publiées de l'équipe -->
+  <div id="tab-team" hidden>
+  <section id="sec-equipe">
+    <h2 class="sec">Les réponses publiées de l'équipe</h2>
+    <p class="sec-note">Chaque réponse publiée devient visible ici, pour tous les membres connectés. Elles alimenteront la recherche de lieux — le croisement famille par famille arrive avec le moteur de recherche.</p>
+    <div class="pub-grid" id="pubGrid"></div>
+  </section>
+  </div><!-- /tab-team -->
+
+  <p class="foot">Lumignis &middot; <span style="font-style:italic;font-family:var(--f-display)">Lumen &middot; Ignis</span> &middot; Espace équipe — tes réponses sont enregistrées dans ton compte.</p>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+
+
+
+</div>
+
 <!-- MODALE DE CONNEXION -->
 <div class="modal-overlay hidden" id="auth-modal">
   <div class="auth-card modal-card">
@@ -521,6 +672,7 @@
   var SB_URL='https://lsdnwszhdsgwzloxdnyt.supabase.co';
   var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZG53c3poZHNnd3psb3hkbnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxMjkyNTgsImV4cCI6MjA5ODcwNTI1OH0.5bidFmPJwIhLi9JQcceI1PSQKXHykKD8rwdgcV2PwFc';
   var sb=window.supabase.createClient(SB_URL, SB_KEY);
+  window.__sb=sb; // partagé avec le panneau Questionnaire
   var $=function(id){return document.getElementById(id);};
   var msgEl=$('auth-msg');
   var ME={email:'',name:''};
@@ -642,6 +794,7 @@
     // (la carte chargeait a l'infini au 2e passage). On la charge une fois, puis on la masque
     // simplement en CSS via .is-active.
     if(name==='docs') loadDocs();
+    if(name==='quest' && window.initQuest) window.initQuest();
   }
   function frDate(s){ try{ return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T00:00:00')); }catch(e){ return s; } }
 
@@ -808,6 +961,657 @@
   refreshThreshold();
   check();
 })();
+</script>
+<style>
+#panel-quest{
+  --qmax:78rem;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
+  --tint-gold:rgba(184,134,47,.14);--cream:#FFFDF8;--bg:var(--paper-warm);
+}
+#panel-quest .q-btn{width:auto;margin-top:0;}
+#panel-quest.is-loading main{opacity:.45;pointer-events:none;}
+#panel-quest h1,
+#panel-quest h2,
+#panel-quest h3{font-family:var(--f-display);line-height:1.2;}
+#panel-quest .q-wrap{max-width:var(--qmax);margin:0 auto;padding:0 1.5rem;}
+#panel-quest :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:3px;}
+#panel-quest .page-head{padding:2.2rem 0 1.3rem;}
+#panel-quest .kicker{font-family:var(--f-label);font-weight:600;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold-deep);margin:0 0 .55rem;display:flex;align-items:center;gap:.6rem;}
+#panel-quest .kicker .star{color:var(--gold);font-size:.9rem;}
+#panel-quest h1.page-title{font-weight:600;font-size:clamp(1.9rem,4.6vw,2.7rem);line-height:1.08;letter-spacing:-.012em;
+    margin:0;color:var(--ink);}
+#panel-quest .intro{font-size:1.04rem;color:var(--ink-soft);line-height:1.62;margin:0 0 1.4rem;}
+#panel-quest .stepbar{position:sticky;top:0;z-index:400;background:color-mix(in srgb,var(--paper) 92%,transparent);
+    -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
+    border-bottom:1px solid var(--line);box-shadow:var(--sh-s);}
+#panel-quest .stepbar-in{max-width:var(--qmax);margin:0 auto;padding:.65rem 1.5rem;
+    display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
+#panel-quest .sb-title{font-family:var(--f-display);font-weight:600;font-size:1.02rem;color:var(--ink);display:inline-flex;align-items:baseline;gap:.4rem;}
+#panel-quest .sb-title .star{color:var(--gold);font-size:.85em;}
+#panel-quest .prog{display:flex;gap:.4rem;flex-wrap:wrap;}
+#panel-quest .prog a{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--f-label);font-size:.72rem;font-weight:600;
+    color:var(--muted);text-decoration:none;border:1px solid var(--line-strong);border-radius:var(--r-full);
+    padding:.32rem .8rem;background:var(--paper);transition:color .15s var(--ease),border-color .15s var(--ease);}
+#panel-quest .prog a:hover{border-color:var(--gold);color:var(--gold-deep);}
+#panel-quest .prog a .pk{width:1.05rem;height:1.05rem;border-radius:50%;border:1.5px solid var(--line-strong);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-size:.62rem;color:#fff;background:transparent;
+    transition:background .15s var(--ease),border-color .15s var(--ease);}
+#panel-quest .prog a.done{color:var(--gold-deep);border-color:var(--gold);background:color-mix(in srgb,var(--paper) 88%,var(--gold) 12%);}
+#panel-quest .prog a.done .pk{background:var(--gold-deep);border-color:var(--gold-deep);}
+#panel-quest .statut{margin-left:auto;font-family:var(--f-label);font-size:.66rem;font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;border-radius:var(--r-full);padding:.3rem .8rem;white-space:nowrap;}
+#panel-quest .statut.s-brouillon{color:var(--muted);border:1px dashed var(--line-strong);}
+#panel-quest .statut.s-enregistre{color:var(--slate);background:rgba(107,122,143,.13);}
+#panel-quest .statut.s-publie{color:var(--success);background:rgba(92,122,74,.14);}
+#panel-quest .statut.s-dirty{color:var(--gold-deep);background:var(--tint-gold);}
+#panel-quest main{padding:1.6rem 0 3.5rem;}
+#panel-quest #sec-profil,
+#panel-quest #sec-criteres,
+#panel-quest #sec-carte,
+#panel-quest #sec-classement,
+#panel-quest #sec-equipe{scroll-margin-top:7rem;}
+#panel-quest .q-subtabs{display:flex;gap:.2rem;border-bottom:1px solid var(--line);margin:0 0 1.8rem;}
+#panel-quest .q-subtab{position:relative;font-family:var(--f-label);font-weight:600;font-size:.9rem;background:none;border:0;
+    padding:.75rem .95rem;margin-bottom:-1px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:color .15s;}
+#panel-quest .q-subtab:hover{color:var(--gold-deep);}
+#panel-quest .q-subtab.is-on{color:var(--ink);}
+#panel-quest .q-subtab.is-on::after{content:"";position:absolute;left:.6rem;right:.6rem;bottom:0;height:2px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-deep));border-radius:2px;}
+#panel-quest .q-subtab .cnt{color:var(--gold-deep);}
+#panel-quest section{margin:0 0 2.4rem;}
+#panel-quest .ornament{display:flex;align-items:center;justify-content:center;gap:1rem;margin:2.2rem 0;color:var(--gold);}
+#panel-quest .ornament::before,
+#panel-quest .ornament::after{content:"";height:1px;width:3.5rem;background:linear-gradient(90deg,transparent,var(--line-strong));}
+#panel-quest .ornament::after{background:linear-gradient(90deg,var(--line-strong),transparent);}
+#panel-quest h2.sec{font-weight:600;font-size:1.45rem;letter-spacing:-.006em;margin:0 0 .35rem;color:var(--ink);
+    position:relative;padding-bottom:.55rem;}
+#panel-quest h2.sec::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:2.4rem;
+    background:linear-gradient(90deg,var(--gold),var(--gold-deep));border-radius:2px;}
+#panel-quest .sec-note{color:var(--ink-soft);font-size:.96rem;margin:.2rem 0 1.2rem;}
+#panel-quest .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);
+    padding:1.4rem 1.5rem;box-shadow:var(--sh-s);}
+#panel-quest .id-grid{display:grid;grid-template-columns:minmax(14rem,1fr) 2fr;gap:1.2rem;align-items:start;}
+#panel-quest label.field-label{display:block;font-family:var(--f-label);font-weight:600;font-size:.7rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-soft);margin-bottom:.45rem;}
+#panel-quest input[type="text"]{font-family:var(--f-body);font-size:1.05rem;color:var(--ink);
+    background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:var(--r-s);
+    padding:.6rem .75rem;width:100%;transition:border-color .2s var(--ease),box-shadow .2s var(--ease);}
+#panel-quest input[type="text"]::placeholder{color:var(--muted);}
+#panel-quest input[type="text"]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--tint-gold);}
+#panel-quest .hz-row{display:flex;gap:.6rem;flex-wrap:wrap;}
+#panel-quest .hz{position:relative;flex:1 1 10rem;}
+#panel-quest .hz input{position:absolute;opacity:0;pointer-events:none;}
+#panel-quest .hz label{display:block;height:100%;background:var(--paper-warm);border:1px solid var(--line-strong);
+    border-radius:var(--r-s);padding:.6rem .8rem;cursor:pointer;transition:border-color .15s var(--ease),box-shadow .15s var(--ease);}
+#panel-quest .hz label:hover{border-color:var(--gold);}
+#panel-quest .hz input:checked + label{border-color:var(--gold-deep);box-shadow:0 0 0 3px var(--tint-gold);background:color-mix(in srgb,var(--paper) 88%,var(--gold) 12%);}
+#panel-quest .hz b{display:block;font-family:var(--f-label);font-weight:600;font-size:.84rem;color:var(--ink);}
+#panel-quest .hz small{display:block;font-size:.76rem;color:var(--muted);line-height:1.4;margin-top:.1rem;}
+#panel-quest .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:.75rem;}
+#panel-quest .pick{position:relative;display:flex;gap:.75rem;align-items:flex-start;text-align:left;width:100%;
+    background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line-strong);
+    border-radius:var(--r-m);padding:.85rem 1rem .9rem;cursor:pointer;box-shadow:var(--sh-s);
+    font:inherit;color:inherit;transition:border-color .15s var(--ease),box-shadow .15s var(--ease),background .15s var(--ease);}
+#panel-quest .pick:hover{box-shadow:var(--sh-m);}
+#panel-quest .pick .tick{flex:0 0 auto;width:1.35rem;height:1.35rem;border-radius:.35rem;border:2px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#fff;background:var(--paper-warm);
+    transition:background .15s var(--ease),border-color .15s var(--ease);margin-top:.1rem;}
+#panel-quest .pick.is-sel{border-left-color:var(--gold-deep);background:color-mix(in srgb,var(--paper) 88%, var(--gold) 12%);}
+#panel-quest .pick.is-sel .tick{background:var(--gold-deep);border-color:var(--gold-deep);}
+#panel-quest .pick b{display:block;font-family:var(--f-label);font-weight:600;font-size:.92rem;color:var(--ink);margin-bottom:.15rem;}
+#panel-quest .pick small{display:block;font-size:.8rem;color:var(--ink-soft);line-height:1.45;}
+#panel-quest .pick .rm{position:absolute;top:.4rem;right:.55rem;background:none;border:none;color:var(--muted);
+    font-family:var(--f-label);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:.15rem;}
+#panel-quest .pick .rm:hover{color:var(--gold-deep);}
+#panel-quest .add-box{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-top:.9rem;}
+#panel-quest .add-box input{flex:1 1 16rem;}
+#panel-quest .map-grid{display:grid;grid-template-columns:minmax(0,1.25fr) 1fr;gap:1.4rem;align-items:start;}
+#panel-quest .map-box{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:1rem;box-shadow:var(--sh-s);}
+#panel-quest svg.fr{display:block;width:100%;height:auto;}
+#panel-quest svg.fr path{fill:var(--paper-warm);stroke:var(--line-strong);stroke-width:.7;cursor:pointer;
+    transition:fill .12s var(--ease);}
+#panel-quest svg.fr path:hover{fill:color-mix(in srgb,var(--gold) 30%,var(--paper-warm));}
+#panel-quest svg.fr path.sel{fill:var(--gold-deep);stroke:var(--gold-deep);}
+#panel-quest svg.fr path.sel:hover{fill:var(--gold);}
+#panel-quest .map-tip{position:fixed;z-index:80;pointer-events:none;
+    background:var(--ink);color:var(--cream);
+    font-family:var(--f-label);font-weight:600;font-size:.85rem;letter-spacing:.02em;
+    padding:.4rem .75rem;border-radius:var(--r-s);box-shadow:var(--sh-m);
+    opacity:0;transition:opacity .1s var(--ease);white-space:nowrap;}
+#panel-quest .map-tip.show{opacity:1;}
+#panel-quest .map-side{display:flex;flex-direction:column;gap:.8rem;}
+#panel-quest .map-count{font-family:var(--f-label);font-size:.85rem;color:var(--ink-soft);}
+#panel-quest .map-count b{color:var(--gold-deep);font-size:1.05rem;}
+#panel-quest .dept-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+#panel-quest .dchip{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.74rem;font-weight:600;
+    background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.28rem .4rem .28rem .7rem;color:var(--ink);}
+#panel-quest .dchip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:.1rem .25rem;}
+#panel-quest .dchip button:hover{color:var(--gold-deep);}
+#panel-quest .map-actions{display:flex;gap:.6rem;flex-wrap:wrap;}
+#panel-quest .q-btn{font-family:var(--f-label);font-weight:600;font-size:.84rem;letter-spacing:.03em;
+    border:none;border-radius:var(--r-s);padding:.72rem 1.35rem;cursor:pointer;
+    background:var(--gold-deep);color:#fff;box-shadow:var(--sh-s);
+    transition:background .18s var(--ease),transform .12s var(--ease),box-shadow .18s var(--ease),opacity .18s var(--ease);}
+#panel-quest .q-btn:hover:not(:disabled){background:var(--gold);transform:translateY(-1px);box-shadow:var(--sh-m);}
+#panel-quest .q-btn:disabled{opacity:.45;cursor:not-allowed;}
+#panel-quest .q-btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line-strong);
+    border-radius:var(--r-full);text-transform:uppercase;font-size:.74rem;box-shadow:none;padding:.6rem 1.15rem;}
+#panel-quest .q-btn-ghost:hover:not(:disabled){border-color:var(--gold);color:var(--gold-deep);background:transparent;transform:none;box-shadow:none;}
+#panel-quest ol.chips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
+#panel-quest .chips-empty{border:1px dashed var(--line-strong);border-radius:var(--r-m);padding:1.1rem 1.3rem;
+    color:var(--muted);font-size:.92rem;background:var(--paper-warm);}
+#panel-quest .chip{display:flex;align-items:center;gap:.75rem;background:var(--paper);border:1px solid var(--line);
+    border-radius:var(--r-full);padding:.5rem .6rem .5rem .5rem;box-shadow:var(--sh-s);cursor:grab;
+    transition:box-shadow .15s var(--ease),border-color .15s var(--ease);}
+#panel-quest .chip:hover{box-shadow:var(--sh-m);}
+#panel-quest .chip.dragging{opacity:.5;}
+#panel-quest .chip.drop-hint{border-color:var(--gold);box-shadow:0 0 0 3px var(--tint-gold);}
+#panel-quest .chip .rk{flex:0 0 auto;width:1.8rem;height:1.8rem;border-radius:50%;
+    background:var(--paper-warm);border:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--f-label);font-weight:600;font-size:.8rem;color:var(--ink-soft);}
+#panel-quest .chip:nth-child(1) .rk{background:var(--gold-deep);color:#fff;border-color:var(--gold-deep);}
+#panel-quest .chip:nth-child(2) .rk{background:var(--gold);color:#fff;border-color:var(--gold);}
+#panel-quest .chip:nth-child(3) .rk{background:color-mix(in srgb,var(--gold) 55%,var(--paper));color:var(--ink);border-color:var(--gold);}
+#panel-quest .chip .lbl{flex:1 1 auto;min-width:0;font-family:var(--f-label);font-weight:600;font-size:.9rem;color:var(--ink);
+    overflow-wrap:anywhere;}
+#panel-quest .chip .grip{flex:0 0 auto;color:var(--muted);font-size:1.05rem;line-height:1;padding:.15rem .45rem .15rem .2rem;
+    cursor:grab;-webkit-user-select:none;user-select:none;transition:color .12s var(--ease);}
+#panel-quest .chip .grip:hover{color:var(--gold-deep);}
+#panel-quest .chip:active .grip{cursor:grabbing;}
+#panel-quest .chip .mv{display:flex;gap:.25rem;}
+#panel-quest .chip .mv button{width:1.75rem;height:1.75rem;border-radius:50%;border:1px solid var(--line-strong);
+    background:var(--paper-warm);color:var(--ink-soft);cursor:pointer;font-size:.85rem;line-height:1;
+    display:flex;align-items:center;justify-content:center;transition:border-color .12s,color .12s,transform .08s;}
+#panel-quest .chip .mv button:hover:not(:disabled){border-color:var(--gold);color:var(--gold-deep);}
+#panel-quest .chip .mv button:active:not(:disabled){transform:scale(.9);}
+#panel-quest .chip .mv button:disabled{opacity:.3;cursor:not-allowed;}
+#panel-quest .drag-hint{font-family:var(--f-label);font-size:.74rem;color:var(--muted);margin:.6rem 0 0;}
+#panel-quest .esprit{background:var(--tint-gold);border:1px solid color-mix(in srgb,var(--gold) 35%,var(--line-strong));
+    border-left:3px solid var(--gold-deep);border-radius:var(--r-s);
+    padding:.85rem 1.1rem;margin:0 0 1.2rem;font-size:.93rem;color:var(--ink-soft);line-height:1.55;}
+#panel-quest .esprit b{color:var(--ink);}
+#panel-quest .publish-bar{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+    background:var(--paper);border:1px solid var(--line-strong);border-left:4px solid var(--gold);
+    border-radius:var(--r-m);padding:1rem 1.3rem;margin:0 0 .6rem;box-shadow:var(--sh-s);}
+#panel-quest .publish-bar > div{flex:1 1 15rem;}
+#panel-quest .autosave{margin:0 0 .15rem;font-family:var(--f-label);font-size:.74rem;color:var(--success);}
+#panel-quest .pub-state{margin:0;color:var(--ink-soft);font-size:.9rem;}
+#panel-quest .pub-state b{color:var(--ink);}
+#panel-quest .save-note{font-family:var(--f-label);font-size:.76rem;color:var(--muted);margin:0 0 .3rem;line-height:1.5;}
+#panel-quest .reset-link{margin:0 0 1.6rem;}
+#panel-quest .reset-link button{background:none;border:none;padding:0;cursor:pointer;
+    font-family:var(--f-label);font-size:.76rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;}
+#panel-quest .reset-link button:hover{color:var(--gold-deep);}
+#panel-quest .pub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,19rem),1fr));gap:.9rem;}
+#panel-quest .pub-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);padding:1.05rem 1.15rem 1.1rem;box-shadow:var(--sh-s);}
+#panel-quest .pub-card.is-you{border-color:var(--gold);box-shadow:0 0 0 3px var(--tint-gold),var(--sh-s);}
+#panel-quest .pub-head{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem;}
+#panel-quest .pub-head b{font-family:var(--f-label);font-weight:600;font-size:.95rem;color:var(--ink);}
+#panel-quest .pub-badge{font-family:var(--f-label);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    border-radius:var(--r-full);padding:.14rem .55rem;}
+#panel-quest .pub-badge.you{background:var(--gold-deep);color:#fff;}
+#panel-quest .pub-badge.demo{border:1px dashed var(--line-strong);color:var(--muted);}
+#panel-quest .pub-hz{font-family:var(--f-label);font-size:.74rem;color:var(--gold-deep);margin:0 0 .55rem;}
+#panel-quest .pub-list{list-style:none;margin:0 0 .6rem;padding:0;display:flex;flex-direction:column;gap:.22rem;}
+#panel-quest .pub-list li{display:flex;gap:.5rem;align-items:baseline;font-size:.85rem;color:var(--ink-soft);}
+#panel-quest .pub-list .n{font-family:var(--f-label);font-weight:600;font-size:.68rem;color:var(--gold-deep);width:1rem;flex:0 0 auto;text-align:right;}
+#panel-quest .pub-more{font-family:var(--f-label);font-size:.72rem;color:var(--muted);}
+#panel-quest .pub-depts{display:flex;flex-wrap:wrap;gap:.3rem;}
+#panel-quest .pub-depts span{font-family:var(--f-label);font-size:.66rem;font-weight:600;color:var(--ink-soft);
+    border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.12rem .5rem;}
+#panel-quest .pub-empty{border:1px solid var(--line);border-radius:var(--r-m);padding:1rem 1.2rem;color:var(--muted);font-size:.9rem;background:var(--paper-warm);}
+#panel-quest .pub-impl{font-family:var(--f-label);font-size:.7rem;font-weight:600;margin:0 0 .6rem;}
+#panel-quest .pub-impl.ok{color:var(--success);}
+#panel-quest .pub-impl.wait{color:var(--muted);}
+#panel-quest .pub-inc{display:flex;align-items:center;gap:.5rem;margin-top:.7rem;padding-top:.6rem;border-top:1px solid var(--line);
+    font-family:var(--f-label);font-size:.74rem;color:var(--ink-soft);cursor:pointer;}
+#panel-quest .pub-inc input{accent-color:var(--gold-deep);width:.95rem;height:.95rem;}
+#panel-quest .toast{position:fixed;left:50%;bottom:1.4rem;transform:translateX(-50%) translateY(1.5rem);
+    background:var(--ink);color:var(--cream);padding:.7rem 1.2rem;border-radius:var(--r-full);
+    font-family:var(--f-label);font-size:.82rem;box-shadow:var(--sh-l);
+    opacity:0;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease);z-index:60;}
+#panel-quest .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#panel-quest .foot{text-align:center;color:var(--muted);font-size:.8rem;padding:1.6rem 0 .5rem;border-top:1px solid var(--line);margin-top:2rem;}
+@media (max-width:820px){#panel-quest .id-grid{grid-template-columns:1fr;}
+#panel-quest .map-grid{grid-template-columns:1fr;}
+}
+@media print{}
+</style>
+<script>
+
+(function(){
+  "use strict";
+  var $=function(s,r){return (r||document).querySelector(s);};
+
+  /* ——— Données critères ——— */
+  var BASE=[
+    {id:"b1", label:"Notre projet, à nous",          desc:"Décidé et porté ensemble entre familles, libres d'organiser notre vie."},
+    {id:"b2", label:"Une vie spirituelle vivante",   desc:"Un lieu qui porte une vraie vie de prière, en profondeur."},
+    {id:"b3", label:"Chacun chez soi",               desc:"Son propre logement, maître de son quotidien, vraie indépendance familiale."},
+    {id:"b4", label:"L'Eucharistie tout près",       desc:"Présence eucharistique et adoration à moins de 500 m, jour et nuit."},
+    {id:"b5", label:"La messe chaque jour",          desc:"Messe quotidienne, prêtre présent et vivant."},
+    {id:"b6", label:"Des familles amies proches",    desc:"Entraide, amitié, enfants qui grandissent ensemble dans la foi."},
+    {id:"b7", label:"Accueillir et rayonner",        desc:"Un lieu ouvert sur l'extérieur, capable d'accueillir du monde."},
+    {id:"b8", label:"Une école catholique",          desc:"Sur place ou juste à côté, pour les enfants du lieu et des environs."},
+    {id:"b9", label:"La nature",                     desc:"Arbres, espace, calme — pas trop loin d'une ville."},
+    {id:"b10",label:"Des retraites sur place",       desc:"Pouvoir organiser week-ends et retraites directement sur place."},
+    {id:"s1", label:"Proche d'une ville ou d'une gare", desc:"Accès facile pour le travail, les visites, les déplacements."},
+    {id:"s2", label:"De la place pour accueillir",   desc:"Chambres et espaces communs pour recevoir familles et groupes."},
+    {id:"s3", label:"Des travaux raisonnables",      desc:"Un bâti correct, sans chantier interminable."},
+    {id:"s4", label:"Une chapelle déjà là",          desc:"Prête à servir, plutôt qu'à aménager entièrement."},
+    {id:"s5", label:"Un jardin, un potager",         desc:"De la terre à cultiver, un peu d'autonomie."},
+    {id:"s6", label:"Santé et écoles à proximité",   desc:"Médecin, commerces, écoles accessibles au quotidien."},
+    {id:"s7", label:"Un climat agréable",            desc:"Une région clémente, agréable au fil des saisons."}
+  ];
+
+  /* ——— État ——— */
+  var state={prenom:"",horizon:null,interet:null,selected:[],order:[],custom:[],depts:[],statut:"brouillon",maj:null,dirty:false};
+  var KEY="lumignis-questionnaire-v2";
+
+  function allCriteria(){ return BASE.concat(state.custom); }
+  function critById(id){ return allCriteria().filter(function(c){return c.id===id;})[0]; }
+
+  /* ——— Persistance Supabase : brouillon auto-enregistré (strictement privé), publication séparée ——— */
+  var QSB=null, QME=null, saveTimer=null, lastSaved="";
+  function clientState(){
+    return {prenom:state.prenom,horizon:state.horizon,interet:state.interet,
+            selected:state.selected,order:state.order,custom:state.custom,depts:state.depts};
+  }
+  // sérialisation canonique (clés triées) : jsonb ne préserve pas l'ordre des clés
+  function sig(o){
+    if(o===null||typeof o!=="object") return JSON.stringify(o);
+    if(Array.isArray(o)) return "["+o.map(sig).join(",")+"]";
+    return "{"+Object.keys(o).sort().map(function(k){return JSON.stringify(k)+":"+sig(o[k]);}).join(",")+"}";
+  }
+  function persist(){
+    if(!QSB||!QME) return;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+      var b=clientState(), s=sig(b);
+      if(s===lastSaved) return;
+      QSB.from("questionnaire_reponses")
+        .upsert({user_id:QME.id,qui:state.prenom,brouillon:b,maj_brouillon:new Date().toISOString()},{onConflict:"user_id"})
+        .then(function(r){
+          if(!r.error){ lastSaved=s; state.maj=new Date().toISOString(); renderStatut(); }
+          else { toast("Enregistrement impossible — vérifie ta connexion"); }
+        });
+    },600);
+  }
+  async function restore(){
+    var r=await QSB.from("questionnaire_reponses")
+      .select("brouillon,publication,statut,maj_brouillon")
+      .eq("user_id",QME.id).maybeSingle();
+    if(r.error){ throw new Error("restore: "+r.error.message); }
+    if(r.data){
+      var d=r.data.brouillon||{};
+      ["prenom","horizon","interet","selected","order","custom","depts"].forEach(function(k){
+        if(d[k]!==undefined&&d[k]!==null) state[k]=d[k];
+      });
+      state.statut=r.data.statut||"brouillon";
+      state.maj=r.data.maj_brouillon;
+      state._publication=r.data.publication||null;
+      state.dirty=(state.statut==="publie")&&(sig(clientState())!==sig(state._publication));
+      lastSaved=sig(clientState());
+    }
+  }
+
+  /* ——— Sélection des critères ——— */
+  var pickGrid=$("#pickGrid");
+  function renderPicks(){
+    pickGrid.innerHTML="";
+    allCriteria().forEach(function(c){
+      var sel=state.selected.indexOf(c.id)>=0;
+      var el=document.createElement("button");
+      el.type="button";
+      el.className="pick"+(sel?" is-sel":"");
+      el.innerHTML='<span class="tick">'+(sel?"&#10003;":"")+'</span>'+
+        '<span><b>'+esc(c.label)+'</b><small>'+esc(c.desc)+'</small></span>'+
+        (c.id.charAt(0)==="c"?'<span class="rm" data-rm="'+c.id+'">retirer</span>':"");
+      el.addEventListener("click",function(e){
+        var rm=e.target.closest("[data-rm]");
+        if(rm){ removeCustom(rm.getAttribute("data-rm")); return; }
+        toggle(c.id);
+      });
+      pickGrid.appendChild(el);
+    });
+    renderChips();
+  }
+  function toggle(id){
+    var i=state.selected.indexOf(id);
+    if(i>=0){ state.selected.splice(i,1); state.order=state.order.filter(function(x){return x!==id;}); }
+    else{ state.selected.push(id); state.order.push(id); }
+    markDirty(); renderPicks();
+  }
+  function addCustom(){
+    var input=$("#customInput"), val=(input.value||"").trim();
+    if(!val){ input.focus(); return; }
+    var id="c"+(state.custom.length+1)+"_"+Date.now().toString(36);
+    state.custom.push({id:id,label:val,desc:"Ton critère personnel."});
+    state.selected.push(id); state.order.push(id);
+    input.value=""; markDirty(); renderPicks();
+  }
+  function removeCustom(id){
+    state.custom=state.custom.filter(function(c){return c.id!==id;});
+    state.selected=state.selected.filter(function(x){return x!==id;});
+    state.order=state.order.filter(function(x){return x!==id;});
+    markDirty(); renderPicks();
+  }
+
+  /* ——— Carte de France ——— */
+  var svg=$("#frMap");
+  var SVGNS="http://www.w3.org/2000/svg";
+  var mapTip=document.createElement("div");
+  mapTip.className="map-tip";
+  document.getElementById("panel-quest").appendChild(mapTip);
+  function renderMap(){
+    window.DEPTS.depts.forEach(function(d){
+      var p=document.createElementNS(SVGNS,"path");
+      p.setAttribute("d",d.d);
+      p.dataset.code=d.c; p.dataset.nom=d.n;
+      if(state.depts.indexOf(d.c)>=0) p.classList.add("sel");
+      p.addEventListener("click",function(){
+        var i=state.depts.indexOf(d.c);
+        if(i>=0){ state.depts.splice(i,1); p.classList.remove("sel"); }
+        else{ state.depts.push(d.c); p.classList.add("sel"); }
+        markDirty(); renderDeptSide();
+      });
+      svg.appendChild(p);
+    });
+    // étiquette au survol : numéro + nom, qui suit le curseur
+    svg.addEventListener("mousemove",function(e){
+      var p=e.target.closest ? e.target.closest("path[data-code]") : null;
+      if(p){
+        mapTip.textContent=p.dataset.code+" · "+p.dataset.nom;
+        mapTip.classList.add("show");
+        var x=Math.min(e.clientX+16, window.innerWidth-mapTip.offsetWidth-8);
+        mapTip.style.left=x+"px";
+        mapTip.style.top=(e.clientY-34)+"px";
+      } else {
+        mapTip.classList.remove("show");
+      }
+    });
+    svg.addEventListener("mouseleave",function(){ mapTip.classList.remove("show"); });
+    renderDeptSide();
+  }
+  function deptName(code){
+    var d=window.DEPTS.depts.filter(function(x){return x.c===code;})[0];
+    return d?d.n:code;
+  }
+  function renderDeptSide(){
+    var n=state.depts.length;
+    $("#deptCount").textContent=n;
+    $("#deptPlural").textContent=n>1?"s":"";
+    $("#deptPlural2").textContent=n>1?"s":"";
+    var box=$("#deptChips"); box.innerHTML="";
+    state.depts.slice().sort().forEach(function(code){
+      var c=document.createElement("span");
+      c.className="dchip";
+      c.innerHTML=esc(code+" · "+deptName(code))+'<button type="button" aria-label="Retirer">&times;</button>';
+      c.querySelector("button").addEventListener("click",function(){
+        state.depts=state.depts.filter(function(x){return x!==code;});
+        var p=svg.querySelector('path[data-code="'+code+'"]');
+        if(p) p.classList.remove("sel");
+        markDirty(); renderDeptSide();
+      });
+      box.appendChild(c);
+    });
+    renderRecap();
+  }
+  $("#deptClear").addEventListener("click",function(){
+    state.depts=[];
+    [].forEach.call(svg.querySelectorAll("path.sel"),function(p){p.classList.remove("sel");});
+    markDirty(); renderDeptSide();
+  });
+
+  /* ——— Classement (chips, en bas de page) ——— */
+  var chipsEl=$("#chips");
+  var dragIdx=null;
+  function renderChips(){
+    state.order=state.order.filter(function(id){return state.selected.indexOf(id)>=0;});
+    state.selected.forEach(function(id){ if(state.order.indexOf(id)<0) state.order.push(id); });
+    chipsEl.innerHTML="";
+    var empty=state.order.length===0;
+    $("#chipsEmpty").style.display=empty?"":"none";
+    $("#dragHint").hidden=empty;
+    state.order.forEach(function(id,idx){
+      var c=critById(id); if(!c) return;
+      var li=document.createElement("li");
+      li.className="chip"; li.draggable=true; li.dataset.idx=idx;
+      li.innerHTML='<span class="rk">'+(idx+1)+'</span>'+
+        '<span class="lbl">'+esc(c.label)+'</span>'+
+        '<span class="mv">'+
+          '<button type="button" data-mv="-1" aria-label="Monter" '+(idx===0?"disabled":"")+'>&#9650;</button>'+
+          '<button type="button" data-mv="1" aria-label="Descendre" '+(idx===state.order.length-1?"disabled":"")+'>&#9660;</button>'+
+        '</span>'+
+        '<span class="grip" aria-hidden="true" title="Glisser pour réordonner">&#9776;</span>';
+      li.addEventListener("click",function(e){
+        var b=e.target.closest("[data-mv]"); if(!b) return;
+        move(idx, idx+parseInt(b.getAttribute("data-mv"),10));
+      });
+      li.addEventListener("dragstart",function(){ dragIdx=idx; li.classList.add("dragging"); });
+      li.addEventListener("dragend",function(){ dragIdx=null; li.classList.remove("dragging");
+        [].forEach.call(chipsEl.children,function(x){x.classList.remove("drop-hint");}); });
+      li.addEventListener("dragover",function(e){ e.preventDefault();
+        [].forEach.call(chipsEl.children,function(x){x.classList.remove("drop-hint");});
+        li.classList.add("drop-hint"); });
+      li.addEventListener("drop",function(e){ e.preventDefault();
+        if(dragIdx!==null && dragIdx!==idx){ move(dragIdx, idx); } });
+      chipsEl.appendChild(li);
+    });
+    renderRecap();
+  }
+  function move(from,to){
+    if(to<0||to>=state.order.length) return;
+    var it=state.order.splice(from,1)[0];
+    state.order.splice(to,0,it);
+    markDirty(); renderChips();
+  }
+
+  /* ——— Réponses publiées de l'équipe (Supabase) ——— */
+  var teamRows=null;
+  async function loadTeam(force){
+    if(!QSB) return;
+    if(teamRows&&!force){ renderPublished(); return; }
+    // lecture équipe via RPC à colonnes restreintes (les brouillons restent privés)
+    var r=await QSB.rpc("questionnaire_publies");
+    if(!r.error){ teamRows=r.data||[]; }
+    renderPublished();
+  }
+  function renderPublished(){
+    var grid=$("#pubGrid"); if(!grid) return;
+    var rows=teamRows||[];
+    $("#teamCount").textContent=rows.length?"("+rows.length+")":"";
+    grid.innerHTML="";
+    if(!rows.length){
+      grid.innerHTML='<div class="pub-empty">Aucune réponse publiée pour l&rsquo;instant — la tienne peut être la première.</div>';
+      return;
+    }
+    rows.forEach(function(row){
+      var p=row.publication||{};
+      var labels=(p.order||[]).map(function(id){
+        var cst=(p.custom||[]).filter(function(x){return x.id===id;})[0];
+        if(cst) return cst.label;
+        var b=critById(id); return b?b.label:id;
+      });
+      var top=labels.slice(0,5), more=labels.length-top.length;
+      var card=document.createElement("div");
+      card.className="pub-card"+((QME&&row.user_id===QME.id)?" is-you":"");
+      card.innerHTML=
+        '<div class="pub-head"><b>'+esc(row.qui||p.prenom||"—")+'</b>'+
+          ((QME&&row.user_id===QME.id)?'<span class="pub-badge you">toi</span>':"")+
+        '</div>'+
+        '<p class="pub-hz">Horizon&nbsp;: '+esc(p.horizon||"—")+' &middot; Intérêt&nbsp;: '+esc(p.interet||"—")+'</p>'+
+        '<p class="pub-impl '+(row.integre?"ok":"wait")+'">'+(row.integre?"&#10003; Intégrée à la recherche de lieux":"&#8987; En attente d'intégration à la recherche")+'</p>'+
+        '<ol class="pub-list">'+
+          top.map(function(c,i){return '<li><span class="n">'+(i+1)+'.</span><span>'+esc(c)+'</span></li>';}).join("")+
+        '</ol>'+
+        (more>0?'<p class="pub-more">+ '+more+' autre'+(more>1?"s":"")+' critère'+(more>1?"s":"")+'</p>':"")+
+        '<div class="pub-depts">'+(p.depts||[]).slice().sort().map(function(c){return '<span>'+esc(c+" · "+deptName(c))+'</span>';}).join("")+'</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  /* ——— Suivi de saisie (barre collante) ——— */
+  function renderProgress(){
+    var checks={
+      qui: !!state.prenom && !!state.horizon && !!state.interet,
+      criteres: state.order.length>=3,
+      depts: state.depts.length>=1,
+      classement: state.order.length>=3
+    };
+    var counts={ criteres: state.order.length, depts: state.depts.length };
+    [].forEach.call(document.querySelectorAll("#prog [data-prog]"),function(a){
+      var k=a.getAttribute("data-prog");
+      a.classList.toggle("done",!!checks[k]);
+      a.querySelector("[data-pk]").innerHTML=checks[k]?"&#10003;":"";
+      var cnt=a.querySelector("[data-count]");
+      if(cnt){ cnt.textContent=counts[k]?"("+counts[k]+")":""; }
+    });
+  }
+
+  /* ——— Statut ——— */
+  function renderRecap(){ renderProgress(); renderStatut(); renderPublished(); }
+  function renderStatut(){
+    var pill=$("#statutPill");
+    var hints=document.querySelectorAll(".js-pub-state");
+    var pubs=document.querySelectorAll(".js-publish");
+    pill.className="statut";
+    if(state.maj){
+      var t=new Date(state.maj);
+      $("#autosave").innerHTML="&#10003; Enregistré automatiquement &middot; "+
+        t.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    }
+    var pillCls, pillTxt, hintHtml, pubTxt;
+    if(state.statut==="publie" && state.dirty){
+      pillCls="s-dirty"; pillTxt="Publié · modifs non publiées";
+      hintHtml="Tu as des modifications <b>non publiées</b>.";
+      pubTxt="Mettre à jour la publication";
+    } else if(state.statut==="publie"){
+      pillCls="s-publie"; pillTxt="Publié";
+      hintHtml="<b>Publié</b> — visible de l'équipe, dans la recherche de lieux.";
+      pubTxt="Publié ✓";
+    } else {
+      pillCls="s-brouillon"; pillTxt="Brouillon";
+      hintHtml="Pas encore publié — <b>visible de toi seul</b>.";
+      pubTxt="Publier";
+    }
+    pill.classList.add(pillCls); pill.textContent=pillTxt;
+    [].forEach.call(hints,function(h){ h.innerHTML=hintHtml; });
+    [].forEach.call(pubs,function(b){ b.textContent=pubTxt; });
+  }
+
+  /* ——— Publier (l'enregistrement, lui, est automatique) ——— */
+  function validateFiche(){
+    state.prenom=($("#prenom").value||"").trim();
+    var hz=document.querySelector('input[name="horizon"]:checked');
+    state.horizon=hz?hz.value:null;
+    var it=document.querySelector('input[name="interet"]:checked');
+    state.interet=it?it.value:null;
+    if(!state.prenom){ toast("Dis-nous qui répond — prénom ou famille"); $("#prenom").focus();
+      $("#prenom").scrollIntoView({behavior:"smooth",block:"center"}); return false; }
+    if(!state.horizon){ toast("Choisis ton horizon (en haut)");
+      $(".hz-row").scrollIntoView({behavior:"smooth",block:"center"}); return false; }
+    if(!state.interet){ toast("Dis-nous ton niveau d'intérêt (en haut)");
+      $("#in1").scrollIntoView({behavior:"smooth",block:"center"}); return false; }
+    if(state.order.length<3){ toast("Coche au moins 3 critères");
+      $("#sec-criteres").scrollIntoView({behavior:"smooth"}); return false; }
+    if(!state.depts.length){ toast("Sélectionne au moins un département");
+      $("#sec-carte").scrollIntoView({behavior:"smooth"}); return false; }
+    return true;
+  }
+  [].forEach.call(document.querySelectorAll(".js-publish"),function(btn){
+    btn.addEventListener("click",async function(){
+      if(!validateFiche()) return;
+      var cs=clientState(), now=new Date().toISOString();
+      btn.disabled=true;
+      var r=await QSB.from("questionnaire_reponses").upsert(
+        {user_id:QME.id,qui:state.prenom,brouillon:cs,publication:cs,statut:"publie",maj_brouillon:now,maj_publication:now},
+        {onConflict:"user_id"});
+      btn.disabled=false;
+      if(r.error){ toast("Publication impossible — réessaie"); return; }
+      state.statut="publie"; state.dirty=false; state._publication=cs; state.maj=now;
+      lastSaved=sig(cs);
+      renderRecap(); loadTeam(true);
+      toast("Publié — l'équipe est prévenue au fil d'actu");
+    });
+  });
+
+  /* ——— Remise à zéro (volontairement discrète) ——— */
+  $("#resetBtn").addEventListener("click",function(){
+    if(!window.confirm("Tout remettre à zéro ? Tes réponses actuelles seront effacées.")) return;
+    state.prenom="";state.horizon=null;state.interet=null;
+    state.selected=[];state.order=[];state.custom=[];state.depts=[];
+    $("#prenom").value="";
+    [].forEach.call(document.querySelectorAll('input[name="horizon"],input[name="interet"]'),function(r){ r.checked=false; });
+    [].forEach.call(svg.querySelectorAll("path.sel"),function(p){ p.classList.remove("sel"); });
+    markDirty(); renderPicks(); renderDeptSide();
+    toast("Page blanche — tu peux recommencer");
+  });
+
+  /* ——— Sous-onglets ——— */
+  function showTab(team){
+    if(team) loadTeam();
+    $("#tab-mine").hidden=team;
+    $("#tab-team").hidden=!team;
+    $("#tabMineBtn").classList.toggle("is-on",!team);
+    $("#tabTeamBtn").classList.toggle("is-on",team);
+  }
+  $("#tabMineBtn").addEventListener("click",function(){ showTab(false); });
+  $("#tabTeamBtn").addEventListener("click",function(){ showTab(true); });
+  [].forEach.call(document.querySelectorAll("#prog a"),function(a){
+    a.addEventListener("click",function(){ if($("#tab-mine").hidden){ showTab(false); } });
+  });
+
+  function markDirty(){
+    if(state.statut==="publie"){ state.dirty=sig(clientState())!==sig(state._publication||{}); }
+    persist(); renderProgress(); renderStatut();
+  }
+
+  /* ——— Divers ——— */
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  var toastTimer;
+  function toast(msg){
+    var t=$("#toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove("show");},2100);
+  }
+
+  $("#addBtn").addEventListener("click",addCustom);
+  $("#customInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); addCustom(); } });
+  $("#prenom").addEventListener("input",function(){ state.prenom=$("#prenom").value.trim(); markDirty(); renderRecap(); });
+  [].forEach.call(document.querySelectorAll('input[name="horizon"]'),function(r){
+    r.addEventListener("change",function(){ state.horizon=r.value; markDirty(); renderRecap(); });
+  });
+  [].forEach.call(document.querySelectorAll('input[name="interet"]'),function(r){
+    r.addEventListener("change",function(){ state.interet=r.value; markDirty(); renderRecap(); });
+  });
+
+  
+
+  /* ——— Init (lazy — déclenché par le site à l'ouverture de l'onglet) ——— */
+  var qInited=false;
+  window.initQuest=async function(){
+    if(qInited) return; qInited=true;
+    var panel=document.getElementById("panel-quest");
+    panel.classList.add("is-loading"); // le formulaire n'est éditable qu'une fois le brouillon chargé
+    try{
+      QSB=window.__sb;
+      var u=await QSB.auth.getUser(); QME=u.data.user;
+      if(!QME){ qInited=false; return; }
+      if(!window.DEPTS){ window.DEPTS=await (await fetch("depts.json")).json(); }
+      await restore();
+      if(state.prenom) $("#prenom").value=state.prenom;
+      if(state.horizon){ var h=document.querySelector('input[name="horizon"][value="'+state.horizon+'"]'); if(h) h.checked=true; }
+      if(state.interet){ var it=document.querySelector('input[name="interet"][value="'+state.interet+'"]'); if(it) it.checked=true; }
+      renderPicks(); renderMap(); renderRecap(); loadTeam();
+      panel.classList.remove("is-loading");
+    }catch(e){
+      qInited=false;
+      toast("Chargement impossible — vérifie ta connexion puis rouvre l'onglet");
+    }
+  };
+})();
+
 </script>
 </body>
 </html>
