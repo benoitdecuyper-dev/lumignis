@@ -89,9 +89,11 @@
 
   .fire-rule{height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));}
 
-  /* ——— Tête compacte : sélecteur de scénario + une ligne de contexte, fondus dans la page ——— */
-  .rm-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem 1.4rem;flex-wrap:wrap;}
-  .rm-switch{display:flex;justify-content:flex-start;gap:.55rem;flex-wrap:wrap;}
+  /* ——— Tête compacte : sélecteur de scénario + une ligne de contexte, fondus dans la page.
+     PC d'abord : la ligne reste À CÔTÉ des pastilles (elle se replie en interne au besoin) ;
+     elle ne passe dessous qu'en petit écran. ——— */
+  .rm-head{display:flex;align-items:center;justify-content:space-between;gap:.7rem 1.4rem;flex-wrap:nowrap;}
+  .rm-switch{display:flex;flex:0 0 auto;justify-content:flex-start;gap:.55rem;flex-wrap:wrap;}
   .sw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.05rem;text-align:left;
     font-family:var(--f-label);border:1px solid var(--line-strong);background:var(--paper);
     border-radius:var(--r-m);padding:.42rem .9rem .48rem;cursor:pointer;color:var(--ink-soft);
@@ -101,8 +103,12 @@
   .sw:hover{border-color:var(--gold);}
   .sw.is-on{border-color:var(--gold-deep);background:color-mix(in srgb,var(--paper) 88%,var(--gold) 12%);box-shadow:0 0 0 3px var(--tint-gold);}
   .sw.is-on b{color:var(--gold-deep);}
-  .rm-line{margin:0;font-family:var(--f-display);font-style:italic;font-size:.95rem;color:var(--ink-soft);line-height:1.5;}
+  .rm-line{margin:0;flex:0 1 auto;min-width:0;text-align:right;font-family:var(--f-display);font-style:italic;font-size:.95rem;color:var(--ink-soft);line-height:1.5;}
   .rm-line b{color:var(--ink);font-weight:600;}
+  @media (max-width:900px){
+    .rm-head{flex-wrap:wrap;}
+    .rm-line{text-align:left;}
+  }
 
   /* ——— Fondu au changement de scénario ——— */
   .rm-line,.gantt-card,.assume,.foot{transition:opacity .18s var(--ease);}
