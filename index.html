@@ -287,6 +287,25 @@
     font-size:clamp(1.25rem,3vw,1.55rem);line-height:1.4;color:var(--ink);
   }
 
+  /* ===== Rythme alterné image/texte (pitch retravaillé) ===== */
+  #panel-accueil .alt-wrap{max-width:68rem;margin:0 auto;padding:0 1.5rem;}
+  #panel-accueil .alt-band{padding:3.4rem 0;}
+  #panel-accueil .alt-band.tint{background:var(--paper-warm);}
+  #panel-accueil .alt-row{display:grid;grid-template-columns:1fr 1fr;gap:3.2rem;align-items:center;}
+  #panel-accueil .alt-row.img-right .alt-media{order:2;} #panel-accueil .alt-row.img-right .alt-text{order:1;}
+  #panel-accueil .alt-row.img-left  .alt-media{order:1;} #panel-accueil .alt-row.img-left  .alt-text{order:2;}
+  #panel-accueil .alt-media{aspect-ratio:4/3;border-radius:.6rem;overflow:hidden;}
+  #panel-accueil .alt-media .alt-img{width:100%;height:100%;object-fit:cover;display:block;}
+  #panel-accueil .alt-text h2{margin-bottom:.9rem;}
+  #panel-accueil .alt-text p{margin:0 0 1rem;} #panel-accueil .alt-text p:last-child{margin-bottom:0;}
+  @media (max-width:760px){
+    #panel-accueil .alt-row{grid-template-columns:1fr;gap:1.5rem;}
+    #panel-accueil .alt-row.img-right .alt-media,#panel-accueil .alt-row.img-left .alt-media{order:1;}
+    #panel-accueil .alt-row.img-right .alt-text,#panel-accueil .alt-row.img-left .alt-text{order:2;}
+    #panel-accueil .alt-media{aspect-ratio:16/10;}
+    #panel-accueil .alt-band{padding:2.4rem 0;}
+  }
+
   #panel-accueil .ask{background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:3px;padding:2.5rem 2rem;margin:1rem 0 0;}
   #panel-accueil .ask h2{margin-bottom:1rem;text-align:center;}
   #panel-accueil .ask p{max-width:34rem;margin-left:auto;margin-right:auto;}
@@ -379,8 +398,8 @@
   <header class="hero">
     <div class="hero-inner">
       <h1 class="brand">Lumignis</h1>
-      <p class="accroche">Embraser le monde à la lumière de l'Esprit Saint.</p>
-      <p class="promise">Le projet de familles qui veulent se retrouver, avec le Christ au centre.</p>
+      <p class="accroche">Faire revivre un lieu, simplement et sincèrement.</p>
+      <p class="promise">Un projet tout jeune, porté par quelques familles et un prêtre en chemin, avec le désir de mettre une vie chrétienne au service d'un lieu de l'Église.</p>
       <p class="confidential">Document de présentation · partagé à un cercle restreint</p>
     </div>
   </header>
@@ -389,57 +408,66 @@
   <main>
     <div class="accueil-wrap">
       <section>
-        <p class="lead">Nous sommes des familles et un prêtre. Nous croyons qu'un lieu de l'Église ne se sauve pas en le gardant, mais en y remettant une vie : la prière quotidienne, le travail de nos mains, la fraternité, l'accueil. Nous voulons offrir cette vie à un lieu qui en manque — et le faire humblement, sous l'autorité de l'Église, à laquelle nous remettons ce désir.</p>
+        <p class="lead">Nous sommes deux à trois familles, avec d'autres en réflexion, et un prêtre qui chemine à nos côtés sans engagement pris à ce jour. Le projet est très en amont : nous n'avons pas encore de lieu, pas de statut juridique arrêté, pas de communauté constituée. Nous avons une conviction simple : un lieu de l'Église laissé vide ne demande pas d'être préservé, mais d'être habité, une présence, un entretien, une activité, une porte ouverte. C'est cette vie que nous voulons offrir, humblement et sous l'autorité de l'Église.</p>
       </section>
+    </div>
 
-      <div class="ornament"><span>&#10022;</span></div>
+    <div class="alt-band">
+    <div class="alt-wrap">
+      <div class="alt-row img-left">
+        <div class="alt-media"><img class="alt-img" src="img/accueil-chapelle.webp" alt="Une chapelle, lieu de prière quotidienne" loading="lazy" /></div>
+        <div class="alt-text">
+          <h2>Une vie de prière, au quotidien</h2>
+          <p>Nous voulons que chaque journée commence par la messe et un temps d'adoration, et que le reste s'organise autour : le travail, les repas partagés, les enfants qui grandissent, la porte ouverte à qui passe.</p>
+          <p>Nous ne cherchons pas à inventer une spiritualité nouvelle ni à porter un charisme particulier. Nous voulons vivre l'Évangile, simplement, dans un lieu de l'Église, et le faire assez sérieusement pour que cela se voie.</p>
+          <p class="pull">Un lieu de l'Église ne se sauve pas en le gardant fermé, mais en y remettant une vie.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <section>
-        <h2>Le Christ au centre, et la vie qui en découle</h2>
-        <p>Au cœur de tout, il y a une présence : celle du Christ dans l'Eucharistie. C'est de là que nous voulons faire partir chaque journée — la messe, l'adoration — et c'est de là que le reste prend son sens : le travail, la table partagée, les enfants qui grandissent, la porte ouverte à celui qui passe.</p>
-        <p>Nous ne cherchons pas à inventer une spiritualité nouvelle, ni à porter un charisme à nous. Nous voulons simplement vivre l'Évangile, ensemble et pour de vrai, dans un lieu de l'Église — assez pleinement pour que cette vie se voie, et donne à d'autres l'envie de croire.</p>
-        <p class="pull">Un lieu de l'Église ne se sauve pas en le gardant fermé, mais en y rallumant un feu : celui d'une vie chrétienne vécue au grand jour.</p>
-      </section>
+  <div class="alt-band tint">
+    <div class="alt-wrap">
+      <div class="alt-row img-right">
+        <div class="alt-text">
+          <h2>Envoyés, pas installés</h2>
+          <p>Ce désir n'a de sens que porté en Église. Nous ne voulons pas d'un lieu à nous, gouverné par nous : nous voulons être <strong>envoyés</strong>, reconnus, et repris si besoin.</p>
+          <p>C'est pourquoi, le jour où un lieu se prêterait à notre présence, nous ne demanderions qu'à nous le voir <strong>confier</strong>, jamais donner, selon la forme que l'Église jugerait juste : une convention, un prêt à usage, un bail. Le lieu resterait ce qu'il est, et pourrait, à tout moment, revenir à ceux qui nous l'auraient confié. Nous ne demandons aucune subvention à l'Église, et ne ferions courir aucun risque financier au lieu qui nous accueillerait : c'est notre travail, et l'activité du lieu, qui doivent nous faire vivre.</p>
+        </div>
+        <div class="alt-media"><img class="alt-img" src="img/accueil-cloitre.webp" alt="Un cloître, lieu de vie communautaire" loading="lazy" /></div>
+      </div>
+    </div>
+  </div>
 
-      <hr class="rule" />
+  <div class="alt-band">
+    <div class="alt-wrap">
+      <div class="alt-row img-left">
+        <div class="alt-media"><img class="alt-img" src="img/accueil-table.webp" alt="Une table partagée, lieu de vie concrète" loading="lazy" /></div>
+        <div class="alt-text">
+          <h2>Une vie concrète, qui redonne de la tenue au lieu</h2>
+          <p>Concrètement : la messe et l'adoration chaque jour, le travail qui fait vivre le lieu et l'entretient, les repas pris ensemble, des familles qui y habitent et dont les enfants grandissent au rythme de la prière, un accueil simple pour les pèlerins et les groupes de passage. Nous voulons aussi qu'un lieu fatigué ou laissé à l'abandon retrouve de la tenue et de la vie, qu'il redevienne un endroit où l'on a envie d'entrer.</p>
+          <p>Car ce n'est pas du bénévolat. Les familles qui viendront ne donneront pas leur temps libre : elles y <strong>bâtiront leur vie</strong>. Le lieu et son activité doivent pouvoir les faire vivre dignement, par un travail vrai et justement rémunéré.</p>
+          <p>Rien d'extraordinaire dans le principe. Mais une vie chrétienne prise au sérieux, dans un lieu qui reprend vie, cela se voit.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <section>
-        <h2>Envoyés, non installés</h2>
-        <p>Ce désir n'a de sens que porté en Église. Nous ne voulons pas d'un lieu à nous, gouverné par nous : nous voulons être <strong>envoyés</strong>, reconnus, et repris s'il le faut.</p>
-        <p>C'est pourquoi, le jour où un lieu se prêterait à notre présence, nous ne demanderions qu'à nous le voir <strong>confier</strong> — jamais donner — selon la forme que l'Église jugerait juste : une convention, un prêt à usage, un bail. Le lieu resterait ce qu'il est, et pourrait, à tout moment, revenir à ceux qui nous l'auraient confié. Nous ne demandons aucune subvention à l'Église, et ne ferions courir aucun risque financier au lieu qui nous accueillerait : c'est notre travail, et l'activité du lieu, qui doivent nous faire vivre. Et le jour où notre vie commune aura trouvé sa forme, nous chercherons la reconnaissance canonique qui lui revient, sous un mandat révisable.</p>
-      </section>
-
-      <hr class="rule" />
-
-      <section>
-        <h2>Une vie ordinaire, offerte</h2>
-        <p>Concrètement, cela ressemble à peu de choses, et à tout : la messe et l'adoration chaque jour ; le travail qui fait vivre le lieu et l'entretient ; les repas pris ensemble ; des familles qui habitent là, dont les enfants courent dans les cours et grandissent au rythme de la prière ; et un accueil, simple et vrai, pour les pèlerins, les groupes, les âmes de passage venues chercher un peu de silence et de Dieu.</p>
-        <p>Car ce n'est pas du bénévolat. Les familles ne viennent pas donner leur temps libre : elles viennent y bâtir leur vie. Le lieu et son activité doivent pouvoir les <strong>faire vivre dignement</strong> — un travail vrai, justement rémunéré, à la hauteur de ce que chacun y engage. C'est la condition pour qu'un tel engagement tienne dans la durée, et ne repose pas sur l'épuisement de quelques-uns.</p>
-        <p>Rien d'extraordinaire. Une vie chrétienne, mais entière — et c'est précisément cela qui rayonne.</p>
-      </section>
-
-      <hr class="rule" />
-
-      <section>
-        <h2>Des familles, un prêtre — pas un homme seul</h2>
-        <p>Nous sommes deux à trois familles, avec d'autres en chemin, unies par un même désir : vivre proches les unes des autres et mettre notre vie au service d'un lieu de l'Église. Ce projet n'est pas né d'une ambition ni d'un calcul, mais d'un <strong>désir profond de nous relier les uns aux autres, avec Jésus au milieu de nous</strong>.</p>
-        <p>Un <strong>prêtre expérimenté</strong> chemine avec nous et portera la vie sacramentelle du lieu. Ayant connu, par le passé, les fragilités possibles d'une communauté, il est le premier d'entre nous à vouloir des garde-fous clairs et une totale transparence envers l'autorité de l'Église. Sa situation canonique est à la disposition de qui souhaitera la vérifier ; nous appelons cette vérification de nos vœux, nous ne la subissons pas.</p>
-      </section>
-
+    <div class="accueil-wrap">
       <hr class="rule" />
 
       <section>
         <h2>Des garde-fous contre toute dérive</h2>
-        <p>Nous savons ce qui peut faire glisser une communauté vers l'entre-soi ou l'emprise — l'un de nous l'a vu de l'intérieur. C'est pourquoi nous voulons, dès le premier jour, nous en prémunir par des règles claires :</p>
+        <p>Nous savons ce qui peut faire glisser une communauté vers l'entre-soi ou l'emprise, l'un de nous l'a vu de l'intérieur. C'est pourquoi nous voulons, dès le premier jour, nous en prémunir par des règles claires :</p>
         <ul class="commit">
-          <li><strong>Ancrés dans l'Église locale</strong> — la messe du dimanche à la paroisse, avec tout le monde, jamais repliés sur notre seule chapelle. Une communauté ouverte, pas un monde à part.</li>
-          <li><strong>Le gouvernement séparé de l'accompagnement des âmes</strong> — celui qui accompagne spirituellement ne gouverne pas ; chacun reste libre de son confesseur et de son accompagnateur, au-dehors s'il le souhaite.</li>
-          <li><strong>Une gouvernance collégiale, à mandats révisables</strong> — pas de figure unique et inamovible ; des décisions prises ensemble et rendues à l'autorité de l'Église.</li>
-          <li><strong>Chacun libre de ses biens et de son départ</strong> — pas de mise en commun des patrimoines, aucune dépendance qui enferme ; on peut partir sans rupture ni pression.</li>
-          <li><strong>Des comptes transparents</strong> — ouverts au regard et au contrôle de l'Église.</li>
-          <li><strong>Fidèles au magistère, sans doctrine privée</strong> — aucune spiritualité personnelle érigée en règle du lieu ; c'est l'Église qui discerne, jamais nous seuls.</li>
+          <li><strong>Ancrés dans l'Église locale</strong>, la messe du dimanche à la paroisse, avec tout le monde, jamais repliés sur notre seule chapelle. Une communauté ouverte, pas un monde à part.</li>
+          <li><strong>Le gouvernement séparé de l'accompagnement des âmes</strong>, celui qui accompagne spirituellement ne gouverne pas ; chacun reste libre de son confesseur et de son accompagnateur, au dehors s'il le souhaite.</li>
+          <li><strong>Une gouvernance collégiale, à mandats révisables</strong>, pas de figure unique et inamovible ; des décisions prises ensemble et rendues à l'autorité de l'Église.</li>
+          <li><strong>Chacun libre de ses biens et de son départ</strong>, pas de mise en commun des patrimoines, aucune dépendance qui enferme ; on peut partir sans rupture ni pression.</li>
+          <li><strong>Des comptes transparents</strong>, ouverts au regard et au contrôle de l'Église.</li>
+          <li><strong>Fidèles au magistère, sans doctrine privée</strong>, aucune spiritualité personnelle érigée en règle du lieu ; c'est l'Église qui discerne, jamais nous seuls.</li>
         </ul>
-        <p class="soft">Ces garde-fous ne sont pas une contrainte qu'on nous impose : ils sont les nôtres, et nous y tenons.</p>
+        <p><em>Ces garde-fous ne sont pas une contrainte qu'on nous impose : ils sont les nôtres, et nous y tenons.</em></p>
       </section>
 
       <div class="ornament"><span>&#10022;</span></div>
@@ -447,9 +475,9 @@
       <section>
         <div class="ask">
           <h2>Ce que nous cherchons</h2>
-          <p>Concrètement, nous cherchons un <strong>lieu</strong>. Un lieu de l'Église — une abbaye, un monastère, un sanctuaire, une grande maison — assez vaste pour qu'une communauté y vive et y accueille. Si possible un lieu qui <strong>porte déjà une activité, une exploitation</strong> capable de le faire vivre, sur laquelle notre vie pourrait se greffer plutôt que de tout bâtir de zéro.</p>
+          <p>Concrètement, nous cherchons un <strong>lieu</strong>. Un lieu de l'Église, une abbaye, un monastère, un sanctuaire, une grande maison, assez vaste pour qu'une communauté y vive et y accueille. Si possible un lieu qui <strong>porte déjà une activité, une exploitation</strong> capable de le faire vivre, sur laquelle notre vie pourrait se greffer plutôt que de tout bâtir de zéro.</p>
           <p>Nous le cherchons sous l'autorité de l'Église, et sans jamais chercher à le posséder.</p>
-          <p>Si vous connaissez un tel lieu, une communauté qui cherche un renfort, ou simplement quelqu'un vers qui nous tourner — que vous soyez évêque, prêtre, ou touché par ce que nous portons —, une porte que vous nous ouvririez peut être le commencement de tout.</p>
+          <p>Si vous connaissez un tel lieu, une communauté qui cherche un renfort, ou simplement quelqu'un vers qui nous tourner, que vous soyez évêque, prêtre, ou touché par ce que nous portons, une porte que vous nous ouvririez peut être un commencement.</p>
         </div>
       </section>
 
@@ -465,8 +493,7 @@
   </main>
 
   <footer>
-    <span class="latin-foot">Lumen · Ignis</span>
-    Lumignis — nom porté à titre provisoire · Document partagé à un cercle restreint · Merci de ne pas le diffuser au-delà.
+    Lumignis, nom porté à titre provisoire · Document partagé à un cercle restreint · Merci de ne pas le diffuser au-delà.
   </footer>
 
 </div>
