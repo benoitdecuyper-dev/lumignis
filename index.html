@@ -624,17 +624,26 @@
 
   <!-- Carte -->
   <section id="sec-carte">
-    <h2 class="sec">Où êtes-vous ouverts à vous installer&nbsp;?</h2>
-    <p class="sec-note">Clique sur les départements où ta famille se projette. Plusieurs choix possibles&nbsp;— sois large si tu hésites, ça sert à orienter la recherche, pas à t'enfermer.</p>
+    <h2 class="sec">Où êtes-vous ouverts à vous installer, et à quel point&nbsp;?</h2>
+    <p class="sec-note">Clique un département pour le faire monter d'un cran&nbsp;: un clic le passe en <b>favorable</b>, un second en <b>zone de cœur</b>, un troisième le remet à zéro. Trois états en tout, pas besoin d'outil à choisir avant. Tout ce que tu ne touches pas reste hors zone.</p>
     <div class="map-grid">
       <div class="map-box">
-        <svg class="fr" id="frMap" viewBox="0 0 600 575" role="group" aria-label="Carte de France par départements"></svg>
+        <svg class="fr" id="frMap" viewBox="0 0 600 575" role="group" aria-label="Carte de France par départements, cliquables"></svg>
       </div>
       <div class="map-side">
-        <p class="map-count"><b id="deptCount">0</b> département<span id="deptPlural">s</span> sélectionné<span id="deptPlural2">s</span></p>
-        <div class="dept-chips" id="deptChips"></div>
+        <div class="card legend">
+          <h3>Répartition</h3>
+          <div class="row"><span class="sw l2"></span> Zone de cœur <b id="deptC2">0</b></div>
+          <div class="row"><span class="sw l1"></span> Favorable <b id="deptC1">0</b></div>
+          <div class="row"><span class="sw l0"></span> Non retenu <b id="deptC0">0</b></div>
+          <p class="total" id="deptTotal"></p>
+        </div>
+        <div class="card">
+          <h3>Comment faire</h3>
+          <p class="howto">Un <b>clic</b> monte d'un cran, ça tourne&nbsp;: <span class="kbd">non retenu</span> &rarr; <span class="kbd">favorable</span> &rarr; <span class="kbd">cœur</span> &rarr; retour à zéro. Survole un département pour son nom.</p>
+        </div>
         <div class="map-actions">
-          <button class="q-btn-ghost" id="deptClear" type="button">Tout effacer</button>
+          <button class="q-btn-ghost" id="deptClear" type="button">Tout effacer les zones</button>
         </div>
       </div>
     </div>
@@ -1082,6 +1091,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest h2.sec::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:2.4rem;
     background:linear-gradient(90deg,var(--gold),var(--gold-deep));border-radius:2px;}
 #panel-quest .sec-note{color:var(--ink-soft);font-size:.96rem;margin:.2rem 0 1.2rem;}
+#panel-quest .sec-note b{color:var(--ink);}
 #panel-quest .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-m);
     padding:1.4rem 1.5rem;box-shadow:var(--sh-s);}
 #panel-quest .id-grid{display:grid;grid-template-columns:minmax(14rem,1fr) 2fr;gap:1.2rem;align-items:start;}
@@ -1126,9 +1136,10 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest svg.fr{display:block;width:100%;height:auto;}
 #panel-quest svg.fr path{fill:var(--paper-warm);stroke:var(--line-strong);stroke-width:.7;cursor:pointer;
     transition:fill .12s var(--ease);}
-#panel-quest svg.fr path:hover{fill:color-mix(in srgb,var(--gold) 30%,var(--paper-warm));}
-#panel-quest svg.fr path.sel{fill:var(--gold-deep);stroke:var(--gold-deep);}
-#panel-quest svg.fr path.sel:hover{fill:var(--gold);}
+#panel-quest svg.fr path:hover{stroke:var(--gold-deep);stroke-width:1.3;}
+#panel-quest svg.fr path[data-lvl="1"]{fill:color-mix(in srgb,var(--gold) 32%,var(--paper-warm) 68%);}
+#panel-quest svg.fr path[data-lvl="2"]{fill:var(--gold-deep);stroke:var(--gold-deep);}
+#panel-quest svg.fr path[data-lvl="2"]:hover{fill:var(--gold);}
 #panel-quest .map-tip{position:fixed;z-index:80;pointer-events:none;
     background:var(--ink);color:var(--cream);
     font-family:var(--f-label);font-weight:600;font-size:.85rem;letter-spacing:.02em;
@@ -1136,13 +1147,19 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     opacity:0;transition:opacity .1s var(--ease);white-space:nowrap;}
 #panel-quest .map-tip.show{opacity:1;}
 #panel-quest .map-side{display:flex;flex-direction:column;gap:.8rem;}
-#panel-quest .map-count{font-family:var(--f-label);font-size:.85rem;color:var(--ink-soft);}
-#panel-quest .map-count b{color:var(--gold-deep);font-size:1.05rem;}
-#panel-quest .dept-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
-#panel-quest .dchip{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.74rem;font-weight:600;
-    background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.28rem .4rem .28rem .7rem;color:var(--ink);}
-#panel-quest .dchip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:.1rem .25rem;}
-#panel-quest .dchip button:hover{color:var(--gold-deep);}
+#panel-quest .map-side h3{font-family:var(--f-label);font-weight:600;font-size:.7rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 .7rem;}
+#panel-quest .legend .row{display:flex;align-items:center;gap:.6rem;font-family:var(--f-label);font-size:.85rem;color:var(--ink-soft);padding:.3rem 0;}
+#panel-quest .legend .sw{width:1.1rem;height:1.1rem;border-radius:.28rem;border:1px solid var(--line-strong);flex:0 0 auto;}
+#panel-quest .legend .row b{margin-left:auto;color:var(--ink);}
+#panel-quest .legend .sw.l0{background:var(--paper-warm);}
+#panel-quest .legend .sw.l1{background:color-mix(in srgb,var(--gold) 32%,var(--paper-warm) 68%);}
+#panel-quest .legend .sw.l2{background:var(--gold-deep);border-color:var(--gold-deep);}
+#panel-quest .legend .total{border-top:1px solid var(--line);margin-top:.45rem;padding-top:.55rem;font-family:var(--f-label);font-size:.8rem;color:var(--muted);}
+#panel-quest .howto{font-family:var(--f-label);font-size:.8rem;color:var(--ink-soft);line-height:1.5;}
+#panel-quest .howto b{color:var(--gold-deep);}
+#panel-quest .howto .kbd{font-family:var(--f-label);font-size:.72rem;background:var(--paper-warm);border:1px solid var(--line-strong);
+    border-radius:.3rem;padding:.05rem .35rem;}
 #panel-quest .map-actions{display:flex;gap:.6rem;flex-wrap:wrap;}
 #panel-quest .q-btn{font-family:var(--f-label);font-weight:600;font-size:.84rem;letter-spacing:.03em;
     border:none;border-radius:var(--r-s);padding:.72rem 1.35rem;cursor:pointer;
@@ -1241,7 +1258,8 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 #panel-quest .pub-more{font-family:var(--f-label);font-size:.72rem;color:var(--muted);}
 #panel-quest .pub-map{display:block;width:100%;max-width:14rem;height:auto;margin:.2rem 0 .55rem;}
 #panel-quest .pub-map path{fill:var(--paper-warm);stroke:var(--line-strong);stroke-width:.8;}
-#panel-quest .pub-map path.on{fill:var(--gold-deep);stroke:var(--gold-deep);}
+#panel-quest .pub-map path.on{fill:color-mix(in srgb,var(--gold) 32%,var(--paper-warm) 68%);stroke:var(--gold-deep);}
+#panel-quest .pub-map path.coeur{fill:var(--gold-deep);stroke:var(--gold-deep);}
 #panel-quest .pub-depts{display:flex;flex-wrap:wrap;gap:.3rem;}
 #panel-quest .pub-depts span{font-family:var(--f-label);font-size:.66rem;font-weight:600;color:var(--ink-soft);
     border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.12rem .5rem;}
@@ -1288,12 +1306,30 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   ];
 
   /* ——— État ——— */
-  var state={prenom:"",horizon:null,interet:null,selected:[],order:[],custom:[],depts:[],statut:"brouillon",maj:null};
+  var state={prenom:"",horizon:null,interet:null,selected:[],order:[],custom:[],depts:{},statut:"brouillon",maj:null};
   var KEY="lumignis-questionnaire-v2";
 
   function allCriteria(){ return BASE.concat(state.custom); }
   function isLocked(){ return state.statut==="publie"; } // publié = figé
   function critById(id){ return allCriteria().filter(function(c){return c.id===id;})[0]; }
+
+  /* ——— Compat lecture : zones (niveau par département) ————
+     Les réponses déjà enregistrées stockent `depts` comme une LISTE de codes (l'ancien
+     « département ouvert », binaire). On les relit comme niveau 1 (favorable) — rien n'est
+     perdu, mais aucune ne devient automatiquement niveau 2 (zone de cœur, information qui
+     n'existait pas avant ce changement). Placée hors du bloc ci-dessous : cette fonction doit
+     survivre au remplacement de build.js (persistance Supabase), qui l'appelle aussi. */
+  function normalizeDepts(v){
+    if(Array.isArray(v)){
+      var o={}; v.forEach(function(c){ o[c]=1; }); return o;
+    }
+    if(v&&typeof v==="object"){
+      var out={};
+      Object.keys(v).forEach(function(c){ var lvl=+v[c]; if(lvl===1||lvl===2) out[c]=lvl; });
+      return out;
+    }
+    return {};
+  }
 
   /* ——— Persistance Supabase : brouillon auto-enregistré (strictement privé), publication séparée ——— */
   var QSB=null, QME=null, saveTimer=null, lastSaved="";
@@ -1329,7 +1365,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     if(r.data){
       var d=r.data.brouillon||{};
       ["prenom","horizon","interet","selected","order","custom","depts"].forEach(function(k){
-        if(d[k]!==undefined&&d[k]!==null) state[k]=d[k];
+        if(d[k]!==undefined&&d[k]!==null) state[k]=(k==="depts")?normalizeDepts(d[k]):d[k];
       });
       state.statut=r.data.statut||"brouillon";
       state.maj=r.data.maj_brouillon;
@@ -1384,24 +1420,29 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     markDirty(); renderPicks();
   }
 
-  /* ——— Carte de France ——— */
+  /* ——— Carte de France (clic = monte d'un cran, ça tourne : 0 non retenu, 1 favorable, 2 zone de cœur) ——— */
   var svg=$("#frMap");
   var SVGNS="http://www.w3.org/2000/svg";
   var mapTip=document.createElement("div");
   mapTip.className="map-tip";
   document.getElementById("panel-quest").appendChild(mapTip);
+  function bumpDept(code, p){
+    if(isLocked()){ toast("Réponse publiée — dépublie-la pour la modifier"); return; }
+    var lvl=((state.depts[code]||0)+1)%3;
+    if(lvl===0){ delete state.depts[code]; } else { state.depts[code]=lvl; }
+    p.dataset.lvl=lvl;
+    markDirty(); renderDeptSide();
+  }
   function renderMap(){
     window.DEPTS.depts.forEach(function(d){
       var p=document.createElementNS(SVGNS,"path");
       p.setAttribute("d",d.d);
-      p.dataset.code=d.c; p.dataset.nom=d.n;
-      if(state.depts.indexOf(d.c)>=0) p.classList.add("sel");
-      p.addEventListener("click",function(){
-        if(isLocked()){ toast("Réponse publiée — dépublie-la pour la modifier"); return; }
-        var i=state.depts.indexOf(d.c);
-        if(i>=0){ state.depts.splice(i,1); p.classList.remove("sel"); }
-        else{ state.depts.push(d.c); p.classList.add("sel"); }
-        markDirty(); renderDeptSide();
+      p.dataset.code=d.c; p.dataset.nom=d.n; p.dataset.lvl=state.depts[d.c]||0;
+      p.setAttribute("tabindex","0");
+      p.setAttribute("aria-label",d.c+" · "+d.n);
+      p.addEventListener("click",function(){ bumpDept(d.c, p); });
+      p.addEventListener("keydown",function(e){
+        if(e.key==="Enter"||e.key===" "){ e.preventDefault(); bumpDept(d.c, p); }
       });
       svg.appendChild(p);
     });
@@ -1426,30 +1467,23 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     return d?d.n:code;
   }
   function renderDeptSide(){
-    var n=state.depts.length;
-    $("#deptCount").textContent=n;
-    $("#deptPlural").textContent=n>1?"s":"";
-    $("#deptPlural2").textContent=n>1?"s":"";
-    var box=$("#deptChips"); box.innerHTML="";
-    state.depts.slice().sort().forEach(function(code){
-      var c=document.createElement("span");
-      c.className="dchip";
-      c.innerHTML=esc(code+" · "+deptName(code))+'<button type="button" aria-label="Retirer">&times;</button>';
-      c.querySelector("button").addEventListener("click",function(){
-        state.depts=state.depts.filter(function(x){return x!==code;});
-        var p=svg.querySelector('path[data-code="'+code+'"]');
-        if(p) p.classList.remove("sel");
-        markDirty(); renderDeptSide();
-      });
-      box.appendChild(c);
+    var total=window.DEPTS.depts.length, c1=0, c2=0;
+    Object.keys(state.depts).forEach(function(code){
+      if(state.depts[code]===2) c2++; else if(state.depts[code]===1) c1++;
     });
+    var c0=total-c1-c2, retenus=c1+c2;
+    $("#deptC2").textContent=c2;
+    $("#deptC1").textContent=c1;
+    $("#deptC0").textContent=c0;
+    $("#deptTotal").textContent=retenus+" département"+(retenus>1?"s":"")+" retenu"+(retenus>1?"s":"")+" sur "+total;
     renderRecap();
   }
   $("#deptClear").addEventListener("click",function(){
     if(isLocked()) return;
-    state.depts=[];
-    [].forEach.call(svg.querySelectorAll("path.sel"),function(p){p.classList.remove("sel");});
+    state.depts={};
+    [].forEach.call(svg.querySelectorAll("path[data-code]"),function(p){ p.dataset.lvl="0"; });
     markDirty(); renderDeptSide();
+    toast("Zones remises à zéro");
   });
 
   /* ——— Classement (chips, en bas de page) ——— */
@@ -1567,13 +1601,14 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   }
 
   /* ——— Réponses publiées de l'équipe (Supabase, RPC à colonnes restreintes) ——— */
-  // mini-carte de France : les départements retenus, en doré, dans chaque réponse publiée
+  // mini-carte de France : les départements retenus (favorable en doré clair, cœur en doré foncé)
   function miniMapHtml(depts){
-    if(!window.DEPTS||!depts||!depts.length) return "";
-    var sel={}; depts.forEach(function(c){ sel[c]=1; });
+    var sel=normalizeDepts(depts), codes=Object.keys(sel);
+    if(!window.DEPTS||!codes.length) return "";
     return '<svg class="pub-map" viewBox="0 0 600 575" role="img" aria-label="Départements retenus sur la carte">'+
       window.DEPTS.depts.map(function(d){
-        return '<path d="'+d.d+'"'+(sel[d.c]?' class="on"':'')+'></path>';
+        var lvl=sel[d.c];
+        return '<path d="'+d.d+'"'+(lvl===2?' class="coeur"':lvl===1?' class="on"':'')+'></path>';
       }).join("")+'</svg>';
   }
   var teamRows=null;
@@ -1595,6 +1630,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     }
     rows.forEach(function(row){
       var p=row.publication||{};
+      var pd=normalizeDepts(p.depts);
       var labels=(p.order||[]).map(function(id){
         var cst=(p.custom||[]).filter(function(x){return x.id===id;})[0];
         if(cst) return cst.label;
@@ -1613,8 +1649,10 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
           top.map(function(c,i){return '<li><span class="n">'+(i+1)+'.</span><span>'+esc(c)+'</span></li>';}).join("")+
         '</ol>'+
         (more>0?'<p class="pub-more">+ '+more+' autre'+(more>1?"s":"")+' critère'+(more>1?"s":"")+'</p>':"")+
-        miniMapHtml(p.depts)+
-        '<div class="pub-depts">'+(p.depts||[]).slice().sort().map(function(c){return '<span>'+esc(c+" · "+deptName(c))+'</span>';}).join("")+'</div>';
+        miniMapHtml(pd)+
+        '<div class="pub-depts">'+Object.keys(pd).sort().map(function(c){
+          return '<span>'+(pd[c]===2?"&#9733; ":"")+esc(c+" · "+deptName(c))+'</span>';
+        }).join("")+'</div>';
       grid.appendChild(card);
     });
   }
@@ -1624,10 +1662,10 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
     var checks={
       qui: !!state.prenom && !!state.horizon && !!state.interet,
       criteres: state.order.length>=3,
-      depts: state.depts.length>=1,
+      depts: Object.keys(state.depts).length>=1,
       classement: state.order.length>=3
     };
-    var counts={ criteres: state.order.length, depts: state.depts.length };
+    var counts={ criteres: state.order.length, depts: Object.keys(state.depts).length };
     [].forEach.call(document.querySelectorAll("#prog [data-prog]"),function(a){
       var k=a.getAttribute("data-prog");
       a.classList.toggle("done",!!checks[k]);
@@ -1689,7 +1727,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
       $("#in1").scrollIntoView({behavior:"smooth",block:"center"}); return false; }
     if(state.order.length<3){ toast("Coche au moins 3 critères");
       $("#sec-criteres").scrollIntoView({behavior:"smooth"}); return false; }
-    if(!state.depts.length){ toast("Sélectionne au moins un département");
+    if(!Object.keys(state.depts).length){ toast("Sélectionne au moins un département");
       $("#sec-carte").scrollIntoView({behavior:"smooth"}); return false; }
     return true;
   }
@@ -1730,10 +1768,10 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
   $("#resetBtn").addEventListener("click",function(){
     if(!window.confirm("Tout remettre à zéro ? Tes réponses actuelles seront effacées.")) return;
     state.prenom="";state.horizon=null;state.interet=null;
-    state.selected=[];state.order=[];state.custom=[];state.depts=[];
+    state.selected=[];state.order=[];state.custom=[];state.depts={};
     $("#prenom").value="";
     [].forEach.call(document.querySelectorAll('input[name="horizon"],input[name="interet"]'),function(r){ r.checked=false; });
-    [].forEach.call(svg.querySelectorAll("path.sel"),function(p){ p.classList.remove("sel"); });
+    [].forEach.call(svg.querySelectorAll("path[data-code]"),function(p){ p.dataset.lvl="0"; });
     markDirty(); renderPicks(); renderDeptSide();
     toast("Page blanche — tu peux recommencer");
   });
