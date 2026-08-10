@@ -1,0 +1,31 @@
+# Artefacts du banc de recette QA — NE JAMAIS COMMITER
+#
+# `equipe/qa/banc_questionnaire.js` génère ses pages dans un clone du repo (§2 du protocole
+# `equipe/qa/README.md`) : une amorce et une page de test par page × scénario.
+#
+# POURQUOI CE FICHIER EXISTE (ajouté le 2026-08-10)
+# L'amorce contient la session du compte de recette **en clair** : `access_token` ET
+# `refresh_token`, injectés dans le localStorage. Le jeton d'accès expire en une heure, mais le
+# jeton de rafraîchissement permet d'en obtenir de nouveaux sans limite de temps.
+# Ce dépôt est **public**. Un `git add -A` suffisait donc à publier un accès durable à l'espace
+# équipe — dossiers de prospection, qualifications, échanges des familles.
+# Le protocole disait déjà « sessions et jetons restent locaux, jamais commités » : c'était une
+# consigne adressée à quelqu'un qui est déjà d'accord, pas un contrôle. Les fichiers sont
+# apparus en `untracked` pendant la recette du 2026-08-10, à un `git add -A` de la publication.
+#
+# Test d'existence, à rejouer si on touche à ces motifs :
+#   lancer une recette, puis `git status --short` — aucun fichier `qa_boot_*` ni `*_test_*`
+#   ne doit apparaître. S'il en apparaît un, ce fichier ne protège plus.
+
+# Motifs resserrés sur ce que le banc génère RÉELLEMENT (`<page>_test_<scénario>.html`).
+# Le motif large `*_test_*.html` a été écarté : son mode d'échec est vicieux — une page
+# légitime portant `_test_` dans son nom ne serait jamais déployée, sans erreur ni trace.
+qa_boot_*.html
+index_test_*.html
+carte_test_*.html
+roadmap_test_*.html
+qa_session.json
+qa_dom*.html
+
+# Profils Chrome jetables, si quelqu'un les pose dans le clone plutôt que dans le scratchpad
+chrome-e2e*/

@@ -42,6 +42,14 @@ body.panel-open{grid-template-columns:minmax(360px,1fr) minmax(360px,460px)}
 #legend .lg-lab{text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;font-weight:700;color:#8a6a1f}
 #legend .lg-note{color:#8c7a63;font-size:11px}
 #legend .ldot{width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);flex:none}
+/* Écran de refus : remplace la carte quand loadData() a échoué (troncature comprise) — jamais
+   une carte vide qui se fait passer pour un résultat. Voir body.load-error ci-dessous. */
+body.load-error #map,body.load-error #legend{display:none}
+#load-error{display:none;grid-column:1;grid-row:2;min-height:0;align-items:center;justify-content:center;padding:32px;background:#e9e3d6}
+body.load-error #load-error{display:flex}
+#load-error .box{max-width:480px;background:#fffdf8;border:1px solid var(--ligne);border-radius:10px;padding:20px 22px;text-align:center}
+#load-error .box h2{margin:0 0 8px;font-size:16px;color:var(--brun)}
+#load-error .box p{margin:0;font-size:13.5px;line-height:1.5;color:var(--brun2)}
 #panel{grid-column:2;grid-row:2;position:relative;z-index:900;width:100%;min-width:0;height:100%;max-width:none;background:#fffdf8;box-shadow:none;border-left:1px solid transparent;overflow:hidden;transition:border-color .24s ease,box-shadow .24s ease}
 #panel.open{border-left-color:var(--ligne);box-shadow:-8px 0 22px rgba(28,20,15,.10);overflow-y:auto}
 #panel .hero{position:relative;height:250px;background:#2e231a;overflow:hidden}
@@ -119,6 +127,7 @@ body.panel-open{grid-template-columns:minmax(360px,1fr) minmax(360px,460px)}
 .leaflet-tooltip.s-tip .fav-tag{display:inline-block;font-size:10px;font-weight:700;color:#8a6a1f;background:#f3e3bd;border-radius:10px;padding:0 7px;margin-top:4px}
 </style></head><body>
 <div id="map"></div>
+<div id="load-error"><div class="box"><h2>Chargement impossible</h2><p id="load-error-msg"></p></div></div>
 <div id="topbar">
  <span class="k">◆ Lumignis · Lieux</span>
  <input id="search" type="text" placeholder="Rechercher un lieu, une commune, un ordre…">
@@ -144,10 +153,8 @@ body.panel-open{grid-template-columns:minmax(360px,1fr) minmax(360px,460px)}
 </div>
 <div id="panel"><div class="hero"><button class="close" onclick="closePanel()">&times;</button><button class="pnav" id="ph-prev" onclick="phMove(-1)">&#8249;</button><button class="pnav" id="ph-next" onclick="phMove(1)">&#8250;</button><span id="ph-count"></span><div id="hero-img"></div></div>
  <div class="body" id="panel-body"></div></div>
-<script type="application/json" id="qualif-fallback">[]</script>
 <script>
 var DATA = [];
-var QUALIF_LOADED=false;
 var COLS = { s:"#c4561f", a:"#2f6d9e", v:"#3c7a4e" };
 function rad(imp){ return 5 + imp*1.7; }
 var map=L.map('map',{zoomControl:true}).setView([46.9,2.2],6);
@@ -169,9 +176,8 @@ function wikiFetch(title,commune){
  wikiCache[key]=p; return p;
 }
 function trim(t,n){ if(!t) return ''; t=t.trim(); return t.length>n? t.slice(0,n).replace(/\s+\S*$/,'')+'…':t; }
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 var CAD={v:'en ville',b:'village / bourg',c:'pleine campagne'};
-var CADL={v:'En ville',b:'Dans un village / bourg',c:'En pleine campagne'};
 function inf(x){return x && x.toLowerCase().indexOf('non précisé')!==0;}
 
 /* ---- Carrousel photos du panneau ---- */
@@ -188,7 +194,6 @@ function showPh(msg){
 }
 function phMove(d){ if(PH.list.length<2) return; PH.i=(PH.i+d+PH.list.length)%PH.list.length; showPh(); }
 function phErr(){ if(!PH.list.length) return; PH.list.splice(PH.i,1); if(PH.i>=PH.list.length) PH.i=0; showPh('Pas de photo disponible — voir « Source »'); }
-function hideImg(el){ el.style.display='none'; }
 var photoCache={};
 function photosFor(it){
  if(photoCache[it.n]) return photoCache[it.n];
@@ -447,7 +452,7 @@ function ecolesHtml(it){
 }
 function panelScaffold(it,bodyHtml,linksHtml){
  var st=statusFor(it);
- var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Qualification enrichie non chargée sur ce déploiement. Importer <code>site/equipe/sql/import_lieux_qualifications.sql</code> dans Supabase pour afficher évêque, école et crible Benoit.</div>' : '';
+ var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
  return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
   '<div class="sheet-actions"><a class="icon-btn" href="#" onclick="copyPlaceLink();return false" title="Copier le lien">↗</a></div></div>'+
   '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+typeLabel(it)+'</span></div>'+
@@ -521,11 +526,11 @@ function copyPlaceLink(){
  if(navigator.clipboard) navigator.clipboard.writeText(link);
 }
 
-/* ===== Commentaires de qualification par lieu ===== */
-var COMMENTS={}, CMT_MODE='local', CMT_LS_KEY='lumignis_commentaires_lieux_v1';
+/* ===== Commentaires de qualification par lieu — partagés équipe uniquement (Supabase). =====
+   Pas de repli localStorage : un commentaire qui ne part pas doit échouer visiblement, pas
+   dormir dans le navigateur de son auteur en se faisant passer pour publié. */
+var COMMENTS={}, CMT_MODE='';
 function cmtKey(it){ return favKey(it); }
-function cmtStore(){ try{return JSON.parse(localStorage.getItem(CMT_LS_KEY)||'{}')||{};}catch(e){return {};} }
-function saveCmtStore(s){ try{localStorage.setItem(CMT_LS_KEY,JSON.stringify(s));}catch(e){} }
 function kindLabel(k){ return {observation:'Observation',question:'Question',decision:'Décision',action:'Action',source:'Source'}[k]||'Observation'; }
 function fmtDate(s){ try{return new Date(s).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';} }
 function initials(email){ var x=(email||'local').split('@')[0].replace(/[._-]+/g,' ').trim(); return x||'local'; }
@@ -562,22 +567,34 @@ function renderComments(it){
  var el=document.getElementById('comment-list'), mode=document.getElementById('thread-mode');
  if(!el) return;
  var rows=(COMMENTS[cmtKey(it)]||[]).slice().sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
- if(mode) mode.textContent=CMT_MODE==='supabase'?'partagé équipe':'local navigateur';
+ if(mode) mode.textContent = CMT_MODE==='supabase' ? 'partagé équipe' : (CMT_MODE==='error' ? 'échec du chargement' : (CMT_MODE==='guest' ? 'connecte-toi pour voir les échanges' : 'chargement…'));
+ if(CMT_MODE==='error'){ el.innerHTML='<div class="comment-empty">Échec du chargement des échanges sur ce lieu. Réessaie dans un instant.</div>'; return; }
+ if(CMT_MODE==='guest'){ el.innerHTML='<div class="comment-empty">Connecte-toi à l’espace équipe pour voir et publier des échanges sur ce lieu.</div>'; return; }
  if(!rows.length){ el.innerHTML='<div class="comment-empty">Aucun échange sur ce lieu. Ajoute la première info fiable ou la prochaine action.</div>'; return; }
  el.innerHTML=rows.slice(0,8).map(function(c){
   return '<div class="comment"><div class="comment-meta"><span class="comment-kind '+esc(c.kind||'observation')+'">'+kindLabel(c.kind)+'</span><span>'+esc(initials(c.email))+'</span><span>'+fmtDate(c.created_at)+'</span></div><div>'+linkMentions(c.body)+'</div></div>';
  }).join('');
 }
+// Lit la session depuis le localStorage (pas un appel réseau, cf. equipe/qa/README.md) plutôt
+// que de faire confiance au cache global ME : ME n'est renseigné qu'après loadFav(), qui
+// s'exécute après buildAll() — les marqueurs sont cliquables pendant cette fenêtre, et un clic
+// dedans ne doit jamais faire mentir le fil sur l'identité (ou l'absence) du lecteur connecté.
+async function currentEmail(){
+ if(!sbFav) return null;
+ try{
+   var s=await sbFav.auth.getSession();
+   return (s&&s.data&&s.data.session&&s.data.session.user&&s.data.session.user.email)||null;
+ }catch(e){ return null; }
+}
 async function loadComments(it){
  var k=cmtKey(it); COMMENTS[k]=[];
- if(sbFav && ME){
-  try{
-   var r=await sbFav.from('commentaires_lieux').select('id,lieu,nom,email,kind,body,mentions,created_at').eq('lieu',k).order('created_at',{ascending:false}).limit(25);
-   if(!r.error && r.data){ COMMENTS[k]=r.data; CMT_MODE='supabase'; renderComments(it); return; }
-  }catch(e){}
- }
- CMT_MODE='local';
- var s=cmtStore(); COMMENTS[k]=s[k]||[]; renderComments(it);
+ var email=await currentEmail();
+ if(!sbFav || !email){ CMT_MODE='guest'; renderComments(it); return; }
+ try{
+  var r=await sbFav.from('commentaires_lieux').select('id,lieu,nom,email,kind,body,mentions,created_at').eq('lieu',k).order('created_at',{ascending:false}).limit(25);
+  if(r.error){ CMT_MODE='error'; renderComments(it); return; }
+  COMMENTS[k]=r.data||[]; CMT_MODE='supabase'; renderComments(it);
+ }catch(e){ CMT_MODE='error'; renderComments(it); }
 }
 function insertMention(name){
  var ta=document.getElementById('comment-body'); if(!ta) return;
@@ -591,14 +608,19 @@ async function submitComment(){
  var ta=document.getElementById('comment-body'), sel=document.getElementById('comment-kind');
  if(!ta) return;
  var body=(ta.value||'').trim(); if(!body) return;
+ var email=await currentEmail();
+ if(!sbFav || !email){ alert('Connecte-toi à l’espace équipe pour publier un commentaire.'); return; }
  var k=cmtKey(CUR);
- var row={lieu:k,nom:CUR.n,email:ME||'local',kind:(sel&&sel.value)||'observation',body:body,mentions:parseMentions(body),created_at:new Date().toISOString()};
- if(CMT_MODE==='supabase' && sbFav && ME){
-  try{ var r=await sbFav.from('commentaires_lieux').insert(row).select().single(); if(!r.error && r.data) row=r.data; }catch(e){}
- }
- if(CMT_MODE!=='supabase'){
-  var s=cmtStore(); s[k]=s[k]||[]; s[k].push(row); saveCmtStore(s);
- }
+ var row={lieu:k,nom:CUR.n,email:email,kind:(sel&&sel.value)||'observation',body:body,mentions:parseMentions(body),created_at:new Date().toISOString()};
+ // Le texte n'est vidé du champ qu'après une insertion confirmée : un échec ne doit jamais
+ // faire perdre à l'auteur ce qu'il a écrit, ni afficher un commentaire qui n'a pas été publié.
+ try{
+  var r=await sbFav.from('commentaires_lieux').insert(row).select().single();
+  // Phrase rédigée à l'écran (jamais l'artefact PostgREST brut, ex. « violates row-level
+  // security policy ») ; le détail technique part en console pour le diagnostic.
+  if(r.error){ console.error('submitComment: échec insertion commentaires_lieux', r.error); alert('Échec de la publication du commentaire. Ton texte est conservé, réessaie.'); return; }
+  row=r.data||row;
+ }catch(e){ console.error('submitComment: exception', e); alert('Échec de la publication du commentaire. Vérifie ta connexion et réessaie, ton texte est conservé.'); return; }
  COMMENTS[k]=(COMMENTS[k]||[]).concat([row]); ta.value=''; renderComments(CUR);
 }
 function closePanel(){ document.getElementById('panel').classList.remove('open'); document.body.classList.remove('panel-open'); setTimeout(function(){ map.invalidateSize(); },260); }
@@ -655,18 +677,7 @@ function favBtnHtml(it){
 function syncPanelStar(it){ var el=document.getElementById('fav-slot'); if(el) el.innerHTML=favBtnHtml(it); }
 
 var PISTES=[];
-var markers=[], pisteMarkers=[];
-function fallbackQualifs(){
- var el=document.getElementById('qualif-fallback');
- if(!el) return {};
- var txt=(el.textContent||'').trim();
- if(!txt || txt.indexOf('[]')>=0) return {};
- try{
-  var rows=JSON.parse(txt), map={};
-  rows.forEach(function(row){ if(row&&row.id) map[row.id]=row; });
-  return map;
- }catch(e){ return {}; }
-}
+var markers=[];
 // Vignette photo (~230px) trop haute pour toujours s'ouvrir au-dessus : si le marqueur est
 // trop près du bord haut du conteneur #map, on l'ouvre en dessous plutôt que rognée.
 function tipDirection(latlng){
@@ -694,7 +705,7 @@ function buildAll(){
   p._m=m; m._it=p;
   m.bindTooltip('<div class="tip-in tip-min"><div class="tip-nm">'+esc(p.nom)+'</div><div class="tip-sub" style="color:#a06a1f">\u25c6 Piste \u00e9quipe \u00b7 '+PTIER_L[p.tier]+'</div><div class="tip-line">'+esc(p.zone)+' \u00b7 '+esc(p.angle)+'</div></div>',{className:'s-tip',sticky:true,direction:'top',opacity:1});
   m.on('click',function(){ openPiste(p); });
-  m.addTo(map); markers.push(m); pisteMarkers.push(p);
+  m.addTo(map); markers.push(m);
  });
 }
 var search=document.getElementById('search'), count=document.getElementById('count');
@@ -727,26 +738,56 @@ if(cbFav) cbFav.addEventListener('change',refresh);
 if(cbP) cbP.addEventListener('change',refresh);
 var rc=document.getElementById('recenter'); if(rc) rc.addEventListener('click',fitAll);
 window.addEventListener('resize',function(){ map.invalidateSize(); });
+// LOAD_ERROR : null tant que loadData() n'a pas échoué. Sinon, message rédigé à afficher —
+// distingue une vraie panne (réseau, RLS, troncature) d'un simple "zéro lieu" (visiteur non
+// connecté). Ne jamais laisser une erreur de requête se faire passer pour un résultat vide.
+var LOAD_ERROR=null;
 async function loadData(){
- DATA.length=0; PISTES.length=0;
-  try{
-   if(sbFav){ try{ await sbFav.auth.getSession(); }catch(e){} }
-   var qmap=fallbackQualifs();
-   QUALIF_LOADED=Object.keys(qmap).length>0;
-   if(sbFav){
-     try{
-       var qr=await sbFav.from('lieux_qualifications').select('lieu_id,data');
-       if(qr && !qr.error && qr.data){ qr.data.forEach(function(row){ qmap[row.lieu_id]=row.data; }); QUALIF_LOADED=qr.data.length>0; }
-     }catch(e){}
+ DATA.length=0; PISTES.length=0; LOAD_ERROR=null;
+ if(!sbFav) return; // client Supabase indisponible : état visiteur normal, pas une panne de requête
+ try{ await sbFav.auth.getSession(); }catch(e){}
+ var qmap={};
+ try{
+   var qr=await sbFav.from('lieux_qualifications').select('lieu_id,data',{count:'exact'});
+   if(qr.error){ LOAD_ERROR='Le chargement des qualifications de lieux a échoué. Réessaie dans un instant.'; return; }
+   if(qr.data){
+     if(qr.count!=null && qr.data.length!==qr.count){
+       LOAD_ERROR='Chargement incomplet des qualifications de lieux ('+qr.data.length+' sur '+qr.count+'). Mieux vaut réessayer que d\'afficher une carte partielle.';
+       return;
+     }
+     qr.data.forEach(function(row){ qmap[row.lieu_id]=row.data; });
    }
-   var r = sbFav ? await sbFav.from('carte_lieux').select('id,t,data').order('sort') : {data:null};
-   if(r && !r.error && r.data){ r.data.forEach(function(row){ var o=row.data||{}; o.qid=row.id; if(qmap[row.id]) o.qualif=qmap[row.id]; if(row.t==='p') PISTES.push(o); else DATA.push(o); }); }
- }catch(e){}
+ }catch(e){ LOAD_ERROR='Le chargement des qualifications de lieux a échoué. Réessaie dans un instant.'; return; }
+ try{
+   var r=await sbFav.from('carte_lieux').select('id,t,data',{count:'exact'}).order('sort');
+   if(r.error){ LOAD_ERROR='Le chargement des lieux a échoué. Réessaie dans un instant.'; return; }
+   if(r.data){
+     if(r.count!=null && r.data.length!==r.count){
+       LOAD_ERROR='Chargement incomplet des lieux ('+r.data.length+' sur '+r.count+'). Mieux vaut réessayer que d\'afficher une carte partielle.';
+       return;
+     }
+     r.data.forEach(function(row){ var o=row.data||{}; o.qid=row.id; if(qmap[row.id]) o.qualif=qmap[row.id]; if(row.t==='p') PISTES.push(o); else DATA.push(o); });
+   }
+ }catch(e){ LOAD_ERROR='Le chargement des lieux a échoué. Réessaie dans un instant.'; }
 }
 loadData().then(function(){ buildAll(); prefetchThumbs(); return loadFav(); }).then(function(){
  markers.forEach(function(m){ styleMarker(m._it); });
  refresh();
- if(!markers.length){ count.textContent='Connecte-toi \u00e0 l\'espace \u00e9quipe pour afficher les lieux.'; }
+ if(LOAD_ERROR){
+   // Refuse d'afficher : carte et légende masquées (CSS body.load-error), message rédigé
+   // en pleine largeur à leur place — jamais une carte vide qui ressemble à un résultat.
+   document.getElementById('load-error-msg').textContent=LOAD_ERROR;
+   document.body.classList.add('load-error');
+ } else if(!markers.length){
+   count.textContent='Connecte-toi \u00e0 l\'espace \u00e9quipe pour afficher les lieux.';
+ }
  setTimeout(function(){ map.invalidateSize(); if(markers.length) fitAll(); },90);
+}).catch(function(e){
+ // Filet de la chaîne d'amorce entière : si buildAll(), prefetchThumbs(), loadFav(),
+ // styleMarker ou refresh() lève, le bloc LOAD_ERROR ci-dessus ne s'exécute jamais sans ce
+ // .catch() — carte vide sans explication, exactement le défaut que R1 devait fermer.
+ console.error('carte: \u00e9chec d\'initialisation', e);
+ document.getElementById('load-error-msg').textContent='Le chargement de la carte a \u00e9chou\u00e9. R\u00e9essaie dans un instant.';
+ document.body.classList.add('load-error');
 });
 </script></body></html>

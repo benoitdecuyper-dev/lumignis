@@ -385,7 +385,7 @@
 <!-- Compte connecté mais pas encore autorisé -->
 <div class="notmember-banner hidden" id="notmember-banner">
   <div class="wrap notmember-inner">
-    <p>Ton compte est créé, mais il n'est pas encore autorisé à accéder à l'espace équipe. Préviens l'équipe pour qu'on t'ouvre l'accès.</p>
+    <p id="notmember-msg">Ton compte est créé, mais il n'est pas encore autorisé à accéder à l'espace équipe. Préviens l'équipe pour qu'on t'ouvre l'accès.</p>
     <button class="btn-ghost" id="nm-logout" type="button">Se déconnecter</button>
   </div>
 </div>
@@ -734,13 +734,20 @@
     $('notmember-banner').classList.add('hidden');
     document.body.classList.add('on-accueil');
   }
-  function showNotMember(){
+  function showAccessBanner(text){
+    $('notmember-msg').textContent=text;
     $('btn-team').classList.add('hidden');
     $('account').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.remove('hidden');
     document.body.classList.add('on-accueil');
+  }
+  function showNotMember(){
+    showAccessBanner("Ton compte est créé, mais il n'est pas encore autorisé à accéder à l'espace équipe. Préviens l'équipe pour qu'on t'ouvre l'accès.");
+  }
+  function showAccessError(){
+    showAccessBanner("Impossible de vérifier ton accès à l'espace équipe pour le moment (problème de connexion au serveur). Réessaie dans un instant ; si ça persiste, préviens l'équipe.");
   }
   function revealMember(){
     $('btn-team').classList.add('hidden');
@@ -811,12 +818,28 @@
   $('nm-logout').addEventListener('click', doLogout);
   async function doLogout(){ await sb.auth.signOut(); location.reload(); }
 
-  async function isMember(){ var r=await sb.from('members').select('email').maybeSingle(); return !!(r.data&&r.data.email); }
+  // Renvoie {member:true/false, user} si la vérification a pu être faite, {error:...} si la
+  // requête a échoué (réseau, session à rafraîchir…) — une erreur ne doit jamais se traduire
+  // en « pas membre » (perte silencieuse). Pas de filtre .eq('email', …) côté client : la seule
+  // policy sur `members` compare en lower() des deux côtés, un filtre strict désynchroniserait
+  // sur la moindre casse. .limit(1) plutôt que .maybeSingle() : immunisé au nombre de lignes
+  // et à la casse, sans .ilike() (jokers % et _ légaux dans un local-part).
+  async function isMember(){
+    var g=await sb.auth.getUser();
+    if(g.error) return {error:g.error};
+    var u=g.data && g.data.user;
+    if(!u || !u.email) return {member:false};
+    var r=await sb.from('members').select('email').limit(1);
+    if(r.error) return {error:r.error};
+    return {member: !!(r.data && r.data[0] && r.data[0].email), user:u};
+  }
 
   var tabsSetup=false, actuLoadedOnce=false;
   async function onAuthed(){
-    if(!(await isMember())){ showNotMember(); return; }
-    var u=(await sb.auth.getUser()).data.user;
+    var chk=await isMember();
+    if(chk.error){ showAccessError(); return; }
+    if(!chk.member){ showNotMember(); return; }
+    var u=chk.user;
     ME.email=u?u.email:''; ME.name=(u&&u.user_metadata&&u.user_metadata.name)||ME.email;
     $('tb-user').textContent=ME.email;
     revealMember();
