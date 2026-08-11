@@ -14,6 +14,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,560;9..144,600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- Incrément 6b (décision 12, 2026-08-10) : regroupement des marqueurs, prérequis du 3e
+     canal visuel (couronnes) à 262 lieux — cf. cadrage. Version figée @1.5.3, intégrité
+     calculée à la main (openssl sha256, aucun hash publié par unpkg pour ce paquet). -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" integrity="sha256-YU3qCpj/P06tdPBJGPax0bm6Q1wltfwjsho5TR4+TYc=" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" integrity="sha256-YSWCMtmNZNwqex4CEw1nQhvFub2lmU7vcCKP+XVwwXA=" crossorigin="" />
 <style>
   :root{
     --paper:#FFFFFF;--paper-warm:#FAF7F1;--ink:#201B15;--ink-soft:#4A443B;--ink-faint:#8A8177;
@@ -188,12 +193,418 @@
   .page-sec h2::after{content:"";position:absolute;left:0;bottom:0;width:2.4rem;height:2px;background:linear-gradient(90deg,var(--gold),var(--ember));border-radius:2px;}
   .page-sec h3{font-weight:560;font-size:1.14rem;margin:1.5rem 0 .65rem;}
   .page-sec p{margin:0 0 1.05rem;} .page-sec ul{margin:0 0 1.05rem;padding-left:1.2rem;} .page-sec li{margin:0 0 .55rem;}
-  /* ===== Lieux : mise en page + carte ===== */
-  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));}
-  #panel-lieux .lead,#panel-lieux .foot-note{max-width:46rem;margin-left:auto;margin-right:auto;}
-  .carte-embed{margin:1rem 0 1.2rem;border:1px solid var(--line-strong);border-radius:var(--r-m);overflow:hidden;background:#e9e3d6;box-shadow:var(--sh-s);}
-  #carte-frame{display:block;width:100%;height:min(82vh,820px);border:0;background:#e9e3d6;}
-  @media(max-width:640px){#carte-frame{height:86vh;}}
+  /* ===== Lieux : squelette de l'écran (incrément 3) ==========================
+     Barre commune (recherche/types/favoris, decision 3 du cadrage) + sous-onglets
+     Carte/Liste, dans #panel-lieux — transposition fidèle de
+     maquettes/2026-08-09-filtre-criteres/maq-filtre-lieux.html, moins le curseur
+     par famille et le volet des critères (incrément 6, hors périmètre ici).
+     Écart DA assumé et scopé : le reste du site charge Fraunces, le CLAUDE.md
+     impose Literata partout — corrigé ici, alignement global en ticket séparé. */
+  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));--f-display:"Literata",Georgia,serif;}
+  #panel-lieux .foot-note{max-width:46rem;margin-left:auto;margin-right:auto;}
+
+  #panel-lieux .filtre{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;border-bottom:0;box-shadow:0 1px 2px rgba(32,24,14,.05);}
+
+  /* Décision 14 (2026-08-10) : filtre repliable — bandeau de 44px toujours visible sur la vue
+     Carte, qui dit le réglage actif en toutes lettres (jamais un picto muet, cf. cadrage).
+     Clic n'importe où dessus ouvre le réglage en SUPERPOSITION au-dessus de la carte (même
+     geste que le panneau de notifications déjà en prod, 09/08) : le cadre de la carte ne
+     bouge jamais. Sur la vue Liste, la MÊME barre (#lx-filtreBand, un seul exemplaire, jamais
+     dupliqué) reste en ligne, dépliée par défaut — lxSetSubtab() la déplace entre les deux
+     positions (appendChild sur un nœud existant, pas de recréation). Transposé de
+     maq-filtre-repliable.html (2026-08-10), variables de couleur remappées sur celles déjà
+     en place ici (mêmes valeurs, la maquette reprend son propre :root plutôt que celui du
+     site — cf. la note équivalente en tête du fichier pour la maquette du 09/08).
+     Hauteur en dur (44px, pas mesurée) : c'est la même donnée que le calcul du budget de
+     pixels (720 - 238 - 44 = 438px de carte) — si cette valeur bouge, les deux doivent bouger
+     ensemble, ce n'est pas un oubli de measurer-pas-deviner mais un budget déjà posé par
+     Benoit et écrit dans le CSS de la maquette elle-même. */
+  #panel-lieux .mini-filtre{position:relative;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
+  #panel-lieux .mini-btn{flex:1;display:flex;align-items:center;gap:.6rem;padding:0 1.1rem;background:none;border:0;font-family:var(--f-label);font-size:.83rem;color:var(--ink);text-align:left;min-width:0;cursor:pointer;}
+  #panel-lieux .mini-btn .chev{color:var(--ink-faint);font-size:.85rem;transition:transform .18s var(--ease);flex:0 0 auto;}
+  #panel-lieux .mini-filtre.is-open .mini-btn .chev{transform:rotate(90deg);}
+  #panel-lieux .mini-fam{display:inline-flex;align-items:center;gap:.4rem;font-weight:600;flex:0 0 auto;}
+  #panel-lieux .mini-fam .av{width:1.35rem;height:1.35rem;border-radius:50%;background:var(--tint-gold);border:1px solid var(--gold);color:var(--gold-deep);font-size:.58rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #panel-lieux .mini-dot{width:.28rem;height:.28rem;border-radius:50%;background:var(--line-strong);flex:0 0 auto;}
+  #panel-lieux .mini-seg{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  #panel-lieux .mini-seg.actif{color:var(--gold-deep);font-weight:600;}
+  #panel-lieux .mini-right{flex:0 0 auto;display:flex;align-items:center;gap:.4rem;padding:0 1.4rem 0 .9rem;font-family:var(--f-label);font-size:.78rem;font-weight:600;color:var(--gold-deep);border-left:1px solid var(--line);white-space:nowrap;cursor:pointer;}
+  #panel-lieux .mini-filtre.is-open{background:var(--paper-warm);}
+
+  #panel-lieux .filtre-overlay{display:none;}
+  /* border-bottom explicite : .filtre le met à 0 (pensé pour la soudure avec .subtabs juste
+     en dessous, en flux normal) — en superposition, l'overlay flotte au-dessus de la carte,
+     plus rien en dessous pour fermer visuellement le bloc sans cette bordure (reprise de
+     maq-filtre-repliable.html, qui la pose explicitement pour cette même raison). */
+  #panel-lieux .mini-filtre.is-open .filtre-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:40;}
+  #panel-lieux .overlay-foot{display:flex;justify-content:flex-end;padding:.7rem 1.1rem .9rem;background:var(--paper-warm);border-top:1px solid var(--line);}
+  #panel-lieux .btn-gold{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--gold-deep);border:0;border-radius:var(--r-full);padding:.4rem 1.05rem;cursor:pointer;}
+  #panel-lieux .btn-gold:hover{background:var(--gold);}
+  #panel-lieux .filtre-inline{position:relative;}
+  /* Réserve 6c #2 : la barre de filtre neutralisée quand le chargement des lieux a échoué —
+     même opacité que .tchip.is-off (assourdie, pas juste grisée en apparence) et
+     pointer-events:none pour que ce ne soit pas seulement un habillage : rien n'y répond
+     plus tant que la donnée n'est pas revenue. */
+  #panel-lieux .lx-filtre-neutralise{opacity:.55;pointer-events:none;}
+  #panel-lieux .band .in{padding:.55rem 1.1rem;}
+  #panel-lieux .tools{background:var(--paper-warm);border-radius:var(--r-m) var(--r-m) 0 0;}
+  #panel-lieux .tools .in{display:flex;align-items:center;gap:.42rem;flex-wrap:wrap;}
+  #panel-lieux .srch{position:relative;display:flex;align-items:center;}
+  #panel-lieux .srch .ico{position:absolute;left:.6rem;color:var(--ink-faint);font-size:.8rem;pointer-events:none;}
+  #panel-lieux .srch input{font-family:var(--f-label);font-size:.82rem;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.3rem .8rem .3rem 1.85rem;width:17.5rem;}
+  #panel-lieux .srch input::placeholder{color:var(--ink-faint);}
+  #panel-lieux .tchip{display:inline-flex;align-items:center;gap:.38rem;font-family:var(--f-label);font-size:.79rem;font-weight:500;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.24rem .62rem;cursor:pointer;transition:border-color .14s,color .14s;}
+  #panel-lieux .tchip:hover{border-color:var(--gold);color:var(--ink);}
+  #panel-lieux .tchip .pt{width:.55rem;height:.55rem;border-radius:50%;flex:0 0 auto;background:var(--line-strong);}
+  #panel-lieux .tchip.is-on{border-color:var(--ink-soft);color:var(--ink);background:var(--paper);box-shadow:inset 0 0 0 1px var(--ink-soft);}
+  #panel-lieux .tchip.is-off{opacity:.55;}
+  #panel-lieux .tchip.is-off .pt{background:var(--line-strong) !important;}
+  #panel-lieux .tools .gap{margin-left:auto;}
+  #panel-lieux .icon-btn{width:1.75rem;height:1.75rem;border-radius:50%;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-faint);font-size:.95rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-family:var(--f-label);}
+  #panel-lieux .icon-btn:hover{border-color:var(--gold);color:var(--gold-deep);}
+
+  #panel-lieux .subtabs{background:var(--paper);border:1px solid var(--line-strong);border-top:0;border-bottom:1px solid var(--line);}
+  #panel-lieux .subtabs-in{display:flex;align-items:center;gap:1.3rem;padding:0 1.1rem;}
+  #panel-lieux .subtab-nav{display:flex;gap:.2rem;}
+  #panel-lieux .subtab{position:relative;font-family:var(--f-label);font-size:.86rem;font-weight:600;color:var(--ink-faint);background:none;border:0;padding:.85rem .5rem;cursor:pointer;transition:color .15s;}
+  #panel-lieux .subtab:hover{color:var(--ink-soft);}
+  #panel-lieux .subtab.is-active{color:var(--ink);}
+  #panel-lieux .subtab.is-active::after{content:"";position:absolute;left:.5rem;right:.5rem;bottom:-1px;height:2px;background:var(--gold-deep);border-radius:2px;}
+  /* white-space:nowrap volontaire (R8, 2026-08-10) : un texte de compteur qui passe à la
+     ligne agrandit .subtabs et mange la marge de 14 px de la décision 8. */
+  #panel-lieux .subtabs .count{margin-left:auto;font-family:var(--f-label);font-size:.79rem;color:var(--ink-soft);white-space:nowrap;}
+
+  #panel-lieux .methode-box{margin:1rem 0;}
+
+  /* Vue Carte : la carte occupe la hauteur restante sous la barre commune, calculée en
+     JS (lxSizeCarteView) faute d'un modèle 100vh utilisable — #panel-lieux est un onglet
+     parmi d'autres dans une page qui défile, pas une page dédiée comme la maquette. La
+     carte est inlinée (incrément 5) : .mapcol contient #lxMap (Leaflet), plus d'iframe. */
+  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:minmax(0,1fr);transition:grid-template-columns .18s var(--ease);}
+  #panel-lieux .mapwrap.has-panel{grid-template-columns:minmax(0,1fr) 27rem;}
+  #panel-lieux .mapcol{position:relative;width:100%;height:100%;min-width:0;min-height:0;}
+  #panel-lieux .mapkey{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.7rem 0 0;}
+  #panel-lieux .mapkey span{display:inline-flex;align-items:center;gap:.35rem;}
+  #panel-lieux .mapkey .d{width:.7rem;height:.7rem;border-radius:50%;flex:0 0 auto;}
+  #panel-lieux .mapkey .vs{width:1px;height:.9rem;background:var(--line-strong);}
+
+  /* Vue Liste : la barre commune est câblée sur la vraie donnée depuis l'inline (incrément 5,
+     voir lxRefresh()), mais la vue Liste elle-même (détail par famille, tri) reste un état
+     d'attente rédigé — elle arrive avec le filtre par critères (incrément 6). Jamais un
+     tableau vide qui ferait croire à zéro résultat. */
+  #panel-lieux .vueliste-placeholder{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);padding:2.4rem 2rem;text-align:center;font-size:.95rem;color:var(--ink-soft);}
+
+  /* ===== Incrément 6a : le filtre par critères — transposé de la maquette validée
+     (maq-filtre-lieux.html), classes et structure reprises telles quelles. ===== */
+  #panel-lieux .tools .tsep{width:1px;align-self:stretch;background:var(--line-strong);margin:0 .2rem;}
+  #panel-lieux .tchip .bx{width:.82rem;height:.82rem;border-radius:.18rem;border:1px solid var(--ink-faint);background:var(--paper);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:.6rem;line-height:1;color:var(--paper);}
+  #panel-lieux .tchip.is-on .bx{background:var(--ink-soft);border-color:var(--ink-soft);}
+
+  #panel-lieux .fam-row{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;}
+  #panel-lieux .chip{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--f-label);font-size:.84rem;font-weight:500;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.34rem .85rem .34rem .34rem;cursor:pointer;transition:background .14s var(--ease),border-color .14s var(--ease),color .14s var(--ease);}
+  #panel-lieux .chip:hover{border-color:var(--gold);color:var(--ink);}
+  #panel-lieux .chip .av{width:1.55rem;height:1.55rem;border-radius:50%;background:var(--paper);border:1px solid var(--line-strong);color:var(--ink-faint);font-size:.62rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #panel-lieux .chip.is-on{background:var(--tint-gold);border-color:var(--gold);color:var(--ink);font-weight:600;}
+  #panel-lieux .chip.is-on .av{background:var(--paper);border-color:var(--gold);color:var(--gold-deep);}
+  #panel-lieux .chip .horiz{font-size:.72rem;font-weight:400;color:var(--ink-faint);}
+  #panel-lieux .chip.is-on .horiz{color:var(--gold-deep);}
+  #panel-lieux .fam-row .sep{width:1px;align-self:stretch;background:var(--line);margin:0 .35rem;}
+  #panel-lieux .lnk{font-family:var(--f-label);font-size:.78rem;font-weight:500;color:var(--gold-deep);background:none;border:0;padding:.3rem .2rem;cursor:pointer;text-decoration:underline;text-underline-offset:.18em;}
+  #panel-lieux .lnk:hover{color:var(--ink);}
+
+  #panel-lieux .cur-band .in{display:grid;grid-template-columns:minmax(0,1fr) 23rem;gap:0;padding:0;}
+  #panel-lieux .cur-left{padding:.6rem 2rem .7rem;min-width:0;}
+  #panel-lieux .cur-right{border-left:1px solid var(--line);background:var(--paper-warm);padding:.6rem 1.5rem;display:flex;flex-direction:column;justify-content:center;}
+  #panel-lieux .cur-head{display:flex;align-items:baseline;gap:.55rem;font-family:var(--f-label);font-size:.95rem;color:var(--ink-soft);margin:0;flex-wrap:wrap;}
+  #panel-lieux .cur-head .n{font-family:var(--f-display);font-size:1.75rem;font-weight:600;color:var(--gold-deep);line-height:1.05;font-variant-numeric:tabular-nums;}
+  #panel-lieux .cur-head b{color:var(--ink);font-weight:600;}
+  #panel-lieux .cur-sub{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.3rem 0 0;}
+  #panel-lieux .cur-left .fam-row{margin:0 0 .45rem;}
+  #panel-lieux .slider{-webkit-appearance:none;appearance:none;width:100%;height:1.15rem;background:transparent;cursor:pointer;display:block;margin:.1rem 0 0;}
+  #panel-lieux .slider::-webkit-slider-runnable-track{height:.4rem;border-radius:var(--r-full);background:var(--trk,var(--line-strong));}
+  #panel-lieux .slider::-webkit-slider-thumb{-webkit-appearance:none;width:1.15rem;height:1.15rem;margin-top:-.38rem;border-radius:50%;background:var(--paper);border:2px solid var(--gold-deep);box-shadow:var(--sh-s);}
+  #panel-lieux .slider::-moz-range-track{height:.4rem;border-radius:var(--r-full);background:var(--trk,var(--line-strong));}
+  #panel-lieux .slider::-moz-range-thumb{width:1.05rem;height:1.05rem;border-radius:50%;background:var(--paper);border:2px solid var(--gold-deep);box-shadow:var(--sh-s);}
+  #panel-lieux .ticks{display:flex;justify-content:space-between;padding:0 .5rem;margin:0;}
+  #panel-lieux .ticks button{font-family:var(--f-label);font-size:.65rem;font-weight:500;line-height:1.15;color:var(--ink-faint);background:none;border:0;padding:0 .16rem;cursor:pointer;font-variant-numeric:tabular-nums;border-radius:var(--r-s);}
+  #panel-lieux .ticks button:hover{color:var(--gold-deep);background:var(--tint-gold);}
+  #panel-lieux .ticks button.is-on{color:var(--ink);font-weight:600;}
+
+  #panel-lieux .res-n{font-family:var(--f-display);font-size:2.1rem;font-weight:600;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+  #panel-lieux .res-txt{font-family:var(--f-label);font-size:.84rem;color:var(--ink-soft);margin:.2rem 0 0;line-height:1.4;}
+  #panel-lieux .res-txt b{color:var(--ink);font-weight:600;}
+  #panel-lieux .res-note{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.35rem 0 0;line-height:1.35;}
+  #panel-lieux .res-note i{font-style:normal;color:var(--gold-deep);}
+  #panel-lieux .lnk-mini{font-family:var(--f-label);font-size:.74rem;font-weight:600;color:var(--gold-deep);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:.16em;}
+  #panel-lieux .lnk-mini:hover{color:var(--ink);}
+  #panel-lieux .res.pulse .res-n{animation:lxPop .4s var(--ease);}
+  @keyframes lxPop{0%{transform:scale(.9);opacity:.5;}100%{transform:scale(1);opacity:1;}}
+  #panel-lieux .btn-ember{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--ember);border:0;border-radius:var(--r-full);padding:.34rem .8rem;cursor:pointer;margin-top:.55rem;align-self:flex-start;}
+  #panel-lieux .btn-ember:hover{background:#A9421A;}
+
+  #panel-lieux .crit-band>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.6rem;padding:.42rem 2rem;font-family:var(--f-label);font-weight:600;font-size:.8rem;color:var(--ink);}
+  #panel-lieux .crit-band>summary::-webkit-details-marker{display:none;}
+  #panel-lieux .crit-band>summary .hint{font-family:var(--f-label);font-weight:400;font-size:.78rem;color:var(--ink-faint);}
+  #panel-lieux .crit-band>summary .chev{margin-left:auto;color:var(--ink-faint);transition:transform .2s var(--ease);}
+  #panel-lieux .crit-band[open]>summary .chev{transform:rotate(90deg);}
+  #panel-lieux .crit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr));gap:1px;background:var(--line);border-top:1px solid var(--line);}
+  #panel-lieux .crit-col{background:var(--paper);padding:.9rem 1.1rem 1.1rem;}
+  #panel-lieux .crit-col h3{font-family:var(--f-label);font-weight:600;font-size:.82rem;color:var(--ink);display:flex;align-items:center;gap:.5rem;margin:0 0 .55rem;}
+  #panel-lieux .crit-col h3 .av{width:1.5rem;height:1.5rem;border-radius:50%;background:var(--paper-warm);border:1px solid var(--line-strong);color:var(--ink-soft);font-size:.62rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #panel-lieux .crit-col h3 .av.me{background:var(--tint-gold);border-color:var(--gold);color:var(--gold-deep);}
+  #panel-lieux .cl2{list-style:none;margin:0;padding:0;}
+  #panel-lieux .cl2 li{display:flex;align-items:flex-start;gap:.45rem;font-size:.82rem;color:var(--ink);padding:.17rem 0;line-height:1.35;}
+  #panel-lieux .cl2 li .rk{font-family:var(--f-label);font-weight:600;font-size:.68rem;color:var(--gold-deep);min-width:.95rem;text-align:right;flex:0 0 auto;padding-top:.12rem;}
+  #panel-lieux .cl2 li.past{color:var(--ink-faint);}
+  #panel-lieux .cl2 li.past .rk{color:var(--ink-faint);font-weight:500;}
+  #panel-lieux .cl2 li .flag{font-family:var(--f-label);font-size:.66rem;font-weight:600;color:var(--gold-deep);background:var(--tint-gold);border-radius:var(--r-s);padding:.02rem .3rem;margin-left:auto;flex:0 0 auto;white-space:nowrap;}
+  #panel-lieux .cut{display:flex;align-items:center;gap:.5rem;margin:.45rem 0 .35rem;font-family:var(--f-label);font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--gold-deep);}
+  #panel-lieux .cut::before,#panel-lieux .cut::after{content:"";height:1px;flex:1;background:rgba(184,134,47,.45);}
+  #panel-lieux .cut.soft{color:var(--ink-faint);}
+  #panel-lieux .cut.soft::before,#panel-lieux .cut.soft::after{background:var(--line-strong);}
+
+  #panel-lieux .sq{width:.5rem;height:.5rem;border-radius:.12rem;flex:0 0 auto;display:inline-block;box-sizing:border-box;}
+  #panel-lieux .sq.met{background:var(--green);border:1px solid var(--green-deep);}
+  #panel-lieux .sq.part{background:linear-gradient(to top,var(--green) 0 50%,#FFFFFF 50% 100%);border:1px solid var(--green-deep);}
+  #panel-lieux .sq.ask{background:var(--paper);border:1.5px solid var(--gold);}
+  #panel-lieux .sq.miss{background:var(--slate);border:1px solid var(--slate-deep);}
+  #panel-lieux .sq.lg{width:.62rem;height:.62rem;}
+
+  #panel-lieux .tbl-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin:1rem 0 .55rem;}
+  #panel-lieux .tbl-head .legend{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap;font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);}
+  #panel-lieux .tbl-head .legend span{display:inline-flex;align-items:center;gap:.35rem;}
+  #panel-lieux .tbl-head .r{display:flex;align-items:center;gap:.5rem;font-family:var(--f-label);font-size:.8rem;color:var(--ink-soft);}
+  #panel-lieux select.tb-select{font:inherit;font-family:var(--f-label);font-size:.8rem;padding:.32rem .5rem;border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper);color:var(--ink);cursor:pointer;}
+  #panel-lieux .tbl-wrap{border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper);overflow:auto;box-shadow:var(--sh-s);}
+  #panel-lieux table.lieux{width:100%;border-collapse:collapse;min-width:52rem;}
+  #panel-lieux table.lieux thead th{text-align:left;font-family:var(--f-label);font-size:.68rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);background:var(--paper-warm);border-bottom:1px solid var(--line-strong);padding:.65rem .85rem;white-space:nowrap;}
+  #panel-lieux table.lieux tbody tr.lieu{border-bottom:1px solid var(--line);transition:background .12s var(--ease);cursor:pointer;}
+  #panel-lieux table.lieux tbody tr.lieu:hover{background:var(--paper-warm);}
+  #panel-lieux table.lieux td{padding:.6rem .85rem;vertical-align:middle;font-size:.9rem;}
+  #panel-lieux tr.grp td{background:var(--paper-warm);border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line);padding:.42rem .85rem;font-family:var(--f-label);font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--gold-deep);}
+  #panel-lieux tr.grp.cold td{color:var(--ink-faint);}
+  #panel-lieux tr.grp td .cnt{font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink-faint);margin-left:.4rem;font-size:.74rem;}
+  #panel-lieux tr.lieu.out .lieu-txt .nom{color:var(--ink-soft);}
+  #panel-lieux tr.lieu.out .thumb{opacity:.6;}
+  #panel-lieux .lieu-cell{display:flex;align-items:center;gap:.7rem;min-width:15rem;}
+  #panel-lieux .lieu-cell .thumb{width:2.5rem;height:2.5rem;border-radius:var(--r-s);flex:0 0 auto;background:linear-gradient(135deg,var(--line-strong),var(--paper-warm));border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;color:var(--gold-deep);font-size:1rem;}
+  #panel-lieux .lieu-txt .nom{font-family:var(--f-label);font-weight:600;font-size:.87rem;color:var(--ink);display:block;line-height:1.3;}
+  #panel-lieux .lieu-txt .meta{font-size:.75rem;color:var(--ink-faint);}
+  #panel-lieux .lieu-txt .type{font-family:var(--f-label);font-size:.68rem;font-weight:500;color:var(--ink-faint);border:1px solid var(--line-strong);border-radius:var(--r-s);padding:0 .3rem;margin-left:.35rem;white-space:nowrap;}
+  #panel-lieux .servies{display:flex;align-items:center;gap:.55rem;font-family:var(--f-label);white-space:nowrap;}
+  #panel-lieux .servies .big{font-family:var(--f-display);font-size:1.15rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+  #panel-lieux .servies .of{font-size:.76rem;color:var(--ink-faint);}
+  #panel-lieux .servies.zero .big{color:var(--ink-faint);}
+  #panel-lieux .servies .w{font-family:var(--f-label);font-size:.88rem;font-weight:600;color:var(--green-deep);}
+  #panel-lieux .servies.zero .w{color:var(--ink-faint);}
+  #panel-lieux .pips{display:flex;gap:.16rem;}
+  #panel-lieux .pip{width:.42rem;height:.85rem;border-radius:.1rem;background:var(--line-strong);}
+  #panel-lieux .pip.on{background:var(--green);}
+  #panel-lieux .fam-badges{display:flex;gap:.4rem .55rem;flex-wrap:wrap;}
+  #panel-lieux .fam-b{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line-strong);background:var(--paper-warm);border-radius:var(--r-full);padding:.2rem .55rem .2rem .2rem;}
+  #panel-lieux .fam-b .who-i{width:1.25rem;height:1.25rem;border-radius:50%;background:var(--paper);border:1px solid var(--line-strong);font-family:var(--f-label);font-size:.58rem;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);flex:0 0 auto;}
+  #panel-lieux .fam-b.ok{background:var(--tint-green);border-color:rgba(92,122,74,.42);}
+  #panel-lieux .fam-b.ok .who-i{border-color:var(--green);color:var(--green-deep);}
+  #panel-lieux .fam-b.me{box-shadow:0 0 0 2px rgba(184,134,47,.28);}
+  #panel-lieux .gauge{display:flex;gap:.16rem;align-items:center;}
+  #panel-lieux .own-dot{width:.34rem;height:.34rem;border-radius:50%;background:var(--gold-deep);flex:0 0 auto;margin-left:.1rem;}
+  #panel-lieux .verif{font-family:var(--f-label);font-size:.78rem;color:var(--ink-soft);display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap;}
+  #panel-lieux .verif.none{color:var(--ink-faint);}
+  #panel-lieux .fav-cell{min-width:9.5rem;}
+  #panel-lieux .lieux .fav-row{display:flex;align-items:center;gap:.55rem;}
+  #panel-lieux .lieux .fav-btn{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--f-label);font-size:.75rem;font-weight:600;color:var(--ink-faint);background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.26rem .6rem;cursor:pointer;transition:color .12s,border-color .12s,background .12s;}
+  #panel-lieux .lieux .fav-btn:hover{border-color:var(--gold);color:var(--gold-deep);}
+  #panel-lieux .lieux .fav-btn.is-on{background:var(--tint-ember);border-color:var(--ember);color:var(--ember);}
+  #panel-lieux .fav-av{width:1.35rem;height:1.35rem;border-radius:50%;background:var(--paper);border:1px solid var(--line-strong);color:var(--ink-soft);font-family:var(--f-label);font-size:.56rem;font-weight:600;display:flex;align-items:center;justify-content:center;}
+  #panel-lieux .fav-av.me{background:var(--tint-ember);border-color:var(--ember);color:var(--ember);}
+  #panel-lieux .empty2{border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper);padding:2rem;text-align:center;font-family:var(--f-label);font-size:.88rem;color:var(--ink-soft);}
+
+  /* Verdict du filtre dans la fiche (décision 6, verdict en tête) — classes reprises de la
+     maquette (fam-block/verdict), posées dans le vocabulaire déjà en place côté fiche. */
+  #panel-lieux .fam-block{border:1px solid var(--lp-line);border-radius:8px;padding:.7rem .8rem;margin:0 0 .6rem;background:#fff;}
+  #panel-lieux .fam-block h4{font-family:var(--f-label);font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:.5rem;margin:0 0 .3rem;}
+  #panel-lieux .fam-block h4 .av{width:1.4rem;height:1.4rem;border-radius:50%;background:var(--paper-warm);border:1px solid var(--line-strong);color:var(--ink-soft);font-size:.58rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-family:var(--f-label);}
+  #panel-lieux .fam-block h4 .av.me{background:var(--tint-gold);border-color:var(--gold);color:var(--gold-deep);}
+  #panel-lieux .fam-block .verdict{font-family:var(--f-label);font-size:.79rem;color:var(--ink-soft);margin:0 0 .5rem;}
+  #panel-lieux .fam-block .verdict.ok{color:var(--green-deep);}
+  #panel-lieux .fam-block .verdict.miss{color:var(--slate-deep);}
+  /* Décision 13 (2026-08-10) : secteur géographique, restitué en texte sous le verdict —
+     pas un nouveau badge, la même discipline visuelle que .verdict/.cur-sub sur cet écran. */
+  #panel-lieux .fam-block .zone-note{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:0 0 .5rem;}
+
+  /* Décision 8 : plein PC, limite basse propre sous 1280px (pas de cascade responsive). */
+  #panel-lieux .petit-ecran{display:none;}
+  @media(max-width:1279px){
+    #panel-lieux .filtre,#panel-lieux .mini-filtre,#panel-lieux .subtabs,#panel-lieux .methode-box,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
+    #panel-lieux .petit-ecran{display:block;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper-warm);padding:2rem;text-align:center;font-size:.95rem;color:var(--ink-soft);}
+  }
+
+  /* ===== Lieux : inline (incrément 5) ==========================================
+     La carte, ses marqueurs, le survol et la fiche unique — repris de carte.html
+     avec ses correctifs déjà en prod (R1-R6) intacts. Couleurs volontairement
+     gardées proches de carte.html (variables --lp-*, ci-dessous) : ce sont des
+     teintes sémantiques de TYPE de lieu (orange/bleu/vert sur la légende), pas la
+     palette d'interface — seule la police est réalignée sur le site (var(--f-body)/
+     var(--f-label)). Alignement complet des couleurs : hors périmètre, cosmétique. */
+  #panel-lieux{
+    --lp-ink:#1c140f;--lp-ink2:#3a2c20;--lp-line:#e0d4bd;--lp-or:#bd8a3e;--lp-vert:#5f6b3e;
+    /* Incrément 6a : deux variables de la maquette (maq-filtre-lieux.html, :root) manquaient
+       au premier transfert du CSS — --green-deep/--slate-deep n'existaient nulle part dans le
+       site réel, donc .sq.met/.sq.miss/.servies .w/.fam-b.ok/.verdict.ok/.miss retombaient sur
+       une bordure/couleur invalides. Portées ici en local (comme --lp-*) plutôt qu'en :root
+       global pour ne rien changer hors de #panel-lieux ; valeurs reprises telles quelles de
+       la maquette. --slate global existant (#6B7A8F) n'est pas touché : .sq.miss l'utilisait
+       déjà seul avant ce correctif, changer sa valeur aurait un effet plus large que nécessaire.
+       Bug repéré en écrivant le vérdict-en-tête de la fiche (6a), pas un bug que j'introduis. */
+    --green-deep:#4A6539;--slate-deep:#93897C;
+    /* Incrément 6c (décision 14, 2026-08-10) : même défaut que --green-deep/--slate-deep en
+       6a, retrouvé en préparant le bandeau replié — --tint-gold/--tint-ember/--tint-green
+       sont utilisées depuis l'incrément 3 (.chip.is-on, .fam-b.ok, .fav-btn.is-on, etc.) mais
+       n'existaient nulle part, ni en :root ni ici : fond transparent au lieu du liseré de
+       couleur attendu, invisible sans capture. Portées ici en local, valeurs de la maquette. */
+    --tint-gold:rgba(184,134,47,.14);--tint-ember:rgba(196,80,30,.10);--tint-green:rgba(92,122,74,.14);
+  }
+  #panel-lieux #lxMap{width:100%;height:100%;background:linear-gradient(180deg,#FCFAF6,#F4EFE4);}
+  #panel-lieux .mapbtn{position:absolute;top:.85rem;right:.95rem;z-index:401;display:inline-flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.78rem;font-weight:600;color:var(--ink-soft);background:rgba(255,255,255,.95);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.35rem .8rem;cursor:pointer;box-shadow:var(--sh-s);}
+  #panel-lieux .mapbtn:hover{border-color:var(--gold);color:var(--gold-deep);}
+
+  /* Boutons de zoom Leaflet, habillés à la DA du projet (revue UX, 2026-08-10) — Leaflet les
+     pose blancs et carrés par défaut (leaflet.css). L'attribution n'est pas touchée : elle
+     est obligatoire et déjà discrète. */
+  #panel-lieux .leaflet-control-zoom{border:1px solid var(--line-strong);border-radius:var(--r-m);overflow:hidden;box-shadow:var(--sh-s);}
+  #panel-lieux .leaflet-control-zoom a{background:var(--paper);color:var(--ink-soft);width:1.9rem;height:1.9rem;line-height:1.9rem;font-family:var(--f-label);font-weight:600;border-color:var(--line-strong)!important;}
+  #panel-lieux .leaflet-control-zoom a:hover{background:var(--paper-warm);color:var(--gold-deep);}
+  #panel-lieux .leaflet-control-zoom-in{border-top-left-radius:var(--r-m);border-top-right-radius:var(--r-m);}
+  #panel-lieux .leaflet-control-zoom-out{border-bottom-left-radius:var(--r-m);border-bottom-right-radius:var(--r-m);}
+
+  /* Incrément 6a : couronne segmentée posée en L.marker+divIcon séparé du circleMarker
+     (cf. lxUpdateRing()) — Leaflet habille tout divIcon d'un fond blanc/bordure par défaut
+     (leaflet.css .leaflet-div-icon), à neutraliser ici. Non interactif : le clic/hover
+     doivent traverser jusqu'au circleMarker en dessous. */
+  #panel-lieux .lx-ring{background:transparent;border:none;pointer-events:none;}
+
+  /* Incrément 6b (décision 12) : bulle de regroupement — jamais la couleur d'un TYPE de lieu
+     (orange/bleu/vert, réservée aux marqueurs individuels), une gamme doré neutre à elle,
+     avec un compte toujours visible : c'est ce qui empêche de la lire comme un lieu unique.
+     leaflet.markercluster pose son propre fond par défaut (MarkerCluster.Default.css),
+     neutralisé ici comme pour .lx-ring. */
+  #panel-lieux .lx-cluster{background:transparent;border:none;}
+  #panel-lieux .lx-cluster-in{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--f-label);font-weight:700;color:var(--lp-ink);background:var(--lp-or);border:2px solid #fff;box-shadow:var(--sh-s);}
+  #panel-lieux .lx-cluster-s .lx-cluster-in{font-size:.76rem;}
+  #panel-lieux .lx-cluster-m .lx-cluster-in{font-size:.85rem;background:#a97a2e;color:#fff;}
+  #panel-lieux .lx-cluster-l .lx-cluster-in{font-size:.94rem;background:#8c6222;color:#fff;}
+
+  /* Refus d'affichage scopé à la vue Carte (jamais de classe sur <body>, cf. CLAUDE.md /
+     MutationObserver du header) : la carte et la légende se masquent, un message rédigé
+     prend leur place — même intention que R1/R6 en increment 2, portée localement ici. */
+  #panel-lieux #vueCarte .lx-load-error{display:none;}
+  #panel-lieux #vueCarte.load-error .mapwrap,#panel-lieux #vueCarte.load-error .mapkey{display:none;}
+  #panel-lieux #vueCarte.load-error .lx-load-error{display:flex;align-items:center;justify-content:center;padding:2.4rem;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper);min-height:200px;}
+  #panel-lieux .lx-load-error .box, #panel-lieux .lx-attente .box{max-width:28rem;text-align:center;}
+  #panel-lieux .lx-load-error .box h2, #panel-lieux .lx-attente .box h2{margin:0 0 .5rem;font-size:1.05rem;}
+  #panel-lieux .lx-load-error .box p, #panel-lieux .lx-attente .box p{margin:0;font-size:.88rem;line-height:1.5;color:var(--ink-soft);}
+
+  /* R16 (2026-08-10) : recouvrement de la carte tant que la barre de filtre n'a pas sa
+     hauteur définitive (familles/curseur/résultat, réseau) — cf. lxRenderFiltre()/
+     LX_FILTRE_RENDU dans le JS. Un SIMPLE recouvrement (position:absolute PAR-DESSUS
+     .mapwrap, qui reste construit normalement en dessous), pas un display:none : Leaflet doit
+     continuer à se construire contre un conteneur réellement dimensionné (R8), 0x0 au moment
+     de L.map() est un cas neuf et moins sûr. L'utilisateur ne voit jamais la mauvaise taille
+     — il voit ce message le temps que la vraie hauteur soit connue, puis la carte apparaît
+     déjà à la bonne taille (lxResizeCarte() tourne avant que la classe soit retirée). */
+  #panel-lieux #vueCarte .lx-attente{display:none;}
+  #panel-lieux #vueCarte.attente .lx-attente{position:absolute;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:2.4rem;background:var(--paper);}
+
+  /* Info-bulle Leaflet au survol (patron carte.html, classes s-tip/tip-*) */
+  #panel-lieux .leaflet-tooltip.s-tip{background:#fffdf8;border:1px solid var(--lp-line);border-radius:10px;box-shadow:var(--sh-m);padding:0;width:300px;max-width:min(340px,82vw);white-space:normal;font-family:var(--f-body);}
+  #panel-lieux .tip-min{padding:8px 11px}#panel-lieux .tip-min .tip-line{margin-top:3px}
+  #panel-lieux .tip-in{padding:10px 12px}
+  #panel-lieux .tip-photo{position:relative;height:150px;margin:-10px -12px 10px;overflow:hidden;background:#efe6d4}
+  #panel-lieux .tip-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  #panel-lieux .tip-skel{position:absolute;inset:0;background:linear-gradient(100deg,#efe6d4 20%,#f6f0e2 42%,#efe6d4 64%);background-size:220% 100%;animation:tipShimmer 1.5s ease-in-out infinite}
+  @keyframes tipShimmer{0%{background-position:120% 0}100%{background-position:-40% 0}}
+  #panel-lieux .tip-loading{position:absolute;left:8px;bottom:7px;display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8c7a63;background:rgba(255,253,248,.9);border:1px solid var(--lp-line);border-radius:6px;padding:2px 7px}
+  #panel-lieux .tip-spin{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--lp-line);border-top-color:var(--lp-or);animation:tipSpin .8s linear infinite;flex:none}
+  @keyframes tipSpin{to{transform:rotate(360deg)}}
+  #panel-lieux .tip-missing{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#9a8f7c}
+  #panel-lieux .tip-missing svg{opacity:.55}
+  #panel-lieux .tip-missing span{font-size:10.5px}
+  #panel-lieux .tip-nm{font-weight:700;font-size:15px;line-height:1.25}#panel-lieux .tip-sub{font-size:12.5px;font-weight:600;margin-top:2px}
+  #panel-lieux .tip-line{font-size:12.5px;color:var(--lp-ink2);margin-top:5px;line-height:1.45}
+  @media(max-width:600px){#panel-lieux .leaflet-tooltip.s-tip{width:260px;max-width:82vw}}
+
+  /* Fiche unique (décision 6) — panneau latéral quand la carte est ouverte sur un lieu.
+     Contenu et logique repris de carte.html tels quels (panelScaffold et consorts). */
+  #panel-lieux .mappanel{display:none;border-left:1px solid var(--line-strong);background:#fffdf8;overflow-y:auto;font-family:var(--f-body);color:var(--lp-ink);}
+  #panel-lieux .mapwrap.has-panel .mappanel{display:block;}
+  #panel-lieux .hero{position:relative;height:250px;background:#2e231a;overflow:hidden}
+  #panel-lieux #hero-img{height:100%}
+  #panel-lieux .hero img{width:100%;height:100%;object-fit:contain;display:block;background:#d7e3ef}
+  #panel-lieux .hero .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#8c7a63;font-size:13px;font-family:var(--f-label);}
+  #panel-lieux .hero .close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer}
+  #panel-lieux .pnav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:24px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center}
+  #panel-lieux .pnav:hover{background:rgba(0,0,0,.7)}
+  #panel-lieux #ph-prev{left:10px}#panel-lieux #ph-next{right:10px}
+  #panel-lieux #ph-count{position:absolute;bottom:8px;right:12px;z-index:6;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:12px;padding:2px 9px;display:none;font-family:var(--f-label);}
+  #panel-lieux .fiche-body{padding:16px 18px 34px;font-size:14px;line-height:1.5;}
+  #panel-lieux .fiche-body h2{margin:0 0 2px;font-size:20px;line-height:1.15;font-family:var(--f-display);}
+  #panel-lieux .fiche-body .loc{color:var(--acc,#c4561f);font-weight:600;font-size:13px;margin-bottom:10px;font-family:var(--f-label);}
+  #panel-lieux .sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+  #panel-lieux .sheet-title{min-width:0}#panel-lieux .sheet-actions{display:flex;gap:6px;flex:none}
+  #panel-lieux .icon-btn2{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--lp-line);border-radius:8px;background:#fff;color:var(--lp-ink2);cursor:pointer;text-decoration:none;font-weight:800}
+  #panel-lieux .icon-btn2:hover{border-color:var(--lp-or);color:#8a6a1f;background:#fbf5ea}
+  #panel-lieux .status-row{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;font-family:var(--f-label);}
+  #panel-lieux .status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;border:1px solid transparent}
+  #panel-lieux .status-priority{background:#f4dfc8;color:#8b3c14;border-color:#e7c09d}#panel-lieux .status-hot{background:#edf3e6;color:#4e6936;border-color:#d5e2c8}#panel-lieux .status-wait{background:#eef1f5;color:#546579;border-color:#d8dee6}#panel-lieux .status-open{background:#f7f0df;color:#8a6a1f;border-color:#e8dcc2}#panel-lieux .status-out{background:#f1eeee;color:#786b63;border-color:#ded6cf}
+  #panel-lieux .summary-box{background:#fff;border:1px solid var(--lp-line);border-left:3px solid var(--acc,#c4561f);border-radius:8px;padding:10px 12px;margin:10px 0 12px;font-size:13.5px;line-height:1.45;color:var(--lp-ink2)}
+  #panel-lieux .section-title{margin:16px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#7e6c55;font-family:var(--f-label);}
+  #panel-lieux .metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 12px}
+  #panel-lieux .metric{border:1px solid var(--lp-line);border-radius:8px;background:#fff;padding:8px 9px;min-height:54px}
+  #panel-lieux .metric b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#766957;margin-bottom:5px;font-family:var(--f-label);}
+  #panel-lieux .meter{display:flex;gap:3px;margin-bottom:2px}#panel-lieux .meter i{height:5px;flex:1;border-radius:99px;background:#e8dfd0}#panel-lieux .meter.l1 i:nth-child(-n+1){background:#a9553c}#panel-lieux .meter.l2 i:nth-child(-n+2){background:#bd8a3e}#panel-lieux .meter.l3 i:nth-child(-n+3){background:#5f6b3e}#panel-lieux .meter.l0 i{background:#eee8dc}
+  #panel-lieux .metric span{font-size:12px;color:#7d6f60}
+  #panel-lieux .info-grid{display:grid;grid-template-columns:1fr;gap:6px;margin:0 0 12px}
+  #panel-lieux .info-line{display:grid;grid-template-columns:118px 1fr;gap:9px;font-size:13px;line-height:1.35;padding:7px 0;border-bottom:1px solid #eee5d6}
+  #panel-lieux .info-line b{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#806f5b;font-family:var(--f-label);}#panel-lieux .info-line span{color:var(--lp-ink2)}
+  #panel-lieux .next-action{border:1px solid #e0c99e;background:#fff8ea;border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px;line-height:1.4}
+  #panel-lieux .next-action b{display:block;text-transform:uppercase;font-size:11px;letter-spacing:.06em;color:#8a6a1f;margin-bottom:4px;font-family:var(--f-label);}
+  #panel-lieux .score-card{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;border:1px solid var(--lp-line);background:#fff;border-radius:8px;padding:10px 12px;margin:10px 0 12px}
+  #panel-lieux .score-num{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f6ead5;color:#8b3c14;font-weight:900;font-size:18px;border:1px solid #e7c09d}
+  #panel-lieux .score-copy{font-size:13px;line-height:1.35;color:var(--lp-ink2)}#panel-lieux .score-copy b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6a1f;margin-bottom:3px;font-family:var(--f-label);}
+  #panel-lieux .criteria-list{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+  #panel-lieux .criterion{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:start;border:1px solid var(--lp-line);background:#fff;border-radius:8px;padding:8px 9px;font-size:12.5px;line-height:1.35}
+  #panel-lieux .criterion-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fbf5ea;color:#8a6a1f;font-weight:900;font-size:11px;font-family:var(--f-label);}
+  #panel-lieux .criterion-main b{display:block;color:var(--lp-ink);font-size:12.5px;margin-bottom:2px}#panel-lieux .criterion-main span{color:#776b5d}
+  #panel-lieux .criterion-note{font-weight:900;border-radius:999px;padding:2px 7px;background:#eee8dc;color:#6d6258;font-size:11px;white-space:nowrap;font-family:var(--f-label);}
+  #panel-lieux .criterion-note.ok{background:#edf3e6;color:#4e6936}#panel-lieux .criterion-note.mid{background:#fff4dc;color:#8a6a1f}#panel-lieux .criterion-note.low{background:#f7e8e1;color:#9a3d25}#panel-lieux .criterion-note.unknown{background:#eef1f5;color:#546579}
+  #panel-lieux .kv{font-size:13.5px;margin:8px 0;line-height:1.45}#panel-lieux .kv b{text-transform:uppercase;font-size:11px;letter-spacing:.04em;display:block;color:var(--lp-vert);font-family:var(--f-label);}
+  #panel-lieux .anl{background:#fbf5ea;border:1px solid var(--lp-line);border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px}
+  #panel-lieux .anl h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-family:var(--f-label);}#panel-lieux .anl.pf h4{color:var(--lp-vert)}#panel-lieux .anl.lm h4{color:#a23b2b}
+  #panel-lieux .anl ul{margin:0;padding-left:18px}#panel-lieux .anl li{margin:2px 0}
+  #panel-lieux #wx{font-size:13px;color:var(--lp-ink2);line-height:1.5;margin-top:10px}
+  #panel-lieux .fbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  #panel-lieux .fbtns a{background:var(--acc,#c4561f);color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:600;font-size:12.5px;font-family:var(--f-label);}
+  #panel-lieux .fbtns a.alt{background:#2e231a}#panel-lieux .fbtns a.gr{background:var(--lp-vert)}
+  #panel-lieux .team-thread{border-top:1px solid var(--lp-line);margin-top:18px;padding-top:14px}
+  #panel-lieux .thread-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  #panel-lieux .thread-head h3{margin:0;font-size:16px;font-family:var(--f-display);}#panel-lieux .thread-mode{font-size:11px;color:#8c7a63;font-family:var(--f-label);}
+  #panel-lieux .comment-list{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+  #panel-lieux .comment{background:#fff;border:1px solid var(--lp-line);border-radius:8px;padding:9px 10px;font-size:13px;line-height:1.42}
+  #panel-lieux .comment-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:#897a67;font-size:11px;margin-bottom:4px;font-family:var(--f-label);}
+  #panel-lieux .comment-kind{font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#8a6a1f}#panel-lieux .comment-kind.decision{color:#8b3c14}#panel-lieux .comment-kind.action{color:#4e6936}#panel-lieux .comment-kind.question{color:#2f6d9e}#panel-lieux .comment-kind.source{color:#6b5b8e}
+  #panel-lieux .mention{font-weight:800;color:#2f6d9e;background:#edf4fa;border-radius:5px;padding:0 3px}
+  #panel-lieux .comment-empty{font-size:12.5px;color:#8c7a63;background:#fbf5ea;border:1px dashed var(--lp-line);border-radius:8px;padding:10px}
+  #panel-lieux .comment-form{background:#fff;border:1px solid var(--lp-line);border-radius:8px;padding:9px}
+  #panel-lieux .comment-tools{display:flex;gap:7px;margin-bottom:8px}#panel-lieux .comment-tools select{border:1px solid var(--lp-line);border-radius:7px;background:#fffdf8;padding:6px 8px;font-size:12px;color:var(--lp-ink2);font-family:var(--f-label);}
+  #panel-lieux .comment-form textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--lp-line);border-radius:7px;padding:8px;font:13px/1.45 var(--f-body);color:var(--lp-ink);background:#fffdf8}
+  #panel-lieux .comment-form textarea:focus{outline:none;border-color:var(--lp-or);box-shadow:0 0 0 3px rgba(189,138,62,.15)}
+  #panel-lieux .comment-submit{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}#panel-lieux .comment-hint{font-size:11.5px;color:#8c7a63;font-family:var(--f-label);}#panel-lieux .comment-submit button{border:0;border-radius:7px;background:var(--acc,#c4561f);color:#fff;font-weight:800;font-size:12px;padding:8px 12px;cursor:pointer;font-family:var(--f-label);}
+  #panel-lieux .mention-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}#panel-lieux .mention-chips button{border:1px solid var(--lp-line);background:#fbf5ea;color:#6d5e4b;border-radius:999px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:var(--f-label);}
+  #panel-lieux .fav-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--lp-or);background:#fff;color:var(--lp-or);border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;margin:2px 0 12px;transition:background .15s,color .15s;font-family:var(--f-label);}
+  #panel-lieux .fav-btn:hover{background:#fbf3e1}
+  #panel-lieux .fav-btn.on{background:var(--lp-or);color:#fff}
+  #panel-lieux .fav-btn .st{font-size:15px;line-height:1}
+  #panel-lieux .fav-who{font-size:11.5px;color:#8c7a63;margin:-6px 0 12px;font-family:var(--f-label);}
 
   /* ===== Feuille de route (afficheur autonome roadmap.html, hauteur pilotée par postMessage) ===== */
   #panel-route{width:min(96vw,72rem);margin-left:calc(50% - min(48vw,36rem));padding-bottom:2rem;}
@@ -506,14 +917,151 @@
   </div>
 
   <div class="panel" id="panel-lieux">
-    <p class="lead">Panorama de prospection : sanctuaires, abbayes actives et lieux à reprendre en France, plus nos <strong>pistes prioritaires</strong> (avec leurs notes). Rien n'est décidé : ce sont des pistes à activer par le contact humain. Survole un point, clique pour la fiche complète.</p>
+
+    <!-- Décision 14 : bandeau replié — visible UNIQUEMENT sur la vue Carte (masqué ici par
+         défaut, la vue par défaut du panneau est Liste). lxSetSubtab() y déplace/retire
+         #lx-filtreBand selon la vue active, voir sa note. -->
+    <div class="mini-filtre" id="lxMiniFiltre" hidden>
+      <button type="button" class="mini-btn" id="lxMiniBtn" aria-expanded="false">
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+        <span id="lxMiniFam"></span>
+        <span class="mini-dot" id="lxMiniDot1" hidden></span>
+        <span class="mini-seg actif" id="lxMiniSeg"></span>
+        <span class="mini-dot" id="lxMiniDot2" hidden></span>
+        <span class="mini-seg" id="lxMiniTypes"></span>
+      </button>
+      <span class="mini-right">Régler les filtres &rsaquo;</span>
+    </div>
+
+    <section class="filtre filtre-inline" id="lx-filtreBand" aria-label="Filtrer les lieux">
+      <div class="band tools">
+        <div class="in">
+          <span class="srch"><span class="ico" aria-hidden="true">&#9906;</span>
+            <input type="search" id="lx-q" placeholder="Rechercher un lieu, une commune, un ordre…" aria-label="Rechercher un lieu, une commune, un ordre" />
+          </span>
+          <span id="lx-typeRow" style="display:flex;gap:.4rem;flex-wrap:wrap"></span>
+          <button type="button" class="tchip is-off" id="lx-favChip" aria-pressed="false"><span class="pt" style="background:var(--ember)"></span>Favoris</button>
+          <span class="tsep"></span>
+          <button type="button" class="tchip" id="lx-cacheChip" aria-pressed="false"><span class="bx" aria-hidden="true">&#10003;</span>Cacher ceux qui ne servent personne</button>
+          <span class="gap"></span>
+          <button type="button" class="icon-btn" id="lx-resetHard" title="Tout réafficher" aria-label="Tout réafficher">&#8635;</button>
+        </div>
+      </div>
+
+      <div class="band cur-band">
+        <div class="in">
+          <div class="cur-left">
+            <div class="fam-row" id="famRow"></div>
+            <p class="cur-head"><span class="n" id="curN"></span> <span id="curLbl"></span></p>
+            <input type="range" class="slider" id="lx-slider" min="1" max="10" value="1" step="1" aria-label="Nombre de critères sur lesquels on ne transige pas" />
+            <div class="ticks" id="ticks"></div>
+            <p class="cur-sub" id="curSub"></p>
+          </div>
+          <div class="cur-right res" id="res">
+            <div><span class="res-n" id="resN"></span></div>
+            <p class="res-txt" id="resTxt"></p>
+            <p class="res-note" id="resNote"></p>
+            <button class="btn-ember" id="resBtn" type="button" hidden></button>
+          </div>
+        </div>
+      </div>
+
+      <details class="band crit-band" id="critBand">
+        <summary>Les critères pris en compte <span class="hint" id="critHint"></span><span class="chev" aria-hidden="true">&rsaquo;</span></summary>
+        <div class="crit-grid" id="critGrid"></div>
+      </details>
+
+      <!-- Décision 14 : visible seulement quand le filtre est ouvert EN SUPERPOSITION sur la
+           carte (fermeture explicite, en plus du reclic sur le bandeau) — masqué sur la vue
+           Liste, où la barre reste dépliée en ligne sans rien à fermer. -->
+      <div class="overlay-foot" id="lxOverlayFoot" hidden>
+        <button type="button" class="btn-gold" id="lxVoirCarte">Voir la carte &rsaquo;</button>
+      </div>
+    </section>
+
+    <div class="subtabs">
+      <div class="subtabs-in">
+        <nav class="subtab-nav">
+          <button class="subtab" id="tab-carte" type="button">Carte</button>
+          <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
+        </nav>
+        <span class="count" id="subCount"></span>
+      </div>
+    </div>
+
     <details class="methode-box"><summary>Notre méthode &amp; nos 10 critères</summary><div id="methode-content"><p class="loading">Chargement…</p></div></details>
 
-    <div class="carte-embed">
-      <iframe id="carte-frame" title="Carte des lieux Lumignis" referrerpolicy="no-referrer"></iframe>
+    <div class="app-wrap-lieux">
+
+      <section id="vueCarte" hidden>
+        <div class="mapwrap" id="mapWrap">
+          <div class="mapcol">
+            <div id="lxMap"></div>
+            <button type="button" class="mapbtn" id="lxFit"><span aria-hidden="true">&#9974;</span> Toute la France</button>
+          </div>
+          <aside class="mappanel" id="mapPanel" aria-label="Détail du lieu">
+            <div class="hero">
+              <button class="close" id="lxPanelClose" aria-label="Fermer">&times;</button>
+              <button class="pnav" id="ph-prev" aria-label="Photo précédente">&#8249;</button>
+              <button class="pnav" id="ph-next" aria-label="Photo suivante">&#8250;</button>
+              <span id="ph-count"></span>
+              <div id="hero-img"></div>
+            </div>
+            <div class="fiche-body" id="panel-body"></div>
+          </aside>
+          <div class="lx-attente" id="lxAttente"><div class="box"><h2>Préparation de la carte…</h2><p>Chargement des familles et des critères.</p></div></div>
+        </div>
+        <p class="mapkey" id="mapKey">
+          <span><span class="d" style="background:#c4561f"></span>Sanctuaire</span>
+          <span><span class="d" style="background:#2f6d9e"></span>Abbaye active</span>
+          <span><span class="d" style="background:#3c7a4e"></span>À reprendre / à vendre</span>
+          <span class="vs"></span>
+          <span>Taille du cercle = importance</span>
+        </p>
+        <div class="lx-load-error" id="lxLoadError"><div class="box"><h2>Chargement impossible</h2><p id="lxLoadErrorMsg"></p></div></div>
+      </section>
+
+      <section id="vueListe">
+        <div class="tbl-head">
+          <span class="legend">
+            <span><i class="sq met lg" aria-hidden="true"></i> tenu</span>
+            <span><i class="sq part lg" aria-hidden="true"></i> en partie tenu</span>
+            <span><i class="sq ask lg" aria-hidden="true"></i> à vérifier, nous ne savons pas</span>
+            <span><i class="sq miss lg" aria-hidden="true"></i> manqué</span>
+            <span>seul un critère <b>manqué</b> fait perdre le niveau</span>
+          </span>
+          <span class="r"><label for="lx-sort">Trier par</label>
+            <select class="tb-select" id="lx-sort">
+              <option value="fam" selected>Familles servies</option>
+              <option value="verif">Ce qui reste à vérifier</option>
+              <option value="fav">Favoris</option>
+              <option value="nom">Nom</option>
+            </select>
+          </span>
+        </div>
+        <div class="tbl-wrap">
+          <table class="lieux">
+            <thead>
+              <tr>
+                <th style="width:33%">Lieu</th>
+                <th style="width:13%" id="lx-thServies">Familles servies</th>
+                <th style="width:27%">Détail par famille, critère par critère</th>
+                <th style="width:12%">À vérifier</th>
+                <th style="width:15%">Favoris</th>
+              </tr>
+            </thead>
+            <tbody id="lieuxBody"></tbody>
+          </table>
+        </div>
+        <p class="foot-note" id="lx-listeFootNote"></p>
+      </section>
+
     </div>
 
     <p class="foot-note">Certains lieux ont été <strong>écartés d'emblée</strong> : un pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
+
+    <p class="petit-ecran">Cet espace se consulte sur un ordinateur, avec un écran d'au moins 1280 px de large.</p>
+
   </div>
 
   <div class="panel" id="panel-route">
@@ -710,6 +1258,7 @@
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" integrity="sha256-Hk4dIpcqOSb0hZjgyvFOP+cEmDXUKKNE/tT542ZbNQg=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
@@ -721,6 +1270,32 @@
   var $=function(id){return document.getElementById(id);};
   var msgEl=$('auth-msg');
   var ME={email:'',name:''};
+  // GARANTIE STRUCTURELLE, pas temporelle (vérifiée le 2026-08-10, suite au retrait de
+  // currentEmail() de carte.html — correctif R4 — au profit d'une lecture directe de ME.email
+  // dans le code Lieux inliné) : ME.email est posé plus haut dans onAuthed(), AVANT l'appel à
+  // setupTabs(). setupTabs() est l'UNIQUE endroit qui attache les écouteurs click sur les
+  // boutons .tab (dont [data-panel="lieux"]) — avant son passage, cliquer cet onglet ne fait
+  // rien (pas de listener), et setPanel('lieux') ne peut donc pas s'exécuter par ce chemin.
+  //
+  // DEUX APPUIS, PAS UN SEUL. buildLieux() a un second appelant : lxSetSubtab('carte'), dont
+  // l'écouteur sur #tab-carte est attaché par initLieuxSkeleton() AU PARSE de la page, bien
+  // avant onAuthed() — ce bouton est câblé dès le chargement, contrairement aux onglets
+  // principaux. Ce chemin est sûr uniquement parce que #tab-carte vit dans #panel-lieux
+  // (.panel{display:none} tant que setPanel('lieux') n'a pas posé .is-active) et que
+  // #main-tabs porte .hidden jusqu'à revealMember() : des boutons dans un sous-arbre non
+  // rendu ne reçoivent pas de clic RÉEL. Un `.click()` PROGRAMMATIQUE, lui, fonctionne sur un
+  // élément caché (voir les scénarios QA, qui s'en servent délibérément) — c'est pourquoi
+  // aucun code de ce fichier ne doit appeler #tab-carte.click() (ni équivalent) avant que
+  // setupTabs() ait tourné. En particulier : la consommation du hash #lieu= prévue pour
+  // l'incrément 6 doit être écrite APRÈS la ligne où setupTabs() est appelée dans onAuthed(),
+  // jamais dans un hook de chargement de page qui s'exécute plus tôt — sinon elle rouvre
+  // exactement la course que R4 fermait.
+  //
+  // Aucun autre chemin n'atteint openPanel()/loadComments()/submitComment() que ces deux-là.
+  // Double filet néanmoins : loadComments()/submitComment() vérifient ME.email eux-mêmes et
+  // retombent sur l'état "guest" plutôt que d'écrire avec une identité absente — si l'une des
+  // deux garanties structurelles ci-dessus venait à être cassée, le pire résultat serait un
+  // blocage visible, pas une écriture silencieuse.
 
   function msg(t,cls){ msgEl.textContent=t||''; msgEl.className='msg'+(cls?' '+cls:''); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -845,7 +1420,21 @@
     revealMember();
     if(!tabsSetup){ tabsSetup=true; setupTabs(); }
     if(!actuLoadedOnce){ actuLoadedOnce=true; loadActu(); }
-    setPanel('actu');
+    // Réserve 6c #4 (consommation du hash #lieu=, cf. la garantie structurelle ci-dessus) :
+    // écrite ICI, APRÈS setupTabs() — jamais avant, sous peine de rouvrir la course sur
+    // ME.email par un troisième chemin d'entrée vers openPanel()/loadComments(). ME.email est
+    // déjà posé (ligne 1418, avant même setupTabs()), donc déjà fiable à ce point.
+    var hashLieu=(location.hash||'').match(/^#lieu=(.+)$/);
+    if(hashLieu){
+      var cleLieu=decodeURIComponent(hashLieu[1]);
+      history.replaceState(null,'',location.pathname+location.search); // consommé, pas relu au prochain changement d'onglet
+      setPanel('lieux');
+      lxSetSubtab('carte');
+      if(LX_FILTRE_RENDU) lxOuvrirDepuisHash(cleLieu);
+      else LX_HASH_LIEU_EN_ATTENTE=cleLieu;
+    } else {
+      setPanel('actu');
+    }
   }
 
   // —— Panneaux / onglets ——
@@ -860,10 +1449,11 @@
     var p=$('panel-'+name); if(p) p.classList.add('is-active');
     document.body.classList.toggle('on-accueil', name==='accueil');
     if(name==='lieux') buildLieux();
-    // NE PAS decharger la carte en quittant l'onglet. Retirer puis reajouter le src de
-    // l'iframe relançait un chargement complet de carte.html qui restait bloque en "Pending"
-    // (la carte chargeait a l'infini au 2e passage). On la charge une fois, puis on la masque
-    // simplement en CSS via .is-active.
+    // NE PAS decharger la feuille de route en quittant l'onglet. Retirer puis reajouter le
+    // src de l'iframe relançait un chargement complet qui restait bloque en "Pending" (la
+    // page chargeait a l'infini au 2e passage). On la charge une fois, puis on la masque
+    // simplement en CSS via .is-active. La carte des lieux suit le même principe (guard
+    // lieuxLoaded dans buildLieux()) mais n'est plus une iframe depuis l'inline (incrément 5).
     if(name==='route') buildRoute();
     if(name==='docs') loadDocs();
     if(name==='quest' && window.initQuest) window.initQuest();
@@ -893,15 +1483,1995 @@
     var w=r.data.filter(function(p){return p.slug==='methode'||p.slug==='criteres';});
     box.innerHTML = w.length ? w.map(function(p){return '<section class="page-sec"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';}).join('') : '<p class="loading">—</p>';
   }
-  // La carte des lieux est un afficheur autonome (carte.html) qui lit ses données depuis
-  // Supabase APRÈS connexion (rien de sensible dans le fichier public). Chargée en lazy dans une iframe.
-  async function buildLieux(){
+  // La carte des lieux est inlinée (incrément 5) : elle lit ses données depuis Supabase
+  // avec le client déjà authentifié de la page hôte (plus de second client, plus d'iframe).
+  function buildLieux(){
     if(lieuxLoaded) return;
     lieuxLoaded=true;
-    var fr=$('carte-frame');
-    if(fr && !fr.getAttribute('src')) fr.setAttribute('src','carte.html');
     loadMethode();
+    lxInit();
   }
+
+  // —— Lieux : barre commune + sous-onglets (incrément 3), câblée sur la donnée réelle
+  // depuis l'inline (incrément 5) — voir lxRefresh() plus bas. ——
+  var LX_TYPES=[
+    {id:'s',label:'Sanctuaires',color:'#c4561f'},
+    {id:'a',label:'Abbayes',color:'#2f6d9e'},
+    {id:'v',label:'À vendre',color:'#3c7a4e'},
+    {id:'p',label:'Pistes équipe',color:'#a06a1f'}
+  ];
+  var lxTypesOn={s:true,a:true,v:true,p:true}, lxFavOn=false;
+  function lxRenderTypeRow(){
+    var row=$('lx-typeRow'); if(!row) return;
+    row.innerHTML=LX_TYPES.map(function(t){
+      var on=lxTypesOn[t.id];
+      return '<button type="button" class="tchip'+(on?' is-on':' is-off')+'" data-lx-type="'+t.id+'" aria-pressed="'+(on?'true':'false')+'"><span class="pt" style="background:'+t.color+'"></span>'+t.label+'</button>';
+    }).join('');
+  }
+  function lxToggleType(id){ lxTypesOn[id]=!lxTypesOn[id]; lxRenderTypeRow(); }
+  function lxResetHard(){
+    var q=$('lx-q'); if(q) q.value='';
+    lxTypesOn={s:true,a:true,v:true,p:true}; lxFavOn=false;
+    lxRenderTypeRow();
+    var fav=$('lx-favChip'); if(fav){ fav.classList.remove('is-on'); fav.classList.add('is-off'); fav.setAttribute('aria-pressed','false'); }
+  }
+  // #panel-lieux est un onglet dans une page qui défile (pas une page dédiée comme la
+  // maquette, qui pouvait poser height:100vh sur l'app entière) : la hauteur disponible
+  // pour la carte se mesure, elle ne se déduit pas d'un calc() figé sur des offsets qui
+  // dériveraient au premier ajout dans la barre (décision 8 : marge de 14 px seulement).
+  // Idempotente par construction (garde-fou posé le 2026-08-10, R16) : chaque appel mesure le
+  // DOM LIVE et n'écrit que l'écart réel constaté — rien n'est accumulé d'un appel à l'autre.
+  // Rappeler cette fonction plusieurs fois de suite sans que rien d'autre n'ait changé entre-
+  // temps converge et reste stable (2e appel : delta≈0, aucune écriture supplémentaire). C'est
+  // ce qui rend sûr d'avoir plusieurs appelants (cf. lxResizeCarte() plus bas) : aucun n'a
+  // besoin de savoir si un autre est déjà passé avant lui.
+  function lxSizeCarteView(){
+    var vc=$('vueCarte');
+    if(!vc || vc.hidden) return;
+    var wrap=vc.querySelector('.mapwrap'), key=$('mapKey');
+    if(!wrap) return;
+    var top=wrap.getBoundingClientRect().top;
+    var keyH=key ? key.getBoundingClientRect().height : 0;
+    var avail=window.innerHeight - top - keyH - 8;
+    wrap.style.height=Math.max(200, Math.round(avail))+'px';
+    // R13 (2026-08-10) : le -8 ci-dessus est une estimation, pas la marge réelle sous la
+    // légende (margin/bordures/arrondis). Plutôt que de la remplacer par une nouvelle
+    // constante en dur qui se désynchroniserait au premier ajustement de style, on mesure
+    // l'écart RÉEL après coup et on corrige d'autant — s'auto-corrige quels que soient les
+    // styles de #mapKey, y compris ceux que l'incrément 6 ajoutera à cette zone.
+    if(key){
+      var delta=window.innerHeight - key.getBoundingClientRect().bottom;
+      if(Math.abs(delta)>1) wrap.style.height=(wrap.getBoundingClientRect().height + delta)+'px';
+    }
+  }
+  // Point d'entrée unique pour tout redimensionnement de la carte — même motif que
+  // lxMaybeFit() en R9 : mesurer la hauteur ET invalider Leaflet sont TOUJOURS le même geste,
+  // jamais l'un sans l'autre. Posé le 2026-08-10 (R16) : avant ce correctif, lxSetSubtab('carte')
+  // et la fin de lxInit() dupliquaient chacun leur propre paire mesure+invalidate, à des
+  // instants différents du cycle de vie. Le bug qui en résultait : lxSetSubtab('carte') mesure
+  // SYNCHRONE au clic, avant que la barre de filtre (familles/curseur/résultat, incrément 6a)
+  // n'ait fini de se peupler depuis le réseau (questionnaire_publies()/lieux_criteres_etat) —
+  // la carte se voyait allouer 345 px de trop (barre pas encore à sa hauteur finale) là où
+  // scenario_hauteur.js, qui attend plus longtemps avant de mesurer, obtenait les 263 px
+  // corrects. Rien ne revenait corriger derrière, parce que le SEUL ResizeObserver existant ne
+  // surveillait que #mapKey (la légende SOUS la carte), jamais #lx-filtreBand (la barre AU-
+  // DESSUS) — voir lxWatchResize() ci-dessous, qui couvre maintenant les deux.
+  // Trace diagnostique optionnelle (R16, 2026-08-10, sur consigne du lead tech — « à quel
+  // instant #lx-filtreBand atteint sa hauteur définitive, et lxResizeCarte() est-il appelé
+  // après cet instant »). Coût nul par défaut : n'écrit que si window.__lxTrace existe déjà
+  // (tableau créé par un scénario QA AVANT d'ouvrir la vue Carte, jamais par ce fichier —
+  // même discipline que les hooks markers/map/openPanel/lxTipDiag, rien d'actif sans un
+  // consommateur explicite). `source` identifie SANS ambiguïté quel appelant a déclenché
+  // l'appel (clic, rAF, observateur, resize fenêtre), pour reconstituer la séquence réelle.
+  function lxTraceResize(source){
+    if(!window.__lxTrace) return;
+    var fb=$('lx-filtreBand'), vc=$('vueCarte'), wrap=vc && vc.querySelector('.mapwrap');
+    window.__lxTrace.push({
+      t: Math.round(performance.now()),
+      source: source||'?',
+      filtreH: fb ? Math.round(fb.getBoundingClientRect().height) : null,
+      wrapH: wrap ? Math.round(wrap.getBoundingClientRect().height) : null,
+      filtreRendu: !!LX_FILTRE_RENDU
+    });
+  }
+  // Incrément 6b (2026-08-10, régression du regroupement) : même discipline que
+  // lxTraceResize() — opt-in via window.__lxTrace, coût nul par défaut. Capture le centre et
+  // le zoom RÉELS de la carte à des points précis du démarrage, pour dater à quel instant la
+  // vue quitte le cadre France (si elle le quitte). Posé sur consigne du lead tech : « le zoom
+  // et le centre effectifs après l'initialisation, et l'ordre entre l'ajout du groupe de
+  // regroupement et l'application du cadre France » — plutôt que de deviner lequel des deux
+  // (fitBounds, création du groupe, pose des 262+12 marqueurs, retrait du recouvrement) est en
+  // cause.
+  // Corrigé avant livraison (relu après coup) : Leaflet lève « Set map center and zoom first »
+  // si getCenter()/getZoom() sont appelés avant tout setView()/fitBounds() — exactement le cas
+  // du 1er point de mesure ('apres-construction-map', posé AVANT fitBounds pour prouver l'état
+  // initial). Sans ce try/catch, l'instrument de diagnostic aurait LUI-MÊME déclenché le
+  // catch() de lxInit() dès qu'un scénario QA l'active — la mesure aurait produit exactement le
+  // symptôme qu'elle cherche à expliquer. Un point qui lève est une donnée utile (« vue pas
+  // encore posée à cet instant »), pas une raison d'interrompre lxInit().
+  function lxTraceCadrage(point){
+    if(!window.__lxTrace || !lxMap) return;
+    try{
+      var c=lxMap.getCenter();
+      var entry={
+        t: Math.round(performance.now()),
+        cadrage: point,
+        centerLat: c.lat, centerLng: c.lng,
+        zoom: lxMap.getZoom()
+      };
+      // Coordination 2026-08-11 — hypothèse zoomSnap (arrondi de niveau de zoom) vs
+      // contrainte géométrique (forme du conteneur ≠ forme du cadre France) : au point
+      // 'apres-fitBounds', trois mesures indépendantes qui tranchent SANS raisonner, seul
+      // patron qui a tenu sur ce lot (cf. « les instruments mentent plus souvent que le
+      // code », plan-lot-lieux-2026-08-10.md). zoomFractionnaire = ce que Leaflet choisirait
+      // sans arrondi de niveau ; conteneur = sa taille réelle en px ; franceEcranPx = la
+      // taille RÉELLE à l'écran du rectangle LX_FRANCE_BOUNDS au zoom retenu. Si
+      // franceEcranPx.haut est déjà proche de conteneur.y (l'axe qui contraint) alors que
+      // franceEcranPx.larg est loin de conteneur.x, l'écart n'est pas un cran de zoom raté
+      // mais une forme de conteneur qui ne correspond pas à celle du cadre France — zoomSnap
+      // n'y changerait quasi rien.
+      if(point==='apres-fitBounds'){
+        try{
+          entry.zoomFractionnaire = lxMap.getBoundsZoom(L.latLngBounds(LX_FRANCE_BOUNDS));
+          var sz=lxMap.getSize();
+          entry.conteneur = {x: sz.x, y: sz.y};
+          var pNE=lxMap.latLngToContainerPoint(L.latLng(LX_FRANCE_BOUNDS[1][0], LX_FRANCE_BOUNDS[1][1]));
+          var pSW=lxMap.latLngToContainerPoint(L.latLng(LX_FRANCE_BOUNDS[0][0], LX_FRANCE_BOUNDS[0][1]));
+          entry.franceEcranPx = {larg: Math.round(Math.abs(pNE.x-pSW.x)), haut: Math.round(Math.abs(pNE.y-pSW.y))};
+        }catch(e2){ entry.mesureCadrageErreur = String(e2 && e2.message || e2); }
+      }
+      window.__lxTrace.push(entry);
+    }catch(e){
+      window.__lxTrace.push({ t: Math.round(performance.now()), cadrage: point, vueNonPosee: true, erreur: String(e && e.message || e) });
+    }
+  }
+  function lxResizeCarte(source){
+    lxSizeCarteView();
+    // #lx-filtreBand est visible même sur la vue Liste (les deux sous-onglets la partagent),
+    // donc l'observateur ci-dessous peut appeler cette fonction alors que #vueCarte est
+    // masqué : invalider Leaflet sur un conteneur display:none n'apporte rien et risque de
+    // lui faire lire une taille 0x0 sans qu'on en ait besoin — inutile de le tenter tant que
+    // la vue n'est pas montrée (lxSetSubtab('carte') rappelle de toute façon cette fonction
+    // dès qu'elle le devient).
+    var vc=$('vueCarte');
+    if(lxMap && vc && !vc.hidden) lxMap.invalidateSize();
+    lxTraceResize(source);
+  }
+  // R13 (2026-08-10) : le diagnostic a montré ecart:0 aux trois appels de lxSizeCarteView()
+  // — le calcul lui-même est sain, la fusion CSS de R11 était hors de cause. Le débordement
+  // venait de #mapKey qui grandit APRÈS le dernier calcul (20 px mesuré, 27 px constaté ~2 s
+  // plus tard), sans que personne ne recalcule derrière. Choix retenu (plutôt qu'une hauteur
+  // de légende figée en CSS) : ResizeObserver, parce que l'incrément 6 va ajouter du contenu
+  // à cette zone (verdict du filtre) — figer une hauteur maintenant serait à refaire dans la
+  // foulée. Observé une seule fois, appelé même si #vueCarte est masqué : lxSizeCarteView()
+  // sort tout de suite dans ce cas, c'est un no-op sûr.
+  // R16 (2026-08-10) : étendu à #lx-filtreBand (la section .filtre qui regroupe les trois
+  // bandes tools/cur-band/crit-band, AU-DESSUS de la carte). #mapKey seul ne suffisait pas :
+  // c'est cette barre-là qui grandit depuis le réseau (familles/curseur/résultat) et au
+  // dépliage du <details> des critères, ni l'un ni l'autre observé jusqu'ici. Les deux cibles
+  // partagent le même observateur et convergent vers le même point d'entrée (lxResizeCarte),
+  // qui invalide Leaflet en plus de mesurer — l'ancien callback ne faisait que mesurer.
+  // Décision 14 (2026-08-10) : #lx-filtreBand n'est PLUS observé, remplacé par #lxMiniFiltre.
+  // Raison mesurée avant d'écrire, pas devinée : depuis le repliement, #lx-filtreBand est soit
+  // caché (display:none, taille 0×0) soit affiché en superposition au-dessus de la carte selon
+  // .is-open — CE BASCULEMENT LUI-MÊME est un changement de taille massif (0×0 -> plusieurs
+  // centaines de px), qui aurait fait tourner l'observateur (donc lxResizeCarte()/
+  // invalidateSize()) à CHAQUE ouverture/fermeture du réglage — exactement le « nouveau cycle
+  // de redimensionnement à chaque ouverture » que la décision 14 interdit, puisque le réglage
+  // se pose maintenant EN SUPERPOSITION et ne doit plus jamais faire bouger le cadre de la
+  // carte. #lxMiniFiltre, lui, a une hauteur FIXE (44px, posée en CSS) qui ne varie JAMAIS
+  // avec l'ouverture/fermeture de son overlay (position:absolute, sorti du flux — ne compte
+  // pas dans la hauteur de son parent) : c'est LUI qui détermine réellement l'espace laissé à
+  // la carte sur la vue Carte, donc le bon élément à observer.
+  var lxKeyObserver=null;
+  function lxWatchResize(){
+    if(lxKeyObserver || typeof ResizeObserver==='undefined') return;
+    lxKeyObserver=new ResizeObserver(function(entries){
+      var qui=entries.map(function(e){ return e.target && e.target.id; }).join(',');
+      lxResizeCarte('observer:'+qui);
+    });
+    var key=$('mapKey'); if(key) lxKeyObserver.observe(key);
+    var mini=$('lxMiniFiltre'); if(mini) lxKeyObserver.observe(mini);
+  }
+  // Décision 14 (2026-08-10) : déplace le SEUL exemplaire du filtre (#lx-filtreBand) entre sa
+  // position en superposition (Carte, enfant de #lxMiniFiltre) et sa position en ligne
+  // (Liste, juste après #lxMiniFiltre dans le flux normal). appendChild()/insertBefore() sur
+  // un nœud DÉJÀ DANS LE DOM le déplacent sans le recréer : aucune perte d'état (valeur des
+  // champs de recherche, <details open>, écouteurs déjà attachés par initLieuxSkeleton()).
+  // Point d'entrée unique, appelé uniquement depuis lxSetSubtab() — pas de chemin parallèle.
+  function lxMoveFiltreBand(carte){
+    var band=$('lx-filtreBand'), mini=$('lxMiniFiltre'), foot=$('lxOverlayFoot');
+    if(!band || !mini) return;
+    if(carte){
+      if(band.parentNode!==mini) mini.appendChild(band);
+      band.classList.add('filtre-overlay'); band.classList.remove('filtre-inline');
+      if(foot) foot.hidden=false;
+    } else {
+      if(band.parentNode===mini && mini.parentNode) mini.parentNode.insertBefore(band, mini.nextSibling);
+      band.classList.add('filtre-inline'); band.classList.remove('filtre-overlay');
+      if(foot) foot.hidden=true;
+      mini.classList.remove('is-open');
+      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+    }
+  }
+  function lxSetSubtab(name){
+    var tCarte=$('tab-carte'), tListe=$('tab-liste'), vCarte=$('vueCarte'), vListe=$('vueListe');
+    if(!tCarte||!tListe||!vCarte||!vListe) return;
+    var carte=name==='carte';
+    tCarte.classList.toggle('is-active',carte); tListe.classList.toggle('is-active',!carte);
+    tCarte.removeAttribute('aria-current'); tListe.removeAttribute('aria-current');
+    (carte?tCarte:tListe).setAttribute('aria-current','page');
+    vCarte.hidden=!carte; vListe.hidden=carte;
+    lxMoveFiltreBand(carte);
+    if(carte){
+      // R16 (2026-08-10, 2e passage) : le fond du défaut n'était pas seulement « personne ne
+      // recorrige derrière » (traité au 1er passage avec lxResizeCarte()/le ResizeObserver
+      // élargi), c'est que la carte est SIZÉE ET RÉVÉLÉE avant que la barre de filtre
+      // (familles/curseur/résultat, réseau) n'ait sa hauteur définitive — l'utilisateur voit
+      // alors une carte à la mauvaise taille, même brièvement, avant qu'elle ne saute à la
+      // bonne. Recommandation du lead tech : rendre ça synchrone à l'ouverture plutôt que de
+      // corriger après coup. Tant que LX_FILTRE_RENDU n'est pas vrai, on couvre la carte
+      // (classe .attente, cf. CSS) au lieu de la révéler à une taille qui va bouger — la
+      // carte se construit normalement en dessous (Leaflet a besoin d'un vrai conteneur, pas
+      // d'un display:none, cf. R8), seule sa RÉVÉLATION attend. lxInit() retire la classe et
+      // fait la première mesure/révélation dès que LX_FILTRE_RENDU passe à vrai (cf. sa note).
+      // Décision 14 : le bandeau replié (#lxMiniFiltre) suit EXACTEMENT le même jalon —
+      // révélé et masqué au même instant que .attente, un seul point d'entrée pour les deux,
+      // pas un readiness signal de plus. Et TOUJOURS refermé à l'arrivée (mini.is-open retiré
+      // même si pret est déjà vrai) : « état par défaut à l'arrivée sur Carte : replié »,
+      // à chaque arrivée, pas seulement la première.
+      var pret=LX_FILTRE_RENDU;
+      vCarte.classList.toggle('attente', !pret);
+      var mini=$('lxMiniFiltre');
+      if(mini){ mini.hidden=!pret; mini.classList.remove('is-open'); }
+      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+      // R8 (2026-08-10) : mesurer AVANT de construire Leaflet, pas seulement après. L.map()
+      // capture la taille du conteneur à la construction ; le mesurer un cran plus tard ne
+      // suffit pas à corriger une carte qui s'est initialisée sur le plancher CSS
+      // (min-height:200px, faute d'un style.height déjà posé).
+      lxSizeCarteView();
+      buildLieux();
+      if(pret){
+        // Données déjà chargées (2e ouverture, ou arrivées pendant que la vue Liste était
+        // active) : rien n'attend, la mesure immédiate est fiable — même chemin qu'avant.
+        lxResizeCarte('sync-post-buildLieux');
+        requestAnimationFrame(function(){ lxResizeCarte('raf-setSubtab'); });
+      }
+      // Sinon (pas prêt) : aucun resize ici — le premier resize valable arrivera avec
+      // LX_FILTRE_RENDU, depuis lxInit(). lxWatchResize() reste le filet pour tout ce qui
+      // bouge APRÈS ce premier affichage correct (sélection de familles, panneau critères).
+    }
+  }
+  // ===== Lieux : inline (incrément 5) =========================================
+  // Repris de carte.html (committé, avec ses correctifs R1-R6) — un seul propriétaire
+  // de la donnée (cette page), un seul client Supabase (sb, déjà authentifié), un seul
+  // ME (déjà fiable : posé par onAuthed() avant que l'onglet Lieux soit atteignable,
+  // donc plus besoin de relire la session à chaque ouverture de fiche comme le faisait
+  // currentEmail() dans carte.html — ce correctif-là visait une course spécifique à
+  // l'ancien modèle standalone, qui n'existe plus ici).
+  var LX_COLS={ s:"#c4561f", a:"#2f6d9e", v:"#3c7a4e" };
+  function lxRad(imp){ return 5 + imp*1.7; }
+  var lxMap=null;
+  var lxClusterGroup=null; // incrément 6b (décision 12) — cf. lxInit()
+  var LX_DATA=[], LX_PISTES=[], LX_MARKERS=[], LX_CUR=null, LX_LOAD_ERROR=null;
+  var LX_FAV={};
+  // Points d'accroche minimaux pour les scénarios QA existants (scenario_carte_hover.js,
+  // scenario_carte_bas.js), écrits pour le modèle carte.html non encapsulé où markers/map/
+  // openPanel étaient globaux par construction. On n'étend pas la portée de tout le module :
+  // seuls ces trois noms, nécessaires à des scénarios déjà payés (2026-07-27), sont exposés.
+  // LX_MARKERS est mutée en place (push), donc window.markers reste à jour sans reliaison ;
+  // lxMap est RÉASSIGNÉE dans lxInit(), donc window.map y est réexposée à ce moment précis.
+  window.markers=LX_MARKERS;
+
+  var lxWikiCache={};
+  function lxWikiFetch(title,commune){
+   if(!title) return Promise.resolve(null);
+   var key=title+'|'+commune;
+   if(lxWikiCache[key]) return lxWikiCache[key];
+   var base='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages%7Cextracts&piprop=thumbnail&pithumbsize=700&exintro=1&explaintext=1&redirects=1';
+   function parse(j){try{var pg=j.query.pages;var k=Object.keys(pg)[0];if(k==='-1')return null;var p=pg[k];return{title:p.title,thumb:p.thumbnail?p.thumbnail.source:null,extract:p.extract||''};}catch(e){return null;}}
+   var p=fetch(base+'&titles='+encodeURIComponent(title)).then(function(r){return r.json();}).then(parse)
+    .then(function(res){ if(res&&res.thumb) return res;
+       var q=encodeURIComponent(title+' '+(commune||''));
+       return fetch(base+'&generator=search&gsrlimit=1&gsrsearch='+q).then(function(r){return r.json();}).then(parse).then(function(r2){return r2||res;}); })
+    ['catch'](function(){return null;});
+   lxWikiCache[key]=p; return p;
+  }
+  function lxTrim(t,n){ if(!t) return ''; t=t.trim(); return t.length>n? t.slice(0,n).replace(/\s+\S*$/,'')+'…':t; }
+  var LX_CAD={v:'en ville',b:'village / bourg',c:'pleine campagne'};
+  function lxInf(x){return x && x.toLowerCase().indexOf('non précisé')!==0;}
+
+  /* ---- Carrousel photos du panneau ---- */
+  var LX_PH={list:[],i:0,key:null};
+  function lxShowPh(msg){
+   var hero=$('hero-img');
+   var pc=$('ph-count'), pv=$('ph-prev'), nx=$('ph-next');
+   if(!hero||!pc||!pv||!nx) return;
+   if(!LX_PH.list.length){ hero.innerHTML='<div class="ph">'+(msg||'Chargement des photos…')+'</div>'; pc.style.display='none'; pv.style.display='none'; nx.style.display='none'; return; }
+   hero.innerHTML='<img src="'+esc(LX_PH.list[LX_PH.i])+'" alt="" onerror="lxPhErr()">';
+   var multi=LX_PH.list.length>1;
+   pc.textContent=(LX_PH.i+1)+' / '+LX_PH.list.length; pc.style.display=multi?'block':'none';
+   pv.style.display=multi?'flex':'none'; nx.style.display=multi?'flex':'none';
+   if(multi){ var pre=new Image(); pre.src=LX_PH.list[(LX_PH.i+1)%LX_PH.list.length]; }
+  }
+  function phMove(d){ if(LX_PH.list.length<2) return; LX_PH.i=(LX_PH.i+d+LX_PH.list.length)%LX_PH.list.length; lxShowPh(); }
+  // Réserve 6c #3 (8 globales -> 2) : n'est plus posée sur window — #ph-prev/#ph-next sont du
+  // markup STATIQUE, jamais régénéré (contrairement à la fiche), donc un addEventListener
+  // direct dans initLieuxSkeleton() suffit, pas besoin d'une fonction accessible globalement.
+  function lxPhErr(){ if(!LX_PH.list.length) return; LX_PH.list.splice(LX_PH.i,1); if(LX_PH.i>=LX_PH.list.length) LX_PH.i=0; lxShowPh('Pas de photo disponible — voir « Source »'); }
+  window.lxPhErr=lxPhErr; // appelée depuis l'attribut onerror inline, comme dans carte.html
+  var lxPhotoCache={};
+  function lxPhotosFor(it){
+   if(lxPhotoCache[it.n]) return lxPhotoCache[it.n];
+   var out=[];
+   if(it.img) out.push(it.img);
+   var p=lxWikiFetch(it.w,it.c).then(function(w){
+     if(w&&w.thumb&&out.indexOf(w.thumb)<0) out.push(w.thumb);
+     var t=(w&&w.title)?w.title:it.w;
+     var u1='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=images&gimlimit=25&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&titles='+encodeURIComponent(t);
+     var u2='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord='+it.lat+'%7C'+it.lng+'&ggsradius=800&ggslimit=25&ggsnamespace=6&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900';
+     function pull(j){ var r=[]; try{ Object.keys(j.query.pages).forEach(function(k){ var pg=j.query.pages[k]; var ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii||ii.mime!=='image/jpeg') return; var n=(pg.title||'').toLowerCase(); if(/blason|logo|carte |map|drapeau|flag|icon|wappen|plan de/.test(n)) return; r.push(ii.thumburl||ii.url); }); }catch(e){} return r; }
+     var u3='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&gsrsearch='+encodeURIComponent(it.n+' '+it.c);
+     var reqs=[fetch(u1).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];})];
+     if(it.t!=='v') reqs.push(fetch(u3).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
+     if(it.cad!=='v'&&it.t!=='v') reqs.push(fetch(u2).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
+     return Promise.all(reqs).then(function(ar){
+       ar.forEach(function(l){ l.forEach(function(u){ if(out.indexOf(u)<0) out.push(u); }); });
+       return out.slice(0,20);
+     });
+   })['catch'](function(){ return out; });
+   lxPhotoCache[it.n]=p; return p;
+  }
+  function lxLoadPhotos(it){
+   LX_PH={list:it.img?[it.img]:(it._thumb?[it._thumb]:[]),i:0,key:it.n};
+   lxShowPh();
+   lxPhotosFor(it).then(function(urls){
+     if(LX_PH.key!==it.n) return;
+     urls.forEach(function(u){ if(LX_PH.list.indexOf(u)<0) LX_PH.list.push(u); });
+     if(!LX_PH.list.length) lxShowPh('Pas de photo trouvée — voir « Plus de photos »');
+     else lxShowPh();
+   });
+  }
+
+  /* ---- Préchargement des vignettes de survol (par lots de 50) ---- */
+  function lxApplyThumb(it,src){ it._thumb=src; it._thumbResolved=true; if(it._m) it._m.setTooltipContent(lxTipHtml(it,src)); var im=new Image(); im.src=src; }
+  function lxMarkNoThumb(it){ if(it._thumb) return; it._thumbResolved=true; if(it._m) it._m.setTooltipContent(lxTipHtml(it,null)); }
+  function lxFallbackThumb(it){ lxWikiFetch(it.w,it.c).then(function(w){ if(w&&w.thumb&&!it._thumb) lxApplyThumb(it,w.thumb); else lxMarkNoThumb(it); }); }
+  function lxPrefetchThumbs(){
+   var byTitle={};
+   LX_DATA.forEach(function(it){ (byTitle[it.w]=byTitle[it.w]||[]).push(it); });
+   var titles=Object.keys(byTitle), chunks=[];
+   for(var i=0;i<titles.length;i+=50) chunks.push(titles.slice(i,i+50));
+   var base='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail&pithumbsize=700&redirects=1';
+   chunks.reduce(function(seq,ch){ return seq.then(function(){
+     return fetch(base+'&titles='+encodeURIComponent(ch.join('|'))).then(function(r){return r.json();}).then(function(j){
+       var norm={},red={},byT={};
+       (j.query.normalized||[]).forEach(function(x){norm[x.from]=x.to;});
+       (j.query.redirects||[]).forEach(function(x){red[x.from]=x.to;});
+       Object.keys(j.query.pages).forEach(function(k){ var p=j.query.pages[k]; byT[p.title]=p; });
+       ch.forEach(function(t){ var f=norm[t]||t; f=red[f]||f; var p=byT[f];
+         var th=(p&&p.thumbnail)?p.thumbnail.source:null;
+         byTitle[t].forEach(function(it){
+           if(it.img){ if(!it._thumb) lxApplyThumb(it,it.img); }
+           else if(th){ lxApplyThumb(it,th); }
+           else { lxFallbackThumb(it); }
+         });
+       });
+     })['catch'](function(){});
+   });}, Promise.resolve());
+  }
+
+  // Infobulle au survol : photo (dès qu'elle est connue) + nom + commune + type. Le détail
+  // complet reste réservé au CLIC dans la fiche latérale (maquette 2026-07-24 maq-carte-hover.html).
+  var LX_TIP_MISSING='<div class="tip-missing"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h4l1.5-2h7L17 7h4v13H3z"/><circle cx="12" cy="13.5" r="3.5"/><path d="M2 2l20 20"/></svg><span>Photo indisponible</span></div>';
+  function lxTipImgErr(img){ var p=img&&img.parentNode; if(p) p.innerHTML=LX_TIP_MISSING; }
+  window.lxTipImgErr=lxTipImgErr;
+  function lxTipPhotoHtml(src, resolved){
+   if (src) return '<div class="tip-photo"><img src="'+esc(src)+'" alt="" loading="lazy" onerror="lxTipImgErr(this)"></div>';
+   if (resolved) return '<div class="tip-photo">'+LX_TIP_MISSING+'</div>';
+   return '<div class="tip-photo"><div class="tip-skel"></div><div class="tip-loading"><span class="tip-spin"></span>Chargement de la photo…</div></div>';
+  }
+  function lxTipHtml(it, img){
+   var col=LX_COLS[it.t];
+   var typ = it.t==='v' ? 'Lieu à reprendre' : (it.t==='a' ? 'Abbaye / monastère actif' : 'Sanctuaire / pèlerinage');
+   var photoSrc = img || it.img || it._thumb || null;
+   var photoResolved = !!(photoSrc || it._thumbResolved);
+   return '<div class="tip-in">'+
+     lxTipPhotoHtml(photoSrc, photoResolved)+
+     '<div class="tip-nm">'+esc(it.n)+'</div>'+
+     '<div class="tip-sub" style="color:'+col+'">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+'</div>'+
+     '<div class="tip-line" style="color:'+col+';font-weight:600">'+typ+'</div>'+
+     '<div class="tip-line" style="color:#9a8f7c;font-size:11px">Cliquez pour la fiche complète</div>'+
+     '</div>';
+  }
+
+  var LX_PTIER={1:'#C4501E',2:'#B8862F',3:'#6B7A8F'};
+  var LX_PTIER_L={1:'À activer maintenant',2:'Chaude — un appel pour trancher',3:'Appui — pas un lieu à prendre'};
+  function lxTypeLabel(it){
+   if(it.t==='v') return 'Lieu à reprendre';
+   if(it.t==='a') return 'Abbaye / monastère actif';
+   if(it.t==='p') return 'Piste équipe';
+   return 'Sanctuaire / pèlerinage';
+  }
+  function lxStatusFor(it){
+   if(it.qualif && it.qualif.scoreBenoit){
+    var st=it.qualif.scoreBenoit.statut;
+    if(st==='qualifie_documentairement') return ['Qualifié doc','status-hot'];
+    if(st==='sous_condition') return ['Sous condition','status-wait'];
+    if(st==='ecarte_documentaire') return ['Écarté doc','status-out'];
+   }
+   if(it.t==='p') return it.tier===1 ? ['Prioritaire','status-priority'] : (it.tier===2 ? ['À creuser','status-hot'] : ['Appui','status-wait']);
+   if(lxIsFav(it)) return ['Prioritaire','status-priority'];
+   if(it.t==='v' && it.imp>=4) return ['À creuser','status-hot'];
+   if(it.t==='s' && it.p && it.p!=='—') return ['À creuser','status-hot'];
+   if(it.t==='a' && /baisse|fragile|vieill/i.test(it.td||'')) return ['À creuser','status-hot'];
+   return ['À qualifier','status-open'];
+  }
+  function lxFirstText(a){ return (a&&a.length)?a[0]:''; }
+  function lxSummaryFor(it){
+   if(it.qualif){
+    var q=it.qualif, e=q.eglise||{}, s=q.ecoleCatholique||{}, b=s.meilleureReference||s.meilleure||{};
+    return esc('Référence Église : '+(e.diocese||'à qualifier')+' — '+(e.eveque||'évêque à vérifier')+'. École : '+(b.nom?b.nom+' à '+b.distanceKm+' km':'à qualifier')+'. Score Benoit : '+((q.scoreBenoit&&q.scoreBenoit.scorePct!=null)?q.scoreBenoit.scorePct+' % provisoire':'à qualifier')+'.');
+   }
+   if(it.t==='p') return esc(it.desc||'Piste repérée par l’équipe. À qualifier avec les critères Lumignis avant contact.');
+   if(it.t==='v') return esc(lxFirstText([it.pts,it.lim].filter(lxInf)) || 'Bien identifié dans la prospection. À qualifier sur le triptyque : vie spirituelle, familles, faisabilité immobilière.');
+   if(it.t==='a') return esc('Abbaye ou monastère actif à observer : potentiel lié au lieu, à l’accueil et à l’évolution de la communauté. Point clé : comprendre la relation possible avec l’ordre ou le diocèse.');
+   var lead = lxFirstText(it.forts) || it.p || 'Sanctuaire repéré pour son potentiel de lieu chrétien habité.';
+   var block = lxFirstText(it.lims);
+   return esc(lead + (block ? ' Point bloquant à vérifier : '+block : ''));
+  }
+  function lxLevelFromText(txt,base){
+   txt=(txt||'').toLowerCase();
+   if(/fort|oui|quotid|important|majeur|actif|sur place|probable|prioritaire|chaude/.test(txt)) return 3;
+   if(/moyen|possible|à vérifier|a verifier|partiel|inconnu|non précisé|non precise/.test(txt)) return 2;
+   if(/faible|non|limite|baisse|fragile|vieill|cher|travaux/.test(txt)) return 1;
+   return base||0;
+  }
+  function lxMetricHtml(label,lvl,note){
+   var l=Math.max(0,Math.min(3,lvl||0));
+   var txt=l===3?'fort':(l===2?'à vérifier':(l===1?'faible':'inconnu'));
+   return '<div class="metric"><b>'+label+'</b><div class="meter l'+l+'"><i></i><i></i><i></i></div><span>'+txt+(note?' · '+esc(note):'')+'</span></div>';
+  }
+  function lxMetricsFor(it){
+   if(it.qualif && it.qualif.criteresBenoit){
+    var by={}; it.qualif.criteresBenoit.forEach(function(c){by[c.critere]=c;});
+    function lvl(n){ var v=by[n]&&by[n].note; return v==null?0:(v>=4?3:(v>=2?2:1)); }
+    return '<div class="metrics">'+
+     lxMetricHtml('Spirituel',Math.round((lvl(2)+lvl(4)+lvl(5))/3),'crit. 2/4/5')+
+     lxMetricHtml('Familles',Math.round((lvl(1)+lvl(3)+lvl(6))/3),'crit. 1/3/6')+
+     lxMetricHtml('Accueil',lvl(7),'crit. 7')+
+     lxMetricHtml('École',lvl(8),'crit. 8')+
+     lxMetricHtml('Territoire',lvl(9),'crit. 9')+
+     lxMetricHtml('Ignis',lvl(10),'crit. 10')+
+    '</div>';
+   }
+   if(it.t==='p' && it.criteres && it.criteres.length){
+    var bp={}; it.criteres.forEach(function(c){bp[c.n]=c;});
+    var pl=function(n){ var v=bp[n]&&bp[n].v; return v==='oui'?3:(v==='partiel'?2:(v==='non'?1:0)); };
+    return '<div class="metrics">'+
+     lxMetricHtml('Spirituel',Math.round((pl(2)+pl(4)+pl(5))/3),'crit. 2/4/5')+
+     lxMetricHtml('Familles',Math.round((pl(1)+pl(3)+pl(6))/3),'crit. 1/3/6')+
+     lxMetricHtml('Accueil',pl(7),'crit. 7')+
+     lxMetricHtml('École',pl(8),'crit. 8')+
+     lxMetricHtml('Territoire',pl(9),'crit. 9')+
+     lxMetricHtml('Ignis',pl(10),'crit. 10')+
+    '</div>';
+   }
+   var spiritual=it.t==='v'?lxLevelFromText(it.chap, it.chap&&/oui|chapelle/i.test(it.chap)?3:1):3;
+   var families=lxLevelFromText([it.cad,it.cap,it.ba,it.tl].join(' '), it.cad==='v'?2:3);
+   var school=it.ecole&&it.ecole.noteCritere8 ? Math.min(3,Math.ceil(it.ecole.noteCritere8/2)) : 0;
+   var real=it.t==='v'?lxLevelFromText([it.ba,it.cap,it.prix,it.ter].join(' '),2):lxLevelFromText([it.ba,it.tl,it.fr].join(' '),2);
+   var church=it.t==='v'?1:(it.t==='a'?2:3);
+   var access=it.cad==='v'?3:(it.cad==='b'?2:1);
+   return '<div class="metrics">'+
+    lxMetricHtml('Spirituel',spiritual,it.t==='v'?'chapelle / usage':'culte existant')+
+    lxMetricHtml('Familles',families,LX_CAD[it.cad]||'cadre à préciser')+
+    lxMetricHtml('École',school,school?'proche à vérifier':'non qualifié')+
+    lxMetricHtml('Immobilier',real,it.t==='v'?'bien identifié':'capacité à qualifier')+
+    lxMetricHtml('Église',church,it.t==='v'?'hors piste diocèse':'interlocuteur à identifier')+
+    lxMetricHtml('Accès',access,LX_CAD[it.cad]||'inconnu')+
+   '</div>';
+  }
+  function lxInfoLine(k,v){ return lxInf(v)?'<div class="info-line"><b>'+k+'</b><span>'+esc(v)+'</span></div>':''; }
+  var LX_CRIT_NAMES={
+   1:'Notre projet / gouvernance',2:'Divine Volonté',3:'Chez nous / logements',
+   4:'Eucharistie + adoration <500 m',5:'Messe quotidienne',6:'Familles croyantes proches',
+   7:'Accueil & rayonnement',8:'École catholique',9:'Nature / Ouest / ville',10:'Retraites Ignis'
+  };
+  function lxNoteClass(v){ return v==null?'unknown':(v>=4?'ok':(v>=2?'mid':'low')); }
+  function lxNoteLabel(v){ return v==null?'?':String(v)+'/5'; }
+  function lxScoreHtml(it){
+   if(!it.qualif || !it.qualif.scoreBenoit) return '';
+   var s=it.qualif.scoreBenoit, unk=s.inconnusEliminatoires||[];
+   var label=s.scorePct==null?'?':s.scorePct+'%';
+   var line=unk.length ? ('À lever avant engagement : critères '+unk.join(', ')+'.') : 'Aucun critère éliminatoire inconnu dans la donnée actuelle.';
+   return '<div class="score-card"><div class="score-num">'+esc(label)+'</div><div class="score-copy"><b>Score Benoit &amp; Éléonore</b>'+esc(line)+'</div></div>';
+  }
+  function lxCriteriaHtml(it){
+   if(it.t==='p' && it.criteres && it.criteres.length){
+    var prows=it.criteres.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
+     var cls=c.v==='oui'?'ok':(c.v==='partiel'?'mid':(c.v==='non'?'low':'unknown'));
+     var lbl=c.v==='oui'?'oui':(c.v==='partiel'?'partiel':(c.v==='non'?'non':'?'));
+     return '<div class="criterion"><div class="criterion-num">'+c.n+'</div><div class="criterion-main"><b>'+esc(LX_CRIT_NAMES[c.n]||('Critère '+c.n))+'</b><span>'+esc(c.note||'À qualifier')+'</span></div><div class="criterion-note '+cls+'">'+lbl+'</div></div>';
+    }).join('');
+    return '<div class="section-title">Crible Benoit &amp; Éléonore</div><div class="criteria-list">'+prows+'</div>';
+   }
+   if(!it.qualif || !it.qualif.criteresBenoit) return '';
+   var rows=it.qualif.criteresBenoit.slice().sort(function(a,b){return a.critere-b.critere;}).map(function(c){
+    return '<div class="criterion"><div class="criterion-num">'+c.critere+'</div><div class="criterion-main"><b>'+esc(LX_CRIT_NAMES[c.critere]||('Critère '+c.critere))+'</b><span>'+esc(c.texte||'À qualifier')+'</span></div><div class="criterion-note '+lxNoteClass(c.note)+'">'+lxNoteLabel(c.note)+'</div></div>';
+   }).join('');
+   return '<div class="section-title">Crible Benoit</div><div class="criteria-list">'+rows+'</div>';
+  }
+  function lxPracticalFor(it){
+   if(it.qualif){
+    var q=it.qualif, e=q.eglise||{}, s=q.ecoleCatholique||{}, best=s.meilleureReference||s.meilleure||{};
+    return '<div class="info-grid">'+
+     lxInfoLine('Diocèse',e.diocese)+
+     lxInfoLine('Évêque',e.eveque)+
+     lxInfoLine('École catho',best.nom ? (best.nom+' · '+best.commune+' · '+best.distanceKm+' km') : 'à qualifier')+
+     lxInfoLine('Contrat',best.contrat)+
+     lxInfoLine('Score Benoit',q.scoreBenoit&&q.scoreBenoit.scorePct!=null ? (q.scoreBenoit.scorePct+' % · '+q.scoreBenoit.statut) : 'à qualifier')+
+     lxInfoLine('Disponibilité',q.disponibilite&&q.disponibilite.statut)+
+    '</div>';
+   }
+   if(it.t==='p') return '<div class="info-grid">'+lxInfoLine('Zone',it.zone)+lxInfoLine('Angle',it.angle)+lxInfoLine('Priorité',LX_PTIER_L[it.tier])+lxInfoLine('Diocèse',it.diocese)+lxInfoLine('Bâti / surface',it.surface)+lxInfoLine('Prix',it.prix)+lxInfoLine('Statut',it.statut)+'</div>';
+   if(it.t==='v') return '<div class="info-grid">'+lxInfoLine('Prix',it.prix)+lxInfoLine('Bâti',it.ba)+lxInfoLine('Terrain',it.ter)+lxInfoLine('Capacité',it.cap)+lxInfoLine('Chapelle',it.chap)+lxInfoLine('Source','Annonce / dossier de prospection')+'</div>';
+   if(it.t==='a') return '<div class="info-grid">'+lxInfoLine('Ordre',it.o)+lxInfoLine('Communauté',it.nb)+lxInfoLine('Tendance',it.td)+lxInfoLine('Accueil',it.tl)+lxInfoLine('Activités',it.ac)+lxInfoLine('Source','Wikipédia / source liée')+'</div>';
+   return '<div class="info-grid">'+lxInfoLine('Statut',it.st)+lxInfoLine('Communauté',it.co)+lxInfoLine('Fréquentation',it.fr)+lxInfoLine('Bâti',it.ba)+lxInfoLine('Potentiel',it.p)+lxInfoLine('Source','Wikipédia / source liée')+'</div>';
+  }
+  function lxNextActionFor(it){
+   if(it.qualif && it.qualif.scoreBenoit && it.qualif.scoreBenoit.inconnusEliminatoires && it.qualif.scoreBenoit.inconnusEliminatoires.length){
+    return 'Lever les critères éliminatoires inconnus : '+it.qualif.scoreBenoit.inconnusEliminatoires.join(', ')+'. Priorité : autonomie, Divine Volonté, logements/familles, messe quotidienne.';
+   }
+   if(it.t==='p') return it.prochaine || 'Qualifier la piste avec les critères Lumignis puis identifier le premier interlocuteur concret.';
+   if(it.t==='v') return 'Vérifier disponibilité, diocèse/localisation spirituelle possible, écoles proches et ordre de grandeur travaux.';
+   if(it.t==='a') return 'Identifier la gouvernance du lieu et tester l’existence d’un besoin réel de reprise ou de partenariat.';
+   if(it.p && it.p!=='—') return 'Identifier le recteur ou le diocèse, puis vérifier si une présence familiale sur place est imaginable.';
+   return 'Compléter la qualification avant tout contact : interlocuteur Église, bâti disponible, écoles, logements proches.';
+  }
+  function lxActionLinks(it,gmaps,gimg){
+   var source=it.u?'<a href="'+it.u+'" target="_blank" rel="noopener">Source</a>':'';
+   return '<div class="fbtns">'+source+'<a class="gr" href="'+gmaps+'" target="_blank" rel="noopener">Google Maps</a><a href="'+gimg+'" target="_blank" rel="noopener">Photos</a></div>';
+  }
+  function lxEcoleLine(lbl,e){
+   if(!e||!e.nom) return '<div class="info-line"><b>'+lbl+'</b><span>—</span></div>';
+   var d=(e.km!=null?' · ~'+e.km+' km':'');
+   var tr=e.tradition?' · <span style="color:#9a3d25">tradition</span>':'';
+   var src=e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" title="source">↗</a>':'';
+   return '<div class="info-line"><b>'+lbl+'</b><span>'+esc(e.nom)+(e.commune?' · '+esc(e.commune):'')+d+tr+src+'</span></div>';
+  }
+  function lxEcolesHtml(it){
+   var e=it.ecoles||{};
+   var sc=e.sc;
+   if(!sc && it.qualif && it.qualif.ecoleCatholique){ var b=it.qualif.ecoleCatholique.meilleureReference||it.qualif.ecoleCatholique.meilleure; if(b&&b.nom) sc={nom:b.nom,commune:b.commune,km:b.distanceKm,url:b.url||b.web}; }
+   var hc=e.hc;
+   if(!sc&&!hc) return '';
+   return '<div class="section-title">Écoles catholiques</div><div class="info-grid">'+lxEcoleLine('Sous contrat',sc)+lxEcoleLine('Hors contrat',hc)+'</div>';
+  }
+  // Incrément 6a — fiche rouverte pour y placer le verdict en tête (décision 6) : un bloc par
+  // famille sélectionnée, verdict + détail critère par critère au niveau du curseur courant.
+  // Rien ici ne réimplémente lxEvalFam()/lxEtatEquipe() : le même moteur que la carte et la
+  // liste, jamais un second calcul du seuil. Aucune famille sélectionnée, ou fiche d'une
+  // piste équipe (pas de qualification à évaluer) : le bloc ne s'affiche pas.
+  function lxFicheVerdictHtml(it){
+   var fs=lxSel();
+   if(!fs.length || it._piste) return '';
+   // Même classe que lxRenderTable()/lxRenderResultat() : le crible de la fiche est un
+   // verdict (lxEvalFam) au même titre que la Liste et la bande résultat — pas de troisième
+   // chemin qui l'ignorerait. Réutilise .summary-box, déjà le patron de ce bloc pour une
+   // information d'indisponibilité (cf. qualifNote dans lxPanelScaffold()), pas une UI neuve.
+   if(LX_LOAD_ERROR) return '<div class="summary-box">'+esc(LX_LOAD_ERROR)+'</div>';
+   return '<div class="section-title">Au niveau d\'exigence choisi ('+lxFiltreN+')</div>'
+    + fs.map(function(f){
+      var e=lxEvalFam(it, f, lxFiltreN), motE=lxMotPremiers(e.k);
+      var txt = e.ok
+       ? (f.moi ? 'Tient vos '+e.k+' '+motE : 'Tient les '+e.k+' '+motE+' '+lxDeFam(f))
+       : 'Bute sur '+e.miss.length+' critère'+(e.miss.length>1?'s':'')+' sur '+e.k;
+      // Décision 13 : le secteur géographique dégrade sans éliminer — signalé à part, jamais
+      // fondu dans le verdict des critères (lxEvalFam()/lxEtatEquipe() n'en savent rien et ne
+      // doivent pas en savoir). Pas de cas « zone inconnue » ici : it._piste a déjà écarté les
+      // seuls lieux sans département juste au-dessus.
+      var zone = lxEnZone(it, f)===false ? '<div class="zone-note">Hors de sa zone géographique</div>' : '';
+      return '<div class="fam-block"><h4><span class="av'+(f.moi?' me':'')+'">'+esc(f.initiales)+'</span>'+esc(f.nom)+'</h4>'
+       + '<div class="verdict '+(e.ok?'ok':'miss')+'">'+esc(txt)+'</div>'
+       + zone
+       + lxGauge(e) + '</div>';
+     }).join('');
+  }
+  function lxPanelScaffold(it,bodyHtml,linksHtml){
+   var st=lxStatusFor(it);
+   var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
+   return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
+    '<div class="sheet-actions"><a class="icon-btn2" href="#" data-act="copy-place-link" title="Copier le lien">↗</a></div></div>'+
+    '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
+    lxFicheVerdictHtml(it)+
+    '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
+    '<div class="summary-box">'+lxSummaryFor(it)+'</div>'+
+    qualifNote+
+    lxScoreHtml(it)+
+    '<div class="section-title">Qualification</div>'+lxMetricsFor(it)+
+    '<div class="section-title">Infos utiles</div>'+lxPracticalFor(it)+lxEcolesHtml(it)+
+    '<div class="next-action"><b>Prochaine action</b>'+esc(lxNextActionFor(it))+'</div>'+
+    lxCriteriaHtml(it)+bodyHtml+linksHtml+lxThreadHtml(it);
+  }
+  // Réserve 6c #1 (revue précédente) : une exception pendant la construction de la fiche
+  // (lxPanelScaffold() enchaîne une dizaine de sous-fonctions — lxFicheVerdictHtml,
+  // lxMetricsFor, lxCriteriaHtml, etc. — sur une donnée réelle, jamais entièrement homogène
+  // sur 262 lieux) laissait aujourd'hui #panel-body tel quel : soit vide au premier lieu
+  // ouvert, soit encore sur le CONTENU DU LIEU PRÉCÉDENT ensuite — la fiche paraît répondre
+  // au clic sans dire qu'elle a échoué. Message explicite, jamais un panneau muet ou figé.
+  function lxFicheErreurHtml(nom){
+   return '<div class="sheet-head"><div class="sheet-title"><h2>Fiche indisponible</h2></div></div>'
+    + '<div class="summary-box">Une erreur est survenue en construisant la fiche'+(nom?' de '+esc(nom):'')+'. Fermez puis rouvrez ce lieu ; si ça persiste, signalez-le.</div>';
+  }
+  function openPiste(p){
+   LX_CUR=p;
+   var mp=$('mapPanel'); if(mp) mp.style.setProperty('--acc','#a06a1f');
+   var heroImg=$('hero-img');
+   if(heroImg) heroImg.innerHTML = p.img
+     ? '<img src="'+esc(p.img)+'" alt="'+esc(p.nom)+'" onerror="this.style.display=\'none\'">'
+     : '<div class="ph">◆ Piste repérée par l\'équipe — '+esc(p.zone)+'</div>';
+   var pc=$('ph-count'), pv=$('ph-prev'), nx=$('ph-next');
+   if(pc)pc.style.display='none'; if(pv)pv.style.display='none'; if(nx)nx.style.display='none';
+   var pb=$('panel-body'), reussi=false;
+   try{
+     var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.nom+' '+p.zone);
+     var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p.nom);
+     var forts=(p.forts&&p.forts.length)?'<div class="anl pf"><h4>Points forts</h4><ul>'+p.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+     var atouts=(p.pour&&p.pour.length)?'<div class="anl pf"><h4>Atouts</h4><ul>'+p.pour.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+     var reserves=(p.contre&&p.contre.length)?'<div class="anl lm"><h4>Réserves</h4><ul>'+p.contre.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+     var detail=p.contenu?'<div class="anl"><h4>En détail</h4><p>'+esc(p.contenu)+'</p></div>':'';
+     var lk=(p.links&&p.links.length)?p.links.filter(function(x){return x&&x.url;}).map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}):[];
+     var srcs=(p.sources&&p.sources.length)?'<div class="kv" style="color:#8c7a63;font-size:12px">Sources : '+p.sources.map(esc).join(' · ')+(lk.length?'<br>Liens : '+lk.join(' · '):'')+'</div>':(lk.length?'<div class="kv" style="color:#8c7a63;font-size:12px">Liens : '+lk.join(' · ')+'</div>':'');
+     if(pb) pb.innerHTML=lxPanelScaffold(p,forts+atouts+reserves+detail+srcs,lxActionLinks(p,gmaps,gimg));
+     reussi=true;
+   }catch(e){
+     console.error('openPiste: échec de construction de la fiche', e);
+     if(pb) pb.innerHTML=lxFicheErreurHtml(p&&p.nom);
+   }
+   var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
+   requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
+   if(reussi) loadComments(p); // pas de fil d'échanges greffé sur une fiche qui n'a pas pu s'afficher
+  }
+  function openPanel(it){
+   if(it&&it.t==='p'){ openPiste(it); return; }
+   LX_CUR=it;
+   var col=LX_COLS[it.t];
+   var mp=$('mapPanel'); if(mp) mp.style.setProperty('--acc',col);
+   lxLoadPhotos(it);
+   var pb=$('panel-body'), reussi=false;
+   try{
+     var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(it.n+' '+it.c+' '+it.d);
+     var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(it.n+' '+it.c);
+     var body='';
+     if(it.t==='v'){
+       var pf=lxInf(it.pts)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4>'+esc(it.pts)+'</div>':'';
+       var lm=lxInf(it.lim)?'<div class="anl lm"><h4>À vérifier / limites</h4>'+esc(it.lim)+'</div>':'';
+       body=pf+lm+
+       '<div class="kv" style="color:#8c7a63;font-size:12px">Photos : commune / environs (ou photo fournie) — voir l\'annonce via « Source » pour les photos du bien. Données du dossier de prospection Lumignis (juin 2026), disponibilité à reconfirmer.</div>';
+     } else if(it.t==='a'){
+       body='';
+     } else {
+       var forts=(it.forts&&it.forts.length)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4><ul>'+it.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+       var lims=(it.lims&&it.lims.length)?'<div class="anl lm"><h4>À vérifier / limites</h4><ul>'+it.lims.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+       body=forts+lims;
+     }
+     if(pb) pb.innerHTML=lxPanelScaffold(it,body+'<div id="wx"></div>',lxActionLinks(it,gmaps,gimg));
+     reussi=true;
+   }catch(e){
+     console.error('openPanel: échec de construction de la fiche', e);
+     if(pb) pb.innerHTML=lxFicheErreurHtml(it&&it.n);
+   }
+   var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
+   requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
+   if(reussi){
+     loadComments(it);
+     lxWikiFetch(it.w,it.c).then(function(w){
+       if(w){ var wx=$('wx'); if(wx) wx.textContent=lxTrim(w.extract,520); }
+     });
+   }
+  }
+  window.openPanel=openPanel; // cf. note à la déclaration de LX_MARKERS : hook QA minimal
+  function lxCopyPlaceLink(){
+   if(!LX_CUR) return;
+   var link=location.href.split('#')[0]+'#lieu='+encodeURIComponent(lxFavKey(LX_CUR));
+   if(navigator.clipboard) navigator.clipboard.writeText(link);
+  }
+  // Réserve 6c #3 : n'est plus posée sur window — data-act="copy-place-link" sur l'écouteur
+  // délégué de #mapPanel (déjà câblé pour data-men), qui persiste à travers les réécritures
+  // innerHTML de la fiche.
+
+  /* ===== Commentaires de qualification par lieu — partagés équipe uniquement. =====
+     Repris intact de carte.html (R1-R6) : pas de repli localStorage, échec visible et
+     texte conservé, échappement complet, identité fiable (ME, posé par onAuthed()). */
+  var LX_COMMENTS={}, LX_CMT_MODE='';
+  function lxCmtKey(it){ return lxFavKey(it); }
+  function lxKindLabel(k){ return {observation:'Observation',question:'Question',decision:'Décision',action:'Action',source:'Source'}[k]||'Observation'; }
+  function lxFmtDate(s){ try{return new Date(s).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';} }
+  function lxInitials(email){ var x=(email||'?').split('@')[0].replace(/[._-]+/g,' ').trim(); return x||'?'; }
+  function lxParseMentions(t){
+   var out=[], re=/@([A-Za-zÀ-ÿ0-9._-]+)/g, m;
+   while((m=re.exec(t||''))){ if(out.indexOf(m[1])<0) out.push(m[1]); }
+   return out;
+  }
+  function lxLinkMentions(t){
+   return esc(t).replace(/@([A-Za-zÀ-ÿ0-9._-]+)/g,'<span class="mention">@$1</span>').replace(/\n/g,'<br>');
+  }
+  function lxMemberSuggestions(){
+   var set={};
+   if(ME.email) set[lxInitials(ME.email)]=true;
+   Object.keys(LX_FAV).forEach(function(k){ (LX_FAV[k]||[]).forEach(function(e){ if(e) set[lxInitials(e)]=true; }); });
+   ['Benoit','Raphael','Emmanuel'].forEach(function(x){set[x]=true;});
+   return Object.keys(set).slice(0,8);
+  }
+  function lxThreadHtml(it){
+   return '<div class="team-thread">'+
+    '<div class="thread-head"><h3>Échanges équipe</h3><span class="thread-mode" id="thread-mode">chargement…</span></div>'+
+    '<div id="comment-list" class="comment-list"><div class="comment-empty">Chargement des échanges…</div></div>'+
+    '<div class="comment-form">'+
+     '<div class="comment-tools"><select id="comment-kind" aria-label="Type de commentaire">'+
+      '<option value="observation">Observation</option><option value="question">Question</option><option value="decision">Décision</option><option value="action">Action</option><option value="source">Source</option>'+
+     '</select></div>'+
+     '<textarea id="comment-body" placeholder="Ajouter une info utile, une question, une décision… Utilise @prenom pour interpeller quelqu’un."></textarea>'+
+     // P1 : puces de mention par data-men + écouteur délégué (voir initLieuxSkeleton), jamais
+     // d'onclick inline construit avec une valeur dynamique — c'est le prérequis verrouillé
+     // pour LUM-34, appliqué dès maintenant puisqu'on déplace ce code.
+     '<div class="mention-chips">'+lxMemberSuggestions().map(function(x){return '<button type="button" data-men="'+esc(x)+'">@'+esc(x)+'</button>';}).join('')+'</div>'+
+     '<div class="comment-submit"><span class="comment-hint">Fil centré qualification, pas chat général.</span><button type="button" data-act="submit-comment">Publier</button></div>'+
+    '</div>'+
+   '</div>';
+  }
+  function lxRenderComments(it){
+   var el=$('comment-list'), mode=$('thread-mode');
+   if(!el) return;
+   var rows=(LX_COMMENTS[lxCmtKey(it)]||[]).slice().sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
+   if(mode) mode.textContent = LX_CMT_MODE==='supabase' ? 'partagé équipe' : (LX_CMT_MODE==='error' ? 'échec du chargement' : (LX_CMT_MODE==='guest' ? 'connecte-toi pour voir les échanges' : 'chargement…'));
+   if(LX_CMT_MODE==='error'){ el.innerHTML='<div class="comment-empty">Échec du chargement des échanges sur ce lieu. Réessaie dans un instant.</div>'; return; }
+   if(LX_CMT_MODE==='guest'){ el.innerHTML='<div class="comment-empty">Connecte-toi à l’espace équipe pour voir et publier des échanges sur ce lieu.</div>'; return; }
+   if(!rows.length){ el.innerHTML='<div class="comment-empty">Aucun échange sur ce lieu. Ajoute la première info fiable ou la prochaine action.</div>'; return; }
+   el.innerHTML=rows.slice(0,8).map(function(c){
+    return '<div class="comment"><div class="comment-meta"><span class="comment-kind '+esc(c.kind||'observation')+'">'+lxKindLabel(c.kind)+'</span><span>'+esc(lxInitials(c.email))+'</span><span>'+lxFmtDate(c.created_at)+'</span></div><div>'+lxLinkMentions(c.body)+'</div></div>';
+   }).join('');
+  }
+  async function loadComments(it){
+   var k=lxCmtKey(it); LX_COMMENTS[k]=[];
+   if(!ME.email){ LX_CMT_MODE='guest'; lxRenderComments(it); return; }
+   try{
+    var r=await sb.from('commentaires_lieux').select('id,lieu,nom,email,kind,body,mentions,created_at').eq('lieu',k).order('created_at',{ascending:false}).limit(25);
+    if(r.error){ LX_CMT_MODE='error'; lxRenderComments(it); return; }
+    LX_COMMENTS[k]=r.data||[]; LX_CMT_MODE='supabase'; lxRenderComments(it);
+   }catch(e){ LX_CMT_MODE='error'; lxRenderComments(it); }
+  }
+  function insertMention(name){
+   var ta=$('comment-body'); if(!ta) return;
+   var ins='@'+name+' ';
+   var start=ta.selectionStart||ta.value.length, end=ta.selectionEnd||start;
+   ta.value=ta.value.slice(0,start)+ins+ta.value.slice(end);
+   ta.focus(); ta.selectionStart=ta.selectionEnd=start+ins.length;
+  }
+  async function submitComment(){
+   if(!LX_CUR) return;
+   var ta=$('comment-body'), sel=$('comment-kind');
+   if(!ta) return;
+   var body=(ta.value||'').trim(); if(!body) return;
+   if(!ME.email){ alert('Connecte-toi à l’espace équipe pour publier un commentaire.'); return; }
+   var k=lxCmtKey(LX_CUR);
+   var row={lieu:k,nom:LX_CUR.n,email:ME.email,kind:(sel&&sel.value)||'observation',body:body,mentions:lxParseMentions(body),created_at:new Date().toISOString()};
+   // Le texte n'est vidé du champ qu'après une insertion confirmée : un échec ne doit jamais
+   // faire perdre à l'auteur ce qu'il a écrit, ni afficher un commentaire qui n'a pas été publié.
+   try{
+    var r=await sb.from('commentaires_lieux').insert(row).select().single();
+    if(r.error){ console.error('submitComment: échec insertion commentaires_lieux', r.error); alert('Échec de la publication du commentaire. Ton texte est conservé, réessaie.'); return; }
+    row=r.data||row;
+   }catch(e){ console.error('submitComment: exception', e); alert('Échec de la publication du commentaire. Vérifie ta connexion et réessaie, ton texte est conservé.'); return; }
+   LX_COMMENTS[k]=(LX_COMMENTS[k]||[]).concat([row]); ta.value=''; lxRenderComments(LX_CUR);
+  }
+  // Réserve 6c #3 : n'est plus posée sur window — data-act="submit-comment" sur le même
+  // écouteur délégué de #mapPanel que copy-place-link/toggle-fav.
+  function closePanel(){
+   var wrap=$('mapWrap'); if(wrap) wrap.classList.remove('has-panel');
+   requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
+  }
+  // Réserve 6c #3 : n'est plus posée sur window — #lxPanelClose est du markup STATIQUE,
+  // jamais régénéré, un addEventListener direct dans initLieuxSkeleton() suffit.
+  window.addEventListener('keydown',function(e){
+   if(!$('vueCarte') || $('vueCarte').hidden) return;
+   if(e.key==='Escape') closePanel();
+   else if(e.key==='ArrowLeft') phMove(-1);
+   else if(e.key==='ArrowRight') phMove(1);
+  });
+
+  /* ===== Favoris — short-list d'équipe (Supabase partagé, un seul cache : LX_FAV) ===== */
+  function lxFavKey(it){ return (it.n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,90); }
+  function lxFavEmails(it){ return LX_FAV[lxFavKey(it)]||[]; }
+  function lxIsFav(it){ return lxFavEmails(it).length>0; }
+  function lxMineFav(it){ return !!(ME.email && lxFavEmails(it).indexOf(ME.email)>=0); }
+  async function loadFav(){
+   if(!ME.email) return; // pas de repli local : hors de l'espace équipe, il n'y a pas de favoris à montrer
+   try{
+     var r=await sb.from('favoris').select('lieu,email');
+     if(r.error){ console.error('loadFav: échec', r.error); return; }
+     LX_FAV={}; (r.data||[]).forEach(function(row){ (LX_FAV[row.lieu]=LX_FAV[row.lieu]||[]).push(row.email); });
+   }catch(e){ console.error('loadFav: exception', e); }
+  }
+  async function toggleFav(it){
+   // Depuis la fiche (data-act="toggle-fav" sur l'écouteur délégué de #mapPanel, réserve 6c
+   // #3), aucun argument n'est passé : on lit LX_CUR dans la fermeture plutôt qu'une chaîne
+   // interpolée dans un attribut (même principe que P1 sur les mentions). Depuis la table de
+   // la Liste (incrément 6a), l'appelant passe le lieu trouvé via data-id sur la ligne — deux
+   // entrées, une seule logique d'écriture.
+   it = it || LX_CUR;
+   if(!it || !ME.email) return; var k=lxFavKey(it);
+   if(lxMineFav(it)){ LX_FAV[k]=lxFavEmails(it).filter(function(e){return e!==ME.email;}); try{ await sb.from('favoris').delete().eq('lieu',k).eq('email',ME.email); }catch(e){ console.error('toggleFav: échec delete', e); } }
+   else { LX_FAV[k]=lxFavEmails(it).concat([ME.email]); try{ await sb.from('favoris').insert({lieu:k,email:ME.email,nom:it.n}); }catch(e){ console.error('toggleFav: échec insert', e); } }
+   lxStyleMarker(it); if(LX_CUR && lxFavKey(LX_CUR)===k) lxSyncPanelStar(it); lxRefresh();
+  }
+  // Réserve 6c #3 : n'est plus posée sur window — cf. la note sur data-act ci-dessus.
+  // Incrément 6a : un lieu qui ne sert aucune famille sélectionnée s'estompe sur la carte
+  // (« rien ne disparaît » reste la règle par défaut — la case cacher, elle, retire vraiment ;
+  // ici le marqueur reste posé mais en retrait visuel). Sans famille sélectionnée le filtre
+  // est inactif : pas d'estompage, comportement identique aux incréments 3/5.
+  function lxStyleMarker(it){
+   if(!it||it._piste) return; var m=it._m; if(!m) return;
+   var favOn=lxIsFav(it);
+   var fs=lxSel();
+   var estompe = fs.length>0 && lxBilan(it, lxFiltreN).sat===0;
+   m.setStyle({
+     color: favOn?'#bd8a3e':'#fff',
+     weight: favOn?3.2:1.5,
+     fillOpacity: estompe?.28:.88,
+     opacity: estompe?.55:1
+   });
+  }
+  // Couronne segmentée (3e canal visuel, décision 6/12 du cadrage) : un secteur par famille
+  // sélectionnée, plein si le lieu tient son niveau pour cette famille, vide sinon. Repris de
+  // la fonction couronne() de la maquette. Posée en L.marker+divIcon non interactif séparé,
+  // positionné à la même latlng que le circleMarker — pas de retouche du circleMarker
+  // lui-même (hover/tooltip/click stabilisés en R14/R15, aucune raison d'y risquer une
+  // régression pour un ajout purement visuel).
+  function lxCouronneSvg(sat, tot, r, w){
+   if(tot<=0) return '';
+   var c=2*Math.PI*r, slot=c/tot, gap=Math.min(.9, slot*.28), dash=Math.max(0, slot-gap);
+   var out='';
+   for(var i=0;i<tot;i++){
+     out+='<circle cx="'+r+'" cy="'+r+'" r="'+r+'" fill="none" stroke="'+(i<sat?'#5C7A4A':'#DFD6C4')+'" '
+       +'stroke-width="'+w+'" stroke-dasharray="'+dash.toFixed(2)+' '+(c-dash).toFixed(2)+'" '
+       +'stroke-dashoffset="'+(-i*slot).toFixed(2)+'" transform="rotate(-90 '+r+' '+r+')"/>';
+   }
+   return out;
+  }
+  function lxUpdateRing(it){
+   if(!lxMap || it._piste || it.lat==null || it.lng==null) return;
+   var fs=lxSel();
+   if(!fs.length){
+     if(it._ring && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
+     return;
+   }
+   // Incrément 6b (décision 12) : pas de couronne tant que le marqueur est absorbé dans une
+   // bulle groupée — un anneau sur une bulle qui représente plusieurs lieux mentirait sur ce
+   // qu'il compte (chaque secteur suppose UN lieu).
+   // BUG TROUVÉ ET CORRIGÉ LE 2026-08-10 (rouvre l'incrément 6b, signalé par le bras droit après
+   // capture d'écran : 46 marqueurs individualisés au Val de Loire, zéro couronne peinte).
+   // getVisibleParent(marker) — source du plugin vérifiée, pas supposée depuis la mémoire :
+   //   getVisibleParent: function(marker){ var v=marker; while(v && !v._icon) v=v.__parent;
+   //     return v || null; }
+   // Ce test regarde la propriété `_icon`, posée par L.Marker/L.DivIcon. Nos lieux sont des
+   // L.circleMarker (rendu SVG, propriété `_path`, JAMAIS `_icon`) — voir buildAll() plus haut.
+   // La boucle ne s'arrête donc JAMAIS sur le marqueur lui-même, qu'il soit groupé ou non : elle
+   // remonte toujours vers __parent, jusqu'à retourner l'icône d'une bulle parente OU null.
+   // Résultat mesuré : `getVisibleParent(it._m) !== it._m` est vrai EN PERMANENCE pour un
+   // circleMarker, dégroupé ou pas — la couronne était donc supprimée à chaque appel, y compris
+   // sur les 46 marqueurs bien individualisés de la capture. Remplacé par le signal que la
+   // vignette et ce même bug ont déjà validé ce jour (assurerIndividuel()/lireEtatCarteGroupe()
+   // dans scenario_coherence_carte_liste.js, éprouvé sur plusieurs heures de mesure réelle) :
+   // le marqueur est réellement affiché seul si son PROPRE `_path` SVG existe ET reste attaché
+   // au DOM (`.isConnected` — pas la seule référence, qui peut survivre à un retrait du DOM).
+   if(lxClusterGroup && it._m && !(it._m._path && it._m._path.isConnected)){
+     if(it._ring && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
+     return;
+   }
+   var b=lxBilan(it, lxFiltreN);
+   var baseR=lxRad(it.imp), ringR=baseR+4, d=(ringR+2)*2;
+   var svg='<svg width="'+d+'" height="'+d+'" viewBox="0 0 '+d+' '+d+'" style="overflow:visible">'
+     +lxCouronneSvg(b.sat, fs.length, ringR, 1.6)+'</svg>';
+   var icon=L.divIcon({className:'lx-ring',html:svg,iconSize:[d,d],iconAnchor:[d/2,d/2]});
+   if(!it._ring){
+     it._ring=L.marker([it.lat,it.lng],{icon:icon,interactive:false,keyboard:false,zIndexOffset:-1});
+   } else {
+     it._ring.setIcon(icon);
+     it._ring.setLatLng([it.lat,it.lng]);
+   }
+   if(!lxMap.hasLayer(it._ring)) it._ring.addTo(lxMap);
+  }
+  function lxFavBtnHtml(it){
+   var mine=lxMineFav(it), any=lxIsFav(it), n=lxFavEmails(it).length;
+   var label = mine?'★ Dans la short-list':(any?'☆ +1 (retenu par l\'équipe)':'☆ Ajouter à la short-list');
+   var who = any ? '<div class="fav-who">Retenu par '+n+' membre'+(n>1?'s':'')+(mine?', dont toi':'')+'.</div>' : '';
+   return '<button class="fav-btn'+(mine?' on':'')+'" id="fav-btn" type="button" data-act="toggle-fav"><span class="st">'+(any?'★':'☆')+'</span> <span>'+label+'</span></button>'+who;
+  }
+  function lxSyncPanelStar(it){ var el=$('fav-slot'); if(el) el.innerHTML=lxFavBtnHtml(it); }
+
+  // R14 (2026-08-10) : l'ancien seuil (pt.y<250, relatif au HAUT DU CONTENEUR de carte)
+  // supposait implicitement un conteneur assez grand pour que « loin du haut du conteneur »
+  // équivale à « assez de place au-dessus dans la fenêtre ». Ce n'était plus vrai une fois
+  // le conteneur réduit (incrément 5) : un marqueur peut être loin du haut du CONTENEUR tout
+  // en étant proche du haut de la FENÊTRE, si le conteneur lui-même est décalé du haut de
+  // l'écran (barre commune + sous-onglets au-dessus). On mesure donc l'espace réel disponible
+  // dans la fenêtre au-dessus du marqueur, pas une position relative au conteneur.
+  // TOOLTIP_H reste une estimation (la vignette n'existe pas encore au moment de la décision,
+  // donc pas de getBoundingClientRect() possible ici) : photo 150px (.tip-photo) + texte,
+  // avec marge de sécurité — mais la COMPARAISON, elle, porte sur une mesure réelle.
+  // R15 (2026-08-10) : recalibré à 290 — la vignette réellement rendue mesure 274 px
+  // (scenario_carte_bas.js), 260 laissait une fenêtre de 14 px où la fonction croyait que ça
+  // tenait alors que non.
+  var LX_TOOLTIP_H=290;
+  function lxTipDirection(latlng){
+   try{
+    var pt=lxMap.latLngToContainerPoint(latlng);
+    var containerTop=lxMap.getContainer().getBoundingClientRect().top;
+    var viewportY=containerTop + pt.y;
+    return (viewportY - LX_TOOLTIP_H < 0) ? 'bottom' : 'top';
+   }catch(e){ return 'top'; }
+  }
+  // R16 (2026-08-10) : hook QA en lecture seule, même discipline que markers/map/openPanel
+  // (cf. leur note commune) — un nom de plus, motivé par un besoin de diagnostic déjà payé.
+  // Régression du 2026-08-10 : les deux scénarios de vignette (haut/bas de carte) sont
+  // repassés au rouge après le rétrécissement de la carte par la barre de filtre (incrément
+  // 6a). Aucun `console.log` n'est visible en `--dump-dom` (cf. equipe/qa/README.md §3) : pour
+  // instrumenter sans rejouer la formule en double dans le scénario (donc sans risque de
+  // dérive entre les deux si LX_TOOLTIP_H change un jour), on expose ICI les valeurs
+  // intermédiaires de la VRAIE fonction, pas une réimplémentation. Aucune mutation, aucun
+  // effet de bord — un simple report des mêmes nombres que lxTipDirection() calcule déjà.
+  window.lxTipDiag=function(latlng){
+   var pt=lxMap.latLngToContainerPoint(latlng);
+   var containerTop=lxMap.getContainer().getBoundingClientRect().top;
+   var viewportY=containerTop + pt.y;
+   return {ptY:pt.y, containerTop:containerTop, viewportY:viewportY, tooltipH:LX_TOOLTIP_H,
+    decision:(viewportY - LX_TOOLTIP_H < 0) ? 'bottom' : 'top'};
+  };
+  function buildAll(){
+   // Incrément 6b (2026-08-10, régression du cadrage) : les 262+12 marqueurs sont désormais
+   // POSÉS EN UN SEUL APPEL (addLayers, la méthode BULK documentée par le plugin), plutôt
+   // qu'un addLayer() par marqueur dans la boucle. Motif : le plugin lui-même prévient qu'une
+   // pose individuelle répétée après que le groupe est déjà sur la carte prend un chemin
+   // différent (pensé pour l'ajout ponctuel d'UN marqueur, avec animation) du chemin bulk —
+   // et un bug documenté du plugin (Leaflet/Leaflet.markercluster#178) montre qu'un marqueur
+   // posé par addLayer() peut ne pas apparaître avant le prochain pan/zoom. Que ce soit ou non
+   // la cause exacte du cadrage cassé (non confirmée avec certitude, cf. lxTraceCadrage() et
+   // le rapport), c'est le chemin que le plugin documente pour poser un LOT — pas un guess.
+   var nouveaux=[];
+   LX_DATA.forEach(function(it){
+    if(it.lat==null||it.lng==null) return;
+    var m=L.circleMarker([it.lat,it.lng],{radius:lxRad(it.imp),color:"#fff",weight:1.5,fillColor:LX_COLS[it.t],fillOpacity:.88});
+    it._m=m; m._it=it;
+    // R15 (2026-08-10) : instrumenté puis confirmé — au moment où ce gestionnaire tourne,
+    // Leaflet a DÉJÀ construit et positionné la vignette avec la direction du bind
+    // (conteneurDejaPresent:true, classe leaflet-tooltip-top déjà posée). Corriger
+    // tt.options.direction après coup n'a donc aucun effet sur l'affichage en cours — il
+    // faut forcer Leaflet à repositionner. Recalculé à CHAQUE survol (pas figé au bind) :
+    // la position écran d'un marqueur change au zoom et au déplacement.
+    m.on('mouseover',function(){
+     var tt=m.getTooltip();
+     if(!tt) return;
+     var d=lxTipDirection(m.getLatLng());
+     if(tt.options.direction!==d){
+      tt.options.direction=d;
+      m.closeTooltip();
+      m.openTooltip(); // relit tt.options.direction au moment de repositionner, cette fois à jour
+     }
+    });
+    m.bindTooltip(lxTipHtml(it,null),{className:'s-tip',sticky:true,direction:'top',opacity:1});
+    m.on('click',function(){ openPanel(it); });
+    nouveaux.push(m); LX_MARKERS.push(m);
+   });
+   LX_PISTES.forEach(function(p){
+    if(p.lat==null||p.lng==null) return;
+    p.t='p'; p._piste=true; p.n=p.nom; p.c=p.zone; p.d=''; p.r=p.zone;
+    var m=L.circleMarker([p.lat,p.lng],{radius:9,color:'#fff',weight:2,fillColor:LX_PTIER[p.tier]||'#888',fillOpacity:1});
+    p._m=m; m._it=p;
+    m.bindTooltip('<div class="tip-in tip-min"><div class="tip-nm">'+esc(p.nom)+'</div><div class="tip-sub" style="color:#a06a1f">◆ Piste équipe · '+LX_PTIER_L[p.tier]+'</div><div class="tip-line">'+esc(p.zone)+' · '+esc(p.angle)+'</div></div>',{className:'s-tip',sticky:true,direction:'top',opacity:1});
+    m.on('click',function(){ openPiste(p); });
+    nouveaux.push(m); LX_MARKERS.push(m);
+   });
+   // Incrément 6b (décision 12) : posés dans le groupe de regroupement, pas directement sur
+   // la carte — lxClusterGroup gère lui-même l'ajout/retrait à la carte selon le zoom.
+   lxClusterGroup.addLayers(nouveaux);
+  }
+  // Incrément 6a : la carte pose désormais EXACTEMENT le même ensemble que lxMontres() (donc
+  // que la Liste — décision 3, « même verdict sur les deux vues »). lxMontres() applique déjà
+  // recherche/nature/favoris (lxVisibles()) PUIS, si la case cacher est cochée, retire les
+  // lieux à sat=0 : la recherche/nature/favoris manuelle qui vivait ici avant est devenue
+  // redondante et a été retirée pour ne garder qu'une seule liste de vérité.
+  function lxRefresh(){
+   var shownQids={};
+   lxMontres().forEach(function(it){ shownQids[it.qid]=true; });
+   var ns=0,na=0,nv=0,np=0;
+   LX_MARKERS.forEach(function(m){ var it=m._it;
+     var hit=!!shownQids[it.qid];
+     // Incrément 6b (décision 12) : le groupe de regroupement remplace la carte comme
+     // conteneur direct des marqueurs (cf. buildAll()) — ajout/retrait passent donc par lui.
+     // lxMap.hasLayer(m) resterait toujours faux pour un marqueur posé dans le groupe (il
+     // n'est jamais un enfant direct de la carte) : le test doit porter sur le groupe.
+     if(hit){
+       if(lxClusterGroup && !lxClusterGroup.hasLayer(m)) lxClusterGroup.addLayer(m);
+       lxStyleMarker(it); lxUpdateRing(it);
+       if(it.t==='s')ns++; else if(it.t==='a')na++; else if(it.t==='p')np++; else nv++;
+     } else {
+       if(lxClusterGroup && lxClusterGroup.hasLayer(m)) lxClusterGroup.removeLayer(m);
+       if(it._ring && lxMap && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
+     }
+   });
+   // Un seul compteur, court (décision : pas de doublon barre-outils/sous-onglets — R8, la
+   // barre outils est saturée et un texte long y a contribué à la faire passer sur deux
+   // lignes ; on ne reproduit pas le même risque dans les sous-onglets).
+   var shown=ns+na+nv+np;
+   var subEl=$('subCount');
+   if(subEl) subEl.textContent = LX_MARKERS.length ? (shown+' affiché'+(shown>1?'s':'')+' sur '+LX_MARKERS.length) : '';
+  }
+  // R9 (2026-08-10) : le diagnostic a montré que le mécanisme de cadrage automatique
+  // fonctionnait — conteneur correctement dimensionné (1227x435) au moment du fitBounds.
+  // Le défaut est géométrique, pas temporel : ce rapport largeur/hauteur (~2,8:1) ne peut
+  // pas encadrer la France (à peu près carrée) sans déborder largement à l'est et à l'ouest
+  // — Portugal, Irlande, Baltique. Aucun réglage de padding/maxZoom n'y change rien.
+  // Mise à jour 2026-08-11 : ceci reste vrai — l'écart de FORME n'est corrigé par aucun
+  // réglage, il attend une maquette. Ce qui a été repris entre-temps, ailleurs (options de
+  // L.map(), cf. sa note), c'est l'arrondi de zoom perdu en plus de cet écart — un levier
+  // différent, qui ne referme pas celui-ci.
+  // Retenu (reprend la recommandation de la revue UX) : la carte s'ouvre sur un cadre
+  // France FIXE, pas sur un ajustement aux marqueurs. fitAll() reste, mais devient l'action
+  // volontaire du bouton « Toute la France » (déjà câblé plus bas), plus un auto-fit au
+  // chargement. Bornes larges (mainland + Corse + marge visuelle, pas les DOM-TOM).
+  var LX_FRANCE_BOUNDS=[[41.0,-5.3],[51.3,9.7]];
+  // Réserve 6c #5 (revue précédente) : fitAll() cadrait sur les 262+12 marqueurs bruts
+  // (LX_MARKERS), pas sur ceux que le filtre retient — « Toute la France » ramenait alors à
+  // l'écran des lieux que le réglage venait justement d'exclure, contredisant le filtre qu'on
+  // vient de poser. lxMontres() est la MÊME liste de vérité que la carte (lxRefresh()) et la
+  // liste (lxRenderTable()) — décision 3, jamais un second calcul de « ce qui est affiché ».
+  function fitAll(){
+   var pts=lxMontres().filter(function(it){return it&&it.lat!=null&&it.lng!=null;}).map(function(it){return [it.lat,it.lng];});
+   if(!lxMap) return;
+   if(pts.length){ lxMap.fitBounds(L.latLngBounds(pts),{padding:[24,24],maxZoom:7}); } else { lxMap.setView([46.7,2.4],6); }
+  }
+  async function loadData(){
+   LX_DATA.length=0; LX_PISTES.length=0; LX_LOAD_ERROR=null;
+   try{ var qmap={};
+     var qr=await sb.from('lieux_qualifications').select('lieu_id,data',{count:'exact'});
+     if(qr.error){ LX_LOAD_ERROR='Le chargement des qualifications de lieux a échoué. Réessaie dans un instant.'; return; }
+     if(qr.data){
+       if(qr.count!=null && qr.data.length!==qr.count){
+         LX_LOAD_ERROR='Chargement incomplet des qualifications de lieux ('+qr.data.length+' sur '+qr.count+'). Mieux vaut réessayer que d\'afficher une carte partielle.';
+         return;
+       }
+       qr.data.forEach(function(row){ qmap[row.lieu_id]=row.data; });
+     }
+     var r=await sb.from('carte_lieux').select('id,t,data',{count:'exact'}).order('sort');
+     if(r.error){ LX_LOAD_ERROR='Le chargement des lieux a échoué. Réessaie dans un instant.'; return; }
+     if(r.data){
+       if(r.count!=null && r.data.length!==r.count){
+         LX_LOAD_ERROR='Chargement incomplet des lieux ('+r.data.length+' sur '+r.count+'). Mieux vaut réessayer que d\'afficher une carte partielle.';
+         return;
+       }
+       r.data.forEach(function(row){ var o=row.data||{}; o.qid=row.id; if(qmap[row.id]) o.qualif=qmap[row.id]; if(row.t==='p') LX_PISTES.push(o); else LX_DATA.push(o); });
+     }
+   }catch(e){ LX_LOAD_ERROR='Le chargement des lieux a échoué. Réessaie dans un instant.'; }
+  }
+  // Refus d'affichage scopé à #vueCarte (jamais body, cf. CLAUDE.md) : distingue une vraie
+  // panne d'un simple zéro résultat, exactement le patron R1/R6 de carte.html.
+  function lxShowLoadError(msg){
+   var vc=$('vueCarte'); if(!vc) return;
+   var m=$('lxLoadErrorMsg'); if(m) m.textContent=msg;
+   vc.classList.add('load-error');
+   // Réserve 6c #2 (revue précédente) : la barre de filtre restait active au-dessus du
+   // message d'erreur — un curseur et des puces qui répondent au clic sans qu'aucune donnée
+   // n'existe pour leur donner un sens promettent une fonction sans moteur derrière (CLAUDE.md,
+   // écran destiné aux familles). L'échec vient du CHARGEMENT DE LA DONNÉE elle-même (pas d'un
+   // rendu propre à une vue) : neutralisée dans les deux positions, superposition (Carte) et
+   // en ligne (Liste), pas seulement celle actuellement visible — l'utilisateur peut basculer
+   // de vue sans recharger la page, la neutralisation doit le suivre.
+   var mini=$('lxMiniFiltre'), band=$('lx-filtreBand');
+   if(mini) mini.classList.add('lx-filtre-neutralise');
+   if(band) band.classList.add('lx-filtre-neutralise');
+  }
+  // R16 (2026-08-10, dernier point de 6a) : une vignette OUVERTE reste figée à l'écran si la
+  // vue bouge sous elle pendant qu'elle est ouverte (zoom molette au premier chef, mesuré via
+  // scenario_carte_hover.js) — le pane de carte se déplace, l'élément de la vignette se
+  // repositionne dans le repère du pane, mais les deux mouvements s'annulent à l'écran : ni un
+  // repère mal lu, ni un moment de mesure mal choisi, juste personne qui rattrape le
+  // déplacement pendant que la vignette est déjà ouverte. Le mouseover de buildAll() ne
+  // corrige qu'AU SURVOL suivant — rien n'écoutait 'moveend'/'zoomend' pendant qu'une
+  // vignette reste affichée. Un seul écouteur, au niveau de la carte : sur tout mouvement, si
+  // une vignette est actuellement ouverte, on reprend le MÊME chemin fermer/rouvrir que R15
+  // (déjà éprouvé — aucun nouveau mécanisme empilé), pour que Leaflet recalcule sa position
+  // dans le repère à jour.
+  // Incrément 6b (décision 12) : bulle de regroupement — porte un compte, ne doit jamais
+  // laisser croire à un lieu unique. Trois paliers de taille/teinte (plus le nombre grandit,
+  // plus la bulle grandit et fonce), sur la même gamme doré que le reste de l'écran — jamais
+  // la couleur d'un TYPE de lieu (orange/bleu/vert), réservée aux marqueurs individuels : la
+  // bulle doit se lire comme une AUTRE chose qu'un lieu, pas comme un lieu de plus.
+  function lxClusterIcon(cluster){
+   var n=cluster.getChildCount();
+   var taille = n<10 ? 's' : (n<50 ? 'm' : 'l');
+   var d = n<10 ? 30 : (n<50 ? 38 : 46);
+   return L.divIcon({
+     html:'<div class="lx-cluster-in">'+n+'</div>',
+     className:'lx-cluster lx-cluster-'+taille,
+     iconSize:L.point(d,d)
+   });
+  }
+  function lxWatchTooltipReposition(){
+   lxMap.on('moveend zoomend', function(){
+    LX_MARKERS.forEach(function(m){
+     if(!m.isTooltipOpen || !m.isTooltipOpen()) return;
+     var it=m._it, tt=m.getTooltip();
+     if(!it || !tt) return;
+     // Pistes équipe : direction fixe 'top', jamais corrigée dynamiquement (pas de mouseover
+     // dédié dans buildAll() pour elles) — on rouvre sans toucher à l'option, juste pour
+     // recalculer la position dans le repère à jour.
+     if(!it._piste) tt.options.direction=lxTipDirection(m.getLatLng());
+     m.closeTooltip();
+     m.openTooltip();
+    });
+   });
+  }
+  function lxInit(){
+   try{
+     // Incrément 6b (2026-08-10, carte plus jamais construite) : CAUSE TROUVÉE, confirmée par
+     // la documentation du plugin (Leaflet/Leaflet.markercluster, issues #46/#894 — même
+     // mécanisme). MarkerClusterGroup.onAdd() exige `isFinite(map.getMaxZoom())` et LÈVE
+     // (une chaîne, pas une Error — donc invisible à une écoute window.onerror, seulement à
+     // console.error) sinon. Le maxZoom de la carte est établi par la première couche qui en
+     // porte un (ici la tuile CARTO, maxZoom:19) — au tour précédent, j'avais déplacé la
+     // création du groupe de regroupement AVANT l'ajout de cette couche pour tester l'hypo-
+     // thèse du lead tech sur l'ordre fitBounds/groupe : ça a réintroduit exactement ce piège,
+     // à un autre endroit. Double correctif, pas un seul : (a) maxZoom:19 posé directement sur
+     // les options de L.map() — la carte a un maxZoom fini DÈS sa construction, quel que soit
+     // l'ordre d'ajout des couches ensuite ; (b) ordre restauré à celui qui tenait depuis R8/R9
+     // (tuile avant regroupement) — l'hypothèse fitBounds/groupe n'a jamais été confirmée et le
+     // correctif qui l'a testée s'est révélé être la cause de cette régression-ci.
+     // Décision Benoit 2026-08-11 (gain gratuit pris maintenant, refonte de forme en
+     // maquette séparée) : zoomSnap:0.25 laisse fitBounds() choisir un niveau de zoom
+     // FRACTIONNAIRE au lieu d'être forcé sur un entier (défaut Leaflet zoomSnap:1). Mesuré
+     // avant application : conteneur 1227×441, France à l'écran 342×339 au cran entier —
+     // scaley (l'axe qui contraint, cf. R9 ci-dessus) mesuré à 1,30, soit ~30% de zoom perdus
+     // au seul arrondi. zoomDelta:1 posé explicitement (déjà la valeur par défaut Leaflet,
+     // mais explicite ici) pour que +/- et le clavier gardent un pas entier — cf. note R9
+     // au-dessus : ce réglage ne touche PAS l'écart de forme conteneur/France (~2,8:1 contre
+     // quasi carré), seulement l'arrondi perdu sur l'axe contraint. La marge gauche/droite
+     // restante est un sujet de maquette, pas de ce réglage.
+     lxMap=L.map('lxMap',{zoomControl:true,maxZoom:19,zoomSnap:0.25,zoomDelta:1});
+     window.map=lxMap; // posé tout de suite, avant tout appel qui pourrait lever — cf. note
+     // à la déclaration de LX_MARKERS : ce hook doit rester fiable même si la suite échoue.
+     lxTraceCadrage('apres-construction-map');
+     lxMap.fitBounds(LX_FRANCE_BOUNDS); // cadre France fixe, cf. R9 — pas un ajustement aux marqueurs
+     lxTraceCadrage('apres-fitBounds');
+     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+      attribution:'&copy; OpenStreetMap, &copy; CARTO',maxZoom:19,subdomains:'abcd'}).addTo(lxMap);
+     lxTraceCadrage('apres-tileLayer');
+     // Incrément 6b (décision 12) : regroupement des marqueurs, prérequis du 3e canal
+     // (couronnes) à 262 lieux qui se recouvrent déjà à l'échelle France. disableClustering
+     // AtZoom:10 choisi délibérément SOUS le zoom 11 que les scénarios QA de vignette
+     // utilisent déjà (scenario_carte_bas.js/scenario_carte_hover.js, setView(latlng,11,...)).
+     lxClusterGroup=L.markerClusterGroup({
+      maxClusterRadius:70,
+      disableClusteringAtZoom:10,
+      showCoverageOnHover:false,
+      iconCreateFunction:lxClusterIcon
+     }).addTo(lxMap);
+     // Hook QA en lecture seule, même discipline que markers/map/openPanel/lxTipDiag/lxSel
+     // (cf. leur note commune) — nécessaire pour instrumenter un doute entre deux hypothèses
+     // lors de l'écriture du garde-fou de sortie de l'incrément 6 (scenario_coherence_carte_
+     // liste.js) : le scénario doit pouvoir compter les 'animationend' réellement reçus pour
+     // distinguer « la carte n'a jamais dégroupé » de « les couronnes ne se reposent pas après
+     // dégroupement ». Aucune mutation, aucun accès en écriture ajouté par ce hook.
+     window.lxClusterGroup=lxClusterGroup;
+     lxTraceCadrage('apres-clusterGroup-addTo');
+     // Les couronnes (3e canal) suivent le regroupement : quand une bulle se scinde ou se
+     // reforme au zoom, on recalcule qui doit en porter une (lxUpdateRing() sort tôt si le
+     // marqueur reste groupé — voir sa note). 'animationend' est l'évènement du PLUGIN, posé
+     // après qu'il a fini de réévaluer le regroupement suite à un zoom/déplacement — pas un
+     // évènement Leaflet natif.
+     lxClusterGroup.on('animationend', function(){
+      LX_DATA.forEach(function(it){ if(it._m) lxUpdateRing(it); });
+      lxTraceCadrage('apres-animationend');
+     });
+     lxWatchTooltipReposition();
+   }catch(e){ console.error('lxInit: échec création de la carte', e); lxShowLoadError('Le chargement de la carte a échoué. Réessaie dans un instant.'); return; }
+   // Ordre imposé : loadFav() AVANT buildAll() (réserve R7 du lead tech) — sinon la
+   // course entre le style des marqueurs (favoris) et leur pose fait deviner le mode.
+   // Aucune sérialisation de LX_DATA/LX_PISTES après ce point : buildAll() y accroche
+   // des références Leaflet (_m) non clonables.
+   // Incrément 6a : familles publiées + états d'équipe sont chargés EN PARALLÈLE de
+   // lieux/favoris (deux sources indépendantes, aucune n'a besoin de l'autre pour démarrer),
+   // mais le premier rendu du filtre (lxRenderFiltre) attend que tout soit arrivé — sinon la
+   // carte se pose sans couronnes puis « saute » dès que les familles répondent.
+   // B1 : lxLoadCritEtats() est non bloquant pour le RENDU de la carte (les 262 marqueurs se
+   // posent quand même) mais PAS pour ce qu'ils affichent — elle pose déjà LX_LOAD_ERROR sur
+   // échec (même garde-fou que loadData(), voir sa note). Ce .catch() ne reste que pour une
+   // exception qu'aucune des deux fonctions n'aurait attrapée elle-même ; il ne doit jamais
+   // avaler ce cas en silence non plus.
+   var famsP=Promise.all([lxLoadFams(), lxLoadCritEtats()]).catch(function(e){
+     console.error('lxInit: chargement familles/états', e);
+     if(!LX_LOAD_ERROR) LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
+   });
+   loadData().then(function(){ return loadFav(); }).then(function(){
+     buildAll();
+     lxTraceCadrage('apres-buildAll');
+     // R10 (2026-08-10) : isolé de la chaîne d'amorce. À ce stade les 262 marqueurs sont déjà
+     // posés — si le préchargement des vignettes Wikipédia jette, c'est un décor manqué, pas
+     // une carte cassée. Sans ce try/catch, le .catch() d'initialisation masquerait une carte
+     // saine derrière « Le chargement de la carte a échoué » : un faux négatif sur le seul
+     // écran du lot.
+     try{ lxPrefetchThumbs(); }catch(e){ console.error('lxPrefetchThumbs: échec (préchargement des vignettes, non bloquant)', e); }
+     return famsP;
+   }).then(function(){
+     // Ordre imposé : APRÈS famsP (lxLoadCritEtats() vide LX_CRIT_ETATS à chaque appel — un
+     // absorb() avant serait écrasé) et après loadData() (LX_PISTES doit être rempli).
+     lxAbsorbCriteresPistes();
+     lxRenderFiltre(); // pose aussi les marqueurs (lxRefresh) et les couronnes (lxUpdateRing) ; LX_FILTRE_RENDU=true en sortie
+     // R16 (2026-08-10, 2e passage) : c'est ICI, et seulement ici, que la barre de filtre a
+     // sa hauteur définitive pour la première fois. On retire le recouvrement AVANT de
+     // mesurer/révéler — jamais l'inverse, sinon on réintroduit exactement le saut visible
+     // qu'on corrige (cf. la note dans lxSetSubtab('carte')).
+     var vcNow=$('vueCarte');
+     if(vcNow) vcNow.classList.remove('attente');
+     // Décision 14 : même jalon que .attente, un seul point d'entrée — mais seulement si la
+     // vue Carte est ACTUELLEMENT active (si les données sont arrivées pendant que
+     // l'utilisateur est sur Liste, #lx-filtreBand est déjà déplacé hors de #lxMiniFiltre par
+     // lxMoveFiltreBand(false) : révéler le bandeau ici le montrerait vide. lxSetSubtab('carte')
+     // le révèlera correctement au moment où l'utilisateur y arrivera, pret étant déjà vrai).
+     var miniNow=$('lxMiniFiltre');
+     if(miniNow && vcNow && !vcNow.hidden){ miniNow.hidden=false; miniNow.classList.remove('is-open'); }
+     // Réserve 6c #4 : même jalon — un lien #lieu= arrivé avant que les données ne soient
+     // prêtes attend ici, pas un chemin séparé.
+     if(LX_HASH_LIEU_EN_ATTENTE){ lxOuvrirDepuisHash(LX_HASH_LIEU_EN_ATTENTE); LX_HASH_LIEU_EN_ATTENTE=null; }
+     if(LX_LOAD_ERROR){ lxShowLoadError(LX_LOAD_ERROR); }
+     else if(!LX_MARKERS.length){ var sc=$('subCount'); if(sc) sc.textContent='Aucun lieu à afficher.'; }
+     // Reprise du garde-fou R8 : les données réelles (comptes de type, favoris, familles,
+     // curseur) changent la hauteur de la barre de filtre — on re-mesure ici, au point où le
+     // réseau vient de finir de la peupler. lxResizeCarte() : point d'entrée unique (R16).
+     lxResizeCarte('sync-filtre-rendu');
+     // Incrément 6b (2026-08-10, cadrage à zoom 0) : fitBounds() à la construction (dans le
+     // try{} plus haut) reste nécessaire — buildAll() a besoin d'une carte qui a DÉJÀ une vue
+     // valide pour poser les marqueurs dans lxClusterGroup, bien avant que le conteneur n'ait
+     // sa taille définitive. À CE MOMENT-LÀ le conteneur est encore à sa hauteur provisoire
+     // (recouvert par .attente, jamais peint) : fitBounds() calcule alors le plus petit zoom
+     // possible pour faire tenir les bornes dans un conteneur quasi nul.
+     // Un premier correctif ICI, juste après ce lxResizeCarte('sync-filtre-rendu'), a été
+     // essayé puis RETIRÉ (mesuré par le lead tech, pas supposé) : bien que wrapH soit déjà
+     // correct à ce point de la trace, un fitBounds() rejoué immédiatement après continue de
+     // rendre zoom=0 — seul celui posé dans la passe rAF plus bas obtient le bon zoom. Je n'ai
+     // pas d'explication certaine (l'ordre exact entre invalidateSize() et la lecture de taille
+     // par fitBounds() à l'intérieur de Leaflet reste à instrumenter si le sujet revient) ; ce
+     // qui est mesuré, c'est qu'un appel ici ne sert à rien et ne produit qu'une trace trompeuse
+     // — retiré plutôt que gardé à faux, comme demandé.
+     lxTraceCadrage('apres-resizeCarte-sync');
+     requestAnimationFrame(function(){
+       lxResizeCarte('raf-init-tail');
+       lxMap.fitBounds(LX_FRANCE_BOUNDS); // le seul appel qui corrige effectivement le zoom, mesuré
+       lxTraceCadrage('apres-resizeCarte-raf');
+     });
+   }).catch(function(e){
+     console.error('lxInit: échec d\'initialisation', e);
+     lxShowLoadError('Le chargement de la carte a échoué. Réessaie dans un instant.');
+   });
+  }
+
+  // ===== Incrément 6a : le filtre par critères ================================
+  // Transposé de la maquette validée (maq-filtre-lieux.html) : mêmes noms de fonctions
+  // que la référence (sel, maxN, evalFam, bilan, montres, nbPlein — préfixés lx pour ne
+  // pas entrer en collision), adaptés à la vraie donnée : public.lieux_criteres_etat
+  // (jamais le seuil de note réimplémenté en JS) et le RPC questionnaire_publies() pour
+  // les classements par famille (pas de fixture FAMS/LIEUX).
+
+  // Catalogue des critères — dupliqué du catalogue du questionnaire (site/questionnaire/
+  // template.html, var BASE, lu le 2026-08-10) : le bloc protégé ===QUESTIONNAIRE:*===
+  // vit dans une IIFE séparée qui n'expose rien sur window, donc pas de réutilisation
+  // possible sans y toucher (interdit). Mêmes id, mêmes libellés, recopiés à la lecture.
+  var LX_FILTRE_CRIT={
+    b1:"Notre projet, à nous", b2:"Une vie spirituelle vivante", b3:"Chacun chez soi",
+    b4:"L'Eucharistie tout près", b5:"La messe chaque jour", b6:"Des familles amies proches",
+    b7:"Accueillir et rayonner", b8:"Une école catholique", b9:"La nature", b10:"Des retraites sur place",
+    s1:"Proche d'une ville ou d'une gare", s2:"De la place pour accueillir", s3:"Des travaux raisonnables",
+    s4:"Une chapelle déjà là", s5:"Un jardin, un potager", s6:"Santé et écoles à proximité", s7:"Un climat agréable"
+  };
+  var LX_CUSTOM_CRIT={}; // rempli depuis publication.custom[] au chargement des familles
+  function lxCritNom(cid){ return LX_FILTRE_CRIT[cid] || LX_CUSTOM_CRIT[cid] || 'Critère ajouté par une famille'; }
+  // Même règle que public.initiales() (SQL, incrément 4a) : deux premières lettres de deux
+  // mots, sinon les deux premiers caractères. Repli seulement (annuaire_comptes() fournit
+  // la vraie valeur ; ce repli ne sert que si un compte manque à l'annuaire).
+  function lxInitialesLocal(nom){
+    var mots=(nom||'').trim().split(/\s+/).filter(Boolean);
+    if(mots.length>=2) return (mots[0].charAt(0)+mots[1].charAt(0)).toUpperCase();
+    return (nom||'').trim().slice(0,2).toUpperCase();
+  }
+
+  // Incrément 6c (décision 13) : normalisation dupliquée de normalizeDepts() (site/
+  // questionnaire/template.html, lu le 2026-08-10) — même bloc protégé que LX_FILTRE_CRIT
+  // ci-dessus, même raison de duplication (rien exposé sur window). Deux formes en base :
+  // tableau de codes (l'ancien « département ouvert », binaire — relu niveau 1/favorable,
+  // rien n'existe en cœur pour ces réponses-là) ou objet {code: niveau} où niveau vaut 1
+  // (favorable) ou 2 (cœur). Décision 13 : les deux niveaux comptent PAREIL dans le verdict
+  // (la réponse Plaut est antérieure à l'introduction du niveau cœur — la distinguer la
+  // pénaliserait par un artefact de calendrier) ; cette fonction ne les distingue donc que
+  // pour rester fidèle à la donnée, jamais pour peser différemment ensuite.
+  function lxNormalizeDepts(v){
+    if(Array.isArray(v)){
+      var o={}; v.forEach(function(c){ o[c]=1; }); return o;
+    }
+    if(v&&typeof v==='object'){
+      var out={};
+      Object.keys(v).forEach(function(c){ var lvl=+v[c]; if(lvl===1||lvl===2) out[c]=lvl; });
+      return out;
+    }
+    return {};
+  }
+  // Décision 13 : un lieu sans département connu (les 12 pistes équipe, data->>'d' absent)
+  // n'est ni « en zone » ni « hors zone » — c'est un troisième état, explicite, qui ne
+  // dégrade JAMAIS le verdict. Rien n'est dérivé depuis la commune (ce serait une déduction
+  // non vérifiée en base, sur les lieux les plus travaillés du projet) : l'inconnu reste
+  // inconnu, comme pour les critères non qualifiés (C1/C2, décision 2).
+  // Renvoie true (en zone), false (hors zone, avéré) ou null (zone inconnue).
+  function lxEnZone(it, fam){
+    if(!it.d) return null;
+    var depts=lxNormalizeDepts(fam.depts);
+    return Object.prototype.hasOwnProperty.call(depts, it.d);
+  }
+
+  var LX_FAMS=[]; // {id (user_id), nom, initiales, order:[], depts:{}, moi:bool}
+  var LX_FAM_ME_UID=null;
+  async function lxLoadFams(){
+   LX_FAMS=[]; LX_CUSTOM_CRIT={};
+   try{
+     var u=await sb.auth.getUser();
+     LX_FAM_ME_UID=(u.data && u.data.user && u.data.user.id) || null;
+   }catch(e){ LX_FAM_ME_UID=null; }
+   try{
+     // Même classe que B1 (revue lead-tech 2026-08-11), appliquée aux familles au lieu des
+     // lieux : avant, un échec du RPC retombait sur LX_FAMS=[] sans poser LX_LOAD_ERROR, et
+     // lxRenderFams() (index.html:~2979) affiche alors « Aucune réponse publiée » — un
+     // message écrit pour l'état vide LÉGITIME, pas pour une panne. Une famille qui lit ça
+     // conclut que personne n'a rempli le questionnaire, alors que la vérité est qu'on n'a
+     // pas pu savoir. Distinction : ce return-ci pose LX_LOAD_ERROR (panne), le cas
+     // qp.data vide plus bas ne touche jamais LX_LOAD_ERROR (zéro réponse, légitime) — les
+     // deux restent des chemins distincts, jamais confondus à l'écran.
+     var qp=await sb.rpc('questionnaire_publies');
+     if(qp.error){
+       console.error('lxLoadFams: questionnaire_publies', qp.error);
+       LX_LOAD_ERROR='Le chargement des familles a échoué. Réessaie dans un instant.';
+       return;
+     }
+     var ac=await sb.rpc('annuaire_comptes');
+     var initiales={};
+     if(!ac.error && ac.data) ac.data.forEach(function(row){ if(!row.est_qa) initiales[row.compte_id]=row.initiales; });
+     (qp.data||[]).forEach(function(row){
+       var pub=row.publication||{};
+       var order=pub.order||[];
+       if(!order.length) return; // brouillon publié sans classement (cadrage : 5e ligne, à ignorer)
+       var nom=row.qui || 'Famille';
+       (pub.custom||[]).forEach(function(c){ if(c && c.id && c.label) LX_CUSTOM_CRIT[c.id]=c.label; });
+       LX_FAMS.push({
+         id: row.user_id,
+         nom: nom,
+         initiales: initiales[row.user_id] || lxInitialesLocal(nom),
+         order: order,
+         depts: pub.depts, // brut (tableau ou objet) — normalisé à la lecture par lxEnZone()
+         moi: !!(LX_FAM_ME_UID && row.user_id===LX_FAM_ME_UID)
+       });
+     });
+   }catch(e){
+     console.error('lxLoadFams: exception', e);
+     LX_LOAD_ERROR='Le chargement des familles a échoué. Réessaie dans un instant.';
+   }
+   // B2 (revue lead-tech 2026-08-11) : sans ceci, lxFiltreFams reste [] au tout premier
+   // rendu (rien ne le remplit avant un clic) et l'écran AFFIRME sur une sélection vide —
+   // en-tête « Conviennent aux 0 familles », « 0 sur 0 » par ligne, et le curseur rabattu de
+   // 6 à 1 de façon irréversible (lxRenderCurseur() -> lxMaxN() sur une sélection vide, cf.
+   // sa note). N'écrase jamais un choix déjà fait : ne s'applique que si lxFiltreFams est
+   // encore vide (appelé une seule fois, à l'amorce, jamais en re-rendu).
+   if(!lxFiltreFams.length){
+     var moi=LX_FAMS.filter(function(f){ return f.moi; }).map(function(f){ return f.id; });
+     lxFiltreFams = moi.length ? moi : LX_FAMS.map(function(f){ return f.id; });
+   }
+  }
+
+  // Le seuil de note ne se réimplémente JAMAIS ici : LX_CRIT_ETATS vient directement de
+  // public.lieux_criteres_etat.etats, calculé en SQL (incrément 4a).
+  var LX_CRIT_ETATS={}; // lieu_qid -> {critere: 'met'|'part'|'miss'|'ask'}
+  async function lxLoadCritEtats(){
+   LX_CRIT_ETATS={};
+   try{
+     // B1 (revue lead-tech 2026-08-11) : c'est la SEULE source du verdict — un échec avalé
+     // ici laisse LX_CRIT_ETATS vide, lxEtatEquipe() rend 'ask' partout, et comme 'ask' ne
+     // compte jamais dans miss (lxEvalFam), TOUS les lieux et TOUTES les familles passent en
+     // ok=true. Même garde-fou que loadData() (count exact + contrôle de troncature), même
+     // canal de refus d'affichage — LX_LOAD_ERROR, consommé à la sortie de lxInit()
+     // (:2680 `if(LX_LOAD_ERROR){ lxShowLoadError(LX_LOAD_ERROR); }`), pas un second mécanisme.
+     var r=await sb.from('lieux_criteres_etat').select('lieu_id,etats',{count:'exact'});
+     if(r.error){
+       console.error('lxLoadCritEtats: échec', r.error);
+       LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
+       return;
+     }
+     if(r.count!=null && r.data.length!==r.count){
+       LX_LOAD_ERROR='Chargement incomplet des critères qualifiés ('+r.data.length+' sur '+r.count+'). Un verdict faux est pire qu\'un écran vide.';
+       return;
+     }
+     (r.data||[]).forEach(function(row){ LX_CRIT_ETATS[row.lieu_id]=row.etats||{}; });
+   }catch(e){
+     console.error('lxLoadCritEtats: exception', e);
+     LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
+   }
+  }
+
+  // Les pistes équipe (t='p') ne passent JAMAIS par lieux_qualifications donc jamais par la
+  // vue lieux_criteres_etat (0 sur 12 constaté en base) — elles sont qualifiées à la main
+  // dans carte_lieux.data.criteres, un tableau [{n, v, note}] où n est le numéro du critère
+  // (1 à 10, même numérotation que LX_CRIT_NAMES/LX_FILTRE_CRIT b1..b10) et v une valeur
+  // textuelle déjà tranchée : 'oui'/'partiel'/'non'/'?'. Ce n'est PAS un second seuil de
+  // note — il n'y a pas de note sur 5 ici, l'état est déjà écrit en toutes lettres ; ceci ne
+  // fait que traduire son vocabulaire vers celui des 250 autres (met/part/miss/ask). Le seuil
+  // de note reste et reste seul dans la vue SQL, pour les 250 lieux qualifiés par l'équipe.
+  var LX_PISTE_V_ETAT={oui:'met', partiel:'part', non:'miss'}; // '?' et toute valeur absente/inconnue retombent sur 'ask' (défaut de lxEtatEquipe(), rien à coder ici)
+  // Appelée après loadData() (LX_PISTES rempli) ET après lxLoadCritEtats() (qui repart de
+  // zéro à chaque appel — l'appeler avant écraserait ce qui suit) : cf. l'ordre dans lxInit().
+  function lxAbsorbCriteresPistes(){
+   LX_PISTES.forEach(function(p){
+     if(!p.criteres || !p.criteres.length) return;
+     var etats={};
+     p.criteres.forEach(function(c){
+       if(c.n==null) return;
+       etats['b'+c.n]=LX_PISTE_V_ETAT[c.v]||'ask';
+     });
+     LX_CRIT_ETATS[p.qid]=etats;
+   });
+  }
+
+  // Un critère absent de l'état d'équipe (s1..s7, critères ajoutés à la main : jamais
+  // qualifiés par personne sur aucun lieu, décision 2 / contrainte C2 du cadrage) retombe
+  // naturellement sur 'ask' — propriété de la vue SQL elle-même, aucune liste à tenir.
+  function lxEtatEquipe(lieuQid, cid){
+   var e=LX_CRIT_ETATS[lieuQid];
+   return (e && e[cid]) || 'ask';
+  }
+
+  var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=false;
+  // Devient vrai après le premier passage de lxRenderFiltre() (donc après que #lx-filtreBand
+  // a reçu son contenu réel — familles, curseur, résultat). Lu par lxTraceResize() (R16) pour
+  // dater, dans la trace, si une mesure de la carte a eu lieu AVANT ou APRÈS que la barre ait
+  // sa hauteur définitive.
+  var LX_FILTRE_RENDU=false;
+
+  function lxSel(){ return LX_FAMS.filter(function(f){ return lxFiltreFams.indexOf(f.id)>=0; }); }
+  // Réserve 6c (garde-fou de sortie) : hook QA en lecture seule, même discipline que
+  // markers/map/openPanel/lxTipDiag (cf. leur note commune) — la fiche rend son crible en
+  // positions muettes (<i class="sq ...">, sans l'identifiant du critère), donc un scénario qui
+  // doit vérifier ce crible contre la vue SQL a besoin du même `order` que lxFicheVerdictHtml()
+  // pour retrouver quel critère occupe quelle position. Aucune mutation, aucun seuil : juste la
+  // même liste de familles sélectionnées, déjà calculée.
+  window.lxSel=lxSel;
+  function lxMaxN(){ return lxSel().reduce(function(a,f){ return Math.max(a, f.order.length); }, 1); }
+
+  // C1 (cadrage) : seul 'miss' fait perdre le niveau — 'ask' ne compte NULLE PART dans
+  // miss. C'est le point sur lequel tout repose : le critère 2 est non qualifié sur les
+  // 250 lieux. S'il comptait comme manqué, curseur à 2 renverrait zéro lieu partout et la
+  // feature serait mort-née. Vérifié par test Node isolé avant livraison (voir rapport).
+  function lxEvalFam(it, f, n){
+   var k=Math.min(n, f.order.length), st=[], met=0, part=0, ask=0, miss=[];
+   for(var i=0;i<k;i++){
+     var e=lxEtatEquipe(it.qid, f.order[i]);
+     st.push(e);
+     if(e==='met') met++;
+     else if(e==='part') part++;
+     else if(e==='ask') ask++;
+     else miss.push(f.order[i]);
+   }
+   return {st:st, k:k, met:met, part:part, ask:ask, miss:miss, ok:miss.length===0, tronq:f.order.length<n};
+  }
+
+  function lxBilan(it, n){
+   var fs=lxSel(), sat=0, ask={};
+   fs.forEach(function(f){
+     var e=lxEvalFam(it, f, n);
+     if(e.ok) sat++;
+     for(var i=0;i<e.k;i++) if(e.st[i]==='ask') ask[f.order[i]]=1;
+   });
+   return {sat:sat, ask:Object.keys(ask), tot:fs.length};
+  }
+
+  function lxTousLieux(){ return LX_DATA.concat(LX_PISTES); }
+
+  // Réserve 6c #4 : lien copié par lxCopyPlaceLink() ('#lieu='+clé), jamais lu jusqu'ici — un
+  // lien partagé atterrissait sur le Fil d'actu, sans indication que le lieu visé existe
+  // même. Consommé dans onAuthed() (cf. sa note, APRÈS setupTabs()) ; comme les données
+  // (LX_DATA/LX_PISTES) ne sont prêtes qu'après le chargement réseau de lxInit(), une clé
+  // arrivée trop tôt est mise en attente (LX_HASH_LIEU_EN_ATTENTE) et rejouée au même jalon
+  // que LX_FILTRE_RENDU — pas un second signal de disponibilité, le même.
+  var LX_HASH_LIEU_EN_ATTENTE=null;
+  function lxOuvrirDepuisHash(cle){
+   var it=lxTousLieux().find(function(x){ return lxFavKey(x)===cle; });
+   if(!it){ console.error('lxOuvrirDepuisHash: aucun lieu ne correspond à la clé du lien', cle); return; }
+   if(it._piste) openPiste(it); else openPanel(it);
+  }
+
+  // Lieux retenus par la recherche/nature/favoris (barre commune, incréments 3/5) — la même
+  // liste que lxRefresh() filtre pour la carte, réutilisée ici pour que Carte et Liste
+  // rendent le même verdict (décision 3).
+  function lxVisibles(){
+   var q=(($('lx-q')&&$('lx-q').value)||'').toLowerCase().trim();
+   return lxTousLieux().filter(function(it){
+     var typeOk=!!lxTypesOn[it.t];
+     var favOk=(!lxFavOn || lxIsFav(it));
+     var hay=it.n+' '+it.c+' '+it.d+' '+it.r+(it.o?' '+it.o:'')+(it.prix?' '+it.prix+' à vendre':'')+(it.desc?' '+it.desc:'');
+     return typeOk && favOk && (!q || hay.toLowerCase().indexOf(q)>=0);
+   });
+  }
+  // Lieux réellement posés à l'écran : les retenus, moins ceux que « cacher » masque.
+  function lxMontres(){
+   var V=lxVisibles();
+   if(!lxCacheOn) return V;
+   return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat>0; });
+  }
+  function lxNbPlein(n){
+   return lxVisibles().filter(function(it){ return lxBilan(it, n).sat===lxSel().length; }).length;
+  }
+
+  /* ----- Rendu : familles, curseur, résultat, critères (transposé de la maquette) ----- */
+  function lxDeFam(f){
+   return /^Famille /.test(f.nom) ? "de la "+f.nom.replace("Famille ","famille ") : "de "+f.nom;
+  }
+  // Accord singulier/pluriel « 1 premier critère » vs « N premiers critères » — point de
+  // vérité unique, réutilisé partout où ce libellé se compose (bande déployée, bandeau
+  // replié, bande résultat, titre de groupe, fiche du lieu). Le cas n=1 redevient atteignable
+  // dès que B2 corrige le rabattement du curseur (cf. lxRenderCurseur()) : sans cet accord,
+  // « 1 premiers critères » restait faux sur un écran lu par des familles, pas des devs.
+  function lxMotPremiers(n){ return n===1 ? 'premier critère' : 'premiers critères'; }
+  function lxLibelleNiveau(n){
+   n = (n==null) ? lxFiltreN : n;
+   var mot=lxMotPremiers(n), fs=lxSel();
+   if(fs.length===1) return fs[0].moi ? mot+" de votre classement" : mot+" "+lxDeFam(fs[0]);
+   return mot+" de chaque famille";
+  }
+  function lxRenderFams(){
+   var row=$('famRow'); if(!row) return;
+   // Même distinction que le return de lxLoadFams() sur qp.error : LX_FAMS vide n'a pas
+   // qu'une seule cause. « Aucune réponse publiée » est le message de l'état vide LÉGITIME ;
+   // LX_LOAD_ERROR signale une PANNE (RPC en échec) — .lx-filtre-neutralise grise la bande
+   // mais ne change pas son texte, donc sans ce garde le message légitime resterait affiché,
+   // grisé, sous une bande qui prétend savoir qu'aucune famille n'a répondu.
+   if(!LX_FAMS.length && LX_LOAD_ERROR){ row.innerHTML='<span class="cur-sub">'+esc(LX_LOAD_ERROR)+'</span>'; return; }
+   if(!LX_FAMS.length){ row.innerHTML='<span class="cur-sub">Aucune réponse publiée au questionnaire pour l\'instant — le filtre a besoin d\'au moins une famille.</span>'; return; }
+   row.innerHTML='<span class="band-lbl" style="margin:0 .3rem 0 0">Critères de</span>'
+    + LX_FAMS.map(function(f){
+      var on=lxFiltreFams.indexOf(f.id)>=0;
+      return '<button type="button" class="chip'+(on?' is-on':'')+'" data-fam="'+esc(f.id)+'" aria-pressed="'+on+'" title="'+esc(f.nom)+'">'
+       + '<span class="av">'+esc(f.initiales)+'</span>'+esc(f.nom)
+       + (f.moi ? ' <span class="horiz">vous</span>' : '')
+       + '</button>';
+     }).join('')
+    + '<span class="sep"></span>'
+    + '<button type="button" class="lnk" id="lx-allFams">Toutes</button>'
+    + (LX_FAM_ME_UID && LX_FAMS.some(function(f){return f.moi;}) ? '<button type="button" class="lnk" id="lx-meFam">Seulement moi</button>' : '');
+  }
+  function lxRenderCurseur(){
+   // B2 (revue lead-tech 2026-08-11 + capture carte-couronnes-corrigees.png) : lxMaxN()
+   // rend 1 quand aucune famille n'est sélectionnée (valeur de repli du reduce(), pas un
+   // vrai plafond) — clamper lxFiltreN dessus le rabattait de 6 à 1 de façon IRRÉVERSIBLE :
+   // rien ne le remontait ensuite, et une sélection ultérieure de familles héritait du
+   // curseur déjà écrasé. On ne clampe que s'il existe une vraie sélection ; sans elle, le
+   // curseur garde la valeur où l'utilisatrice l'a laissée.
+   var fs=lxSel();
+   var mx = fs.length ? lxMaxN() : Math.max(lxFiltreN, 1);
+   if(fs.length && lxFiltreN>mx) lxFiltreN=mx;
+   var sl=$('lx-slider');
+   if(sl){ sl.max=mx; sl.value=lxFiltreN;
+    var pct=mx>1 ? ((lxFiltreN-1)/(mx-1))*100 : 100;
+    sl.style.setProperty('--trk','linear-gradient(90deg,var(--gold) 0 '+pct+'%,var(--line-strong) '+pct+'% 100%)');
+   }
+   var curN=$('curN'); if(curN) curN.textContent=lxFiltreN;
+   var curLbl=$('curLbl'); if(curLbl) curLbl.textContent=lxLibelleNiveau();
+   var courtes=lxSel().filter(function(f){ return f.order.length<lxFiltreN; });
+   var sub=$('curSub');
+   if(sub){
+    sub.textContent=courtes.length
+     ? courtes.map(function(f){return f.nom;}).join(' et ')+(courtes.length>1?' ont':' a')+' classé moins de critères : on regarde alors tous les siens.'
+     : '';
+    sub.hidden=!courtes.length;
+   }
+   var t=''; for(var i=1;i<=mx;i++) t+='<button type="button" data-n="'+i+'" class="'+(i===lxFiltreN?'is-on':'')+'">'+i+'</button>';
+   var ticks=$('ticks'); if(ticks) ticks.innerHTML=t;
+  }
+  function lxRenderResultat(){
+   var resN=$('resN'), txt=$('resTxt'), note=$('resNote'), btn=$('resBtn');
+   // Même classe que le retour anticipé de lxRenderTable() : la bande résultat affiche un
+   // décompte (lxNbPlein) calculé sur LX_CRIT_ETATS/LX_FAMS — sous panne, ce décompte est
+   // faux, pas seulement absent. Réutilise le SEUL message (LX_LOAD_ERROR), pas une variante.
+   if(LX_LOAD_ERROR){
+    if(resN) resN.textContent='—';
+    if(txt) txt.innerHTML=esc(LX_LOAD_ERROR);
+    if(note) note.innerHTML='';
+    if(btn) btn.hidden=true;
+    return;
+   }
+   var fs=lxSel(), n=lxFiltreN, plein=lxNbPlein(n), V=lxVisibles().length;
+   if(resN) resN.textContent=plein;
+   if(txt){
+    if(!fs.length){ txt.innerHTML='Sélectionnez au moins une famille pour voir un résultat.'; }
+    else if(fs.length===1){
+     var motN=lxMotPremiers(n);
+     var quoi=fs[0].moi ? 'vos <b>'+n+' '+motN+'</b>' : 'les <b>'+n+' '+motN+'</b> '+lxDeFam(fs[0]);
+     txt.innerHTML = plein>1 ? 'lieux sur '+V+' tiennent '+quoi+'.'
+      : plein===1 ? 'lieu sur '+V+' tient '+quoi+'.'
+      : 'lieu ne tient '+quoi+'.';
+    } else {
+     txt.innerHTML = plein>1 ? 'lieux conviennent aux <b>'+fs.length+' familles à la fois</b>. Les '+(V-plein)+' autres restent affichés, du plus au moins servant.'
+      : plein===1 ? 'lieu convient aux <b>'+fs.length+' familles à la fois</b>. Les autres restent affichés, du plus au moins servant.'
+      : 'lieu ne convient aux <b>'+fs.length+' familles à la fois</b>. La liste reste classée par nombre de familles servies.';
+    }
+   }
+   if(note){
+    var vides={};
+    fs.forEach(function(f){ f.order.slice(0, Math.min(n, f.order.length)).forEach(function(c){
+      // « qualifié nulle part » : aucun lieu n'a d'état pour ce critère (b1..b10 jamais posé
+      // par l'équipe, ou s1..s7/critère ajouté à la main — jamais qualifié par construction).
+      var jamais=lxVisibles().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
+      if(jamais) vides[c]=1;
+    }); });
+    var vl=Object.keys(vides).map(lxCritNom);
+    note.innerHTML = vl.length===0
+     ? 'Tous les critères de ce niveau sont documentés quelque part.'
+     : '<i>'+vl.length+(vl.length===1?' critère':' critères')+'</i> de ce niveau ne sont qualifiés nulle part. '
+       + '<button type="button" class="lnk-mini" data-open-crit>Voir lesquels</button>';
+   }
+   var repli=0;
+   if(plein===0 && fs.length){ for(var i=n-1;i>=1;i--){ if(lxNbPlein(i)>0){ repli=i; break; } } }
+   if(btn){
+    if(repli){ btn.hidden=false; btn.textContent='Redescendre à '+repli+' ('+lxNbPlein(repli)+' lieux)'; btn.setAttribute('data-n',repli); }
+    else btn.hidden=true;
+   }
+  }
+  function lxRenderCriteres(){
+   var fs=lxSel(), n=lxFiltreN;
+   var hint=$('critHint');
+   if(hint) hint.textContent = fs.length===1
+    ? 'du plus important au moins important, le trait marque votre niveau'
+    : 'du plus important au moins important, le trait marque le niveau du curseur dans chaque classement';
+   var grid=$('critGrid');
+   if(grid) grid.innerHTML=fs.map(function(f){
+    var k=Math.min(n, f.order.length);
+    var li=f.order.map(function(c,i){
+     var cut = (i===k) ? '<div class="cut soft">au-delà, non pris en compte</div>' : '';
+     // Sous LX_LOAD_ERROR, LX_CRIT_ETATS peut être vide/tronqué : lxEtatEquipe() rendrait
+     // 'ask' partout et ce flag marquerait TOUS les critères « qualifié nulle part » — faux
+     // dans l'autre sens que B1 (sous-affirme au lieu de sur-affirmer), même famille de
+     // défaut. On ne calcule le flag que si le chargement a réussi.
+     var jamais=!LX_LOAD_ERROR && lxVisibles().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
+     var flag=jamais ? '<span class="flag">qualifié nulle part</span>' : '';
+     return cut+'<li class="'+(i<k?'':'past')+'"><span class="rk">'+(i+1)+'</span><span>'+esc(lxCritNom(c))+'</span>'+flag+'</li>';
+    }).join('');
+    return '<div class="crit-col"><h3><span class="av'+(f.moi?' me':'')+'">'+esc(f.initiales)+'</span>'+esc(f.nom)+'</h3>'
+     + '<div class="cut">pris en compte</div><ul class="cl2">'+li+'</ul>'
+     + (f.order.length<n ? '<div class="cut soft">classement plus court, tout est pris</div>' : '')+'</div>';
+   }).join('');
+  }
+
+  /* ----- Rendu : vue Liste (table groupée par familles servies) ----- */
+  function lxGauge(e){ return '<span class="gauge">'+e.st.map(function(s){return '<i class="sq '+s+'"></i>';}).join('')+'</span>'; }
+  function lxTitreGroupe(sat, tot){
+   // B2 (revue lead-tech 2026-08-11) : cas résiduel — aucune famille sélectionnée (zéro
+   // réponse publiée, ou sélection manuellement vidée). « Conviennent aux 0 familles »
+   // affirmait un verdict qui n'existe pas ; groupe neutre à la place, sans colonne verdict
+   // (cf. lxLigneTable()).
+   if(tot===0) return 'Aucune famille sélectionnée';
+   if(tot===1){
+    var f=lxSel()[0], mot=lxMotPremiers(lxFiltreN);
+    return sat ? 'Tiennent '+(f.moi?'vos '+lxFiltreN+' '+mot:'les '+lxFiltreN+' '+mot+' '+lxDeFam(f))
+               : 'Butent sur au moins un critère';
+   }
+   if(sat===tot) return 'Conviennent aux '+tot+' familles';
+   if(sat===0) return 'Ne tiennent le niveau d\'aucune famille';
+   return 'Conviennent à '+sat+' famille'+(sat>1?'s':'')+' sur '+tot;
+  }
+  // Décision 13 : texte de zone ajouté à l'infobulle existante, jamais un nouveau badge —
+  // '' pour en zone (le cas courant, rien à signaler) ou zone inconnue (piste équipe, hors du
+  // périmètre de cette table de toute façon), un ajout visible seulement pour le cas qui
+  // compte : hors zone avérée.
+  function lxZoneTexte(it, f){
+   return lxEnZone(it, f)===false ? ', hors de sa zone géographique' : '';
+  }
+  // Décision 13 : la zone dégrade sans éliminer — jamais dans bilan.sat, seulement ici, comme
+  // départage entre lieux à égalité de familles servies (lxRenderTable()). Ne compte que le
+  // hors-zone AVÉRÉ (false) ; la zone inconnue (null, pistes équipe) ne pénalise jamais.
+  function lxHorsZoneCount(it, fs){
+   var n=0; fs.forEach(function(f){ if(lxEnZone(it,f)===false) n++; }); return n;
+  }
+  function lxLigneTable(it){
+   var fs=lxSel(), b=lxBilan(it, lxFiltreN);
+   var badges=fs.map(function(f){
+    var e=lxEvalFam(it, f, lxFiltreN);
+    var tt=f.nom+' : sur ses '+e.k+' '+lxMotPremiers(e.k)+', '+e.met+' tenus, '+e.part+' en partie, '+e.ask+' à vérifier, '+e.miss.length+' manqués'+lxZoneTexte(it,f);
+    return '<span class="fam-b'+(e.ok?' ok':'')+(f.moi?' me':'')+'" title="'+esc(tt)+'">'
+     +'<span class="who-i">'+esc(f.initiales)+'</span>'+lxGauge(e)+'</span>';
+   }).join('');
+   var col2;
+   if(!fs.length){
+    // B2 : cas résiduel sans sélection — pas de « 0 sur 0 », colonne neutre (réutilise le
+    // style muet existant .servies.zero, aucune classe nouvelle ajoutée).
+    col2='<span class="servies zero"><span class="w">—</span></span>';
+   } else if(fs.length===1){
+    col2='<span class="servies'+(b.sat?'':' zero')+'"><span class="w">'+(b.sat?'Tient':'Bute')+'</span></span>';
+   } else {
+    var pips=''; for(var i=0;i<fs.length;i++) pips+='<span class="pip'+(i<b.sat?' on':'')+'"></span>';
+    col2='<span class="servies'+(b.sat?'':' zero')+'"><span class="big">'+b.sat+'</span><span class="of">sur '+fs.length+'</span><span class="pips">'+pips+'</span></span>';
+   }
+   var v=b.ask.length
+    ? '<span class="verif"><i class="sq ask"></i>'+b.ask.length+(b.ask.length>1?' critères':' critère')+'</span>'
+    : '<span class="verif none">rien</span>';
+   var mine=lxMineFav(it), any=lxIsFav(it), n=lxFavEmails(it).length;
+   var fav='<div class="fav-row"><button type="button" class="fav-btn'+(mine?' is-on':'')+'" data-fav="'+esc(lxFavKey(it))+'">'
+    + (mine?'&#10084; Mon favori':'&#9825; Favori')+'</button>'
+    + (any ? '<span style="font-size:.72rem;color:var(--ink-faint)">'+n+'</span>' : '')+'</div>';
+   var thumb = it.t==='v' ? '&#8962;' : (it.t==='p' ? '&#9670;' : '&#9962;');
+   return '<tr class="lieu'+(b.sat?'':' out')+'" data-id="'+esc(it.qid)+'">'
+    + '<td><div class="lieu-cell"><div class="thumb">'+thumb+'</div>'
+    + '<div class="lieu-txt"><span class="nom">'+esc(it.n)+'<span class="type">'+esc(lxTypeLabel(it))+'</span></span>'
+    + '<span class="meta">'+esc(it.c||'')+'</span></div></div></td>'
+    + '<td>'+col2+'</td>'
+    + '<td><div class="fam-badges">'+badges+'</div></td>'
+    + '<td>'+v+'</td>'
+    + '<td class="fav-cell">'+fav+'</td></tr>';
+  }
+  function lxRenderTable(){
+   var fs=lxSel();
+   // B1, portée corrigée (recette 2026-08-11, b1-liste-FAUX-VERDICT) : la Liste est l'onglet
+   // actif par défaut depuis B2, et elle ne consultait jamais LX_LOAD_ERROR — LX_DATA reste
+   // peuplé (loadData() est une source séparée) même quand lieux_criteres_etat ou
+   // questionnaire_publies ont échoué, donc la table calculait et affichait un verdict sur
+   // des états vides/tronqués, sans le moindre message. Même refus d'affichage que la Carte,
+   // MÊME texte (LX_LOAD_ERROR lui-même, jamais une paraphrase) — posé AVANT tout calcul de
+   // verdict, pas en aval d'un tableau déjà construit.
+   var body0=$('lieuxBody');
+   if(LX_LOAD_ERROR){
+    if(body0) body0.innerHTML='<tr><td colspan="5"><p class="empty2">'+esc(LX_LOAD_ERROR)+'</p></td></tr>';
+    var th00=$('lx-thServies'); if(th00) th00.textContent = fs.length===1 ? 'Verdict' : 'Familles servies';
+    var fn00=$('lx-listeFootNote'); if(fn00) fn00.textContent='';
+    return;
+   }
+   var arr=lxMontres().map(function(it){ return {it:it, b:lxBilan(it, lxFiltreN)}; });
+   // Écart assumé vs la maquette : son tri « fam » départage à égalité de sat par un poids
+   // met*2+part agrégé sur toutes les familles. lxBilan() ne l'agrège pas (il ne retient que
+   // sat/ask, cf. rapport) — le départage se fait ici sur le nom, pas sur ce poids. Signalé,
+   // pas absorbé en silence.
+   // Décision 13 : le secteur géographique départage à sat égal (moins de familles hors zone
+   // d'abord) — jamais avant sat, jamais à sa place. C'est tout ce que « dégrade sans
+   // éliminer » veut dire pour ce tri.
+   arr.sort(function(a,z){
+    if(lxFiltreSort==='nom') return a.it.n.localeCompare(z.it.n,'fr');
+    if(lxFiltreSort==='fav') return lxFavEmails(z.it).length-lxFavEmails(a.it).length || z.b.sat-a.b.sat;
+    if(lxFiltreSort==='verif') return a.b.ask.length-z.b.ask.length || z.b.sat-a.b.sat;
+    return z.b.sat-a.b.sat || lxHorsZoneCount(a.it,fs)-lxHorsZoneCount(z.it,fs) || a.it.n.localeCompare(z.it.n,'fr');
+   });
+   var html='', courant=null;
+   arr.forEach(function(o){
+    if(lxFiltreSort==='fam' && o.b.sat!==courant){
+     courant=o.b.sat;
+     var cnt=arr.filter(function(x){return x.b.sat===courant;}).length;
+     html+='<tr class="grp'+(courant?'':' cold')+'"><td colspan="5">'+esc(lxTitreGroupe(courant, fs.length))+'<span class="cnt">'+cnt+' lieu'+(cnt>1?'x':'')+'</span></td></tr>';
+    }
+    html+=lxLigneTable(o.it);
+   });
+   // Réserve 6c #2 : un tableau simplement vide, au même endroit qu'un vrai zéro-résultat de
+   // recherche/curseur, laisserait croire que le filtre a fait son travail alors que la
+   // donnée elle-même n'a jamais chargé — message distinct, jamais confondu avec « rien ne
+   // correspond ».
+   // LX_LOAD_ERROR déjà traité par le retour anticipé en tête de fonction — au-delà de ce
+   // point on sait que le chargement a réussi, seul le réglage du filtre peut faire un
+   // tableau vide.
+   var body=$('lieuxBody');
+   if(body) body.innerHTML = html || '<tr><td colspan="5"><p class="empty2">'+(lxCacheOn
+      ? 'Aucun lieu ne sert de famille à ce niveau d\'exigence. Décochez « Cacher ceux qui ne servent personne » pour les revoir, ou redescendez le curseur.'
+      : 'Aucun lieu ne correspond à la recherche et aux natures cochées. Les critères des familles ne masquent jamais un lieu, seuls ces réglages du haut le font.')+'</p></td></tr>';
+   var th=$('lx-thServies'); if(th) th.textContent = fs.length===1 ? 'Verdict' : 'Familles servies';
+   var fn=$('lx-listeFootNote');
+   if(fn) fn.textContent='Une famille qui a classé moins de critères que le curseur est regardée sur tous les siens. Cliquez une ligne pour voir le détail, critère par critère.';
+  }
+
+  // Décision 14 : le bandeau replié doit dire le réglage actif EN TOUTES LETTRES — « jamais
+  // un picto muet » est le point le plus important du lot. Trois segments possibles : la
+  // famille (ou combien de familles), le niveau d'exigence (réutilise lxLibelleNiveau(), le
+  // même texte que la barre déployée — un seul calcul, jamais un second libellé qui pourrait
+  // diverger), et les types de lieux SEULEMENT s'ils ne sont pas tous cochés (l'état par
+  // défaut ne mérite pas d'être répété — la maquette ne montre pas ce segment dans son seul
+  // exemple, où les quatre types sont actifs).
+  function lxMiniFamHtml(){
+   var fs=lxSel();
+   if(!fs.length) return '<span style="color:var(--ink-faint);font-weight:400">Sélectionnez au moins une famille</span>';
+   if(fs.length===1){
+    var f=fs[0];
+    return '<span class="mini-fam"><span class="av">'+esc(f.initiales)+'</span>'+esc(f.nom)
+     +(f.moi?' <span style="font-weight:400;color:var(--ink-faint);font-size:.72rem">(vous)</span>':'')+'</span>';
+   }
+   return '<span class="mini-fam">'+fs.length+' familles</span>';
+  }
+  function lxMiniTypesTexte(){
+   var actifs=LX_TYPES.filter(function(t){ return lxTypesOn[t.id]; });
+   if(actifs.length===LX_TYPES.length || !actifs.length) return ''; // tout ou rien = défaut, rien à signaler
+   return actifs.map(function(t){ return t.label; }).join(', ');
+  }
+  function lxRenderMiniFiltre(){
+   var fam=$('lxMiniFam'); if(fam) fam.innerHTML=lxMiniFamHtml();
+   var seg=$('lxMiniSeg'); if(seg) seg.textContent=lxSel().length ? (lxFiltreN+' '+lxLibelleNiveau()) : '';
+   var typesTexte=lxMiniTypesTexte();
+   var typesEl=$('lxMiniTypes'); if(typesEl) typesEl.textContent=typesTexte;
+   var d1=$('lxMiniDot1'), d2=$('lxMiniDot2');
+   if(d1) d1.hidden=!lxSel().length; // pas de puce avant le premier segment si rien à dire
+   if(d2) d2.hidden=!typesTexte;
+  }
+
+  /* ----- Orchestrateur : un seul endroit qui sait dans quel ordre tout recalculer ----- */
+  function lxRenderFiltre(){
+   lxRenderFams(); lxRenderCurseur(); lxRenderResultat(); lxRenderCriteres();
+   lxRenderTable(); lxRefresh(); // lxRefresh() pose aussi les couronnes carte, cf. buildAll()/lxStyleMarker
+   lxRenderMiniFiltre(); // décision 14 : le bandeau replié suit le même rendu, jamais en retard
+   LX_FILTRE_RENDU=true; // #lx-filtreBand a désormais son contenu réel — cf. lxTraceResize()
+  }
+
+  (function initLieuxSkeleton(){
+   // Réserve (revue lead-tech 2026-08-11) : cette IIFE s'exécute au parse, AVANT l'amorce de
+   // session (onAuthed()), hors de toute frontière d'erreur. Une exception ici privait
+   // l'espace équipe entier de sa restauration de session (documents, questionnaire, fil
+   // compris) — même propriété que A1 bis (lxInit()), transposée au point d'entrée le plus
+   // en amont.
+   try{
+    var tCarte=$('tab-carte'), tListe=$('tab-liste');
+    if(tCarte) tCarte.addEventListener('click', function(){ lxSetSubtab('carte'); });
+    if(tListe) tListe.addEventListener('click', function(){ lxSetSubtab('liste'); });
+
+    // Décision 14 — bandeau replié : clic n'importe où sur les 44px du bandeau ouvre le
+    // réglage (écouteur sur le conteneur entier, .mini-btn ET .mini-right, pas seulement le
+    // bouton — c'est la consigne explicite : « clic n'importe où sur le bandeau »). Un clic
+    // qui vient de DANS le réglage ouvert (.filtre-overlay, nichée à l'intérieur une fois
+    // ouverte) ne doit jamais le refermer : sans cette garde, chaque clic sur une puce/case du
+    // filtre remonterait jusqu'ici et le fermerait aussitôt.
+    var mini=$('lxMiniFiltre');
+    if(mini) mini.addEventListener('click', function(e){
+      if(e.target.closest('.filtre-overlay')) return;
+      var ouvre=!mini.classList.contains('is-open');
+      mini.classList.toggle('is-open', ouvre);
+      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded', ouvre?'true':'false');
+    });
+    var voirCarte=$('lxVoirCarte');
+    if(voirCarte) voirCarte.addEventListener('click', function(e){
+      e.stopPropagation(); // ne pas laisser remonter jusqu'à l'écouteur ci-dessus (rouvrirait)
+      if(mini) mini.classList.remove('is-open');
+      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+    });
+    var typeRow=$('lx-typeRow');
+    if(typeRow) typeRow.addEventListener('click', function(e){
+      var b=e.target.closest('[data-lx-type]');
+      if(b){ lxToggleType(b.getAttribute('data-lx-type')); lxRenderFiltre(); }
+    });
+    var fav=$('lx-favChip');
+    if(fav) fav.addEventListener('click', function(){
+      lxFavOn=!lxFavOn;
+      // Cohérence avec les puces de type (revue UX, 2026-08-10) : le petit rond ne reste
+      // saturé que sur la puce réellement active, jamais par défaut — cf. .tchip.is-off .pt.
+      fav.classList.toggle('is-on',lxFavOn); fav.classList.toggle('is-off',!lxFavOn);
+      fav.setAttribute('aria-pressed', lxFavOn?'true':'false');
+      lxRenderFiltre();
+    });
+    // Incrément 6a — case « cacher ceux qui ne servent personne » (décochée par défaut,
+    // valable sur les deux vues : elle passe par lxMontres(), lue à la fois par lxRefresh()
+    // pour la carte et lxRenderTable() pour la liste).
+    var cache=$('lx-cacheChip');
+    if(cache) cache.addEventListener('click', function(){
+      lxCacheOn=!lxCacheOn;
+      cache.classList.toggle('is-on',lxCacheOn);
+      cache.setAttribute('aria-pressed', lxCacheOn?'true':'false');
+      lxRenderFiltre();
+    });
+    var reset=$('lx-resetHard');
+    if(reset) reset.addEventListener('click', function(){
+      lxResetHard();
+      // « Tout réafficher » reprend aussi la case cacher (même intention : rien ne reste
+      // masqué) — la sélection de familles n'est PAS remise à zéro, ce n'est pas un réglage
+      // d'affichage mais un choix de familles, décision distincte.
+      lxCacheOn=false;
+      var cacheChip=$('lx-cacheChip');
+      if(cacheChip){ cacheChip.classList.remove('is-on'); cacheChip.setAttribute('aria-pressed','false'); }
+      lxRenderFiltre();
+    });
+    var q=$('lx-q');
+    if(q) q.addEventListener('input', lxRenderFiltre);
+    var fit=$('lxFit');
+    if(fit) fit.addEventListener('click', fitAll);
+
+    // Incrément 6a — bande familles : puces de sélection (multi), « Toutes », « Seulement moi ».
+    var famRow=$('famRow');
+    if(famRow) famRow.addEventListener('click', function(e){
+      var allBtn=e.target.closest('#lx-allFams');
+      if(allBtn){ lxFiltreFams=LX_FAMS.map(function(f){return f.id;}); lxRenderFiltre(); return; }
+      var meBtn=e.target.closest('#lx-meFam');
+      if(meBtn){ var mine=LX_FAMS.filter(function(f){return f.moi;}).map(function(f){return f.id;}); lxFiltreFams=mine; lxRenderFiltre(); return; }
+      var chip=e.target.closest('[data-fam]');
+      if(chip){
+        var id=chip.getAttribute('data-fam'), i=lxFiltreFams.indexOf(id);
+        if(i>=0) lxFiltreFams.splice(i,1); else lxFiltreFams.push(id);
+        lxRenderFiltre();
+      }
+    });
+    // Curseur d'exigence : glissière + puces numérotées, deux entrées vers le même réglage.
+    var slider=$('lx-slider');
+    if(slider) slider.addEventListener('input', function(){
+      lxFiltreN=parseInt(slider.value,10)||1;
+      lxRenderFiltre();
+    });
+    var ticks=$('ticks');
+    if(ticks) ticks.addEventListener('click', function(e){
+      var b=e.target.closest('[data-n]');
+      if(b){ lxFiltreN=parseInt(b.getAttribute('data-n'),10)||1; lxRenderFiltre(); }
+    });
+    // Bande résultat : bouton « Redescendre à N » et lien « Voir lesquels » (ouvre la bande
+    // des critères jamais qualifiés, cf. lxRenderResultat()).
+    var res=$('res');
+    if(res) res.addEventListener('click', function(e){
+      var btn=e.target.closest('#resBtn');
+      if(btn){ var n=parseInt(btn.getAttribute('data-n'),10); if(n){ lxFiltreN=n; lxRenderFiltre(); } return; }
+      var lien=e.target.closest('[data-open-crit]');
+      if(lien){ var cb=$('critBand'); if(cb){ cb.open=true; cb.scrollIntoView({block:'nearest'}); } }
+    });
+    // Vue Liste : tri, clic ligne (fiche), bouton favori.
+    var sortSel=$('lx-sort');
+    if(sortSel) sortSel.addEventListener('change', function(){ lxFiltreSort=sortSel.value; lxRenderTable(); });
+    var body=$('lieuxBody');
+    if(body) body.addEventListener('click', function(e){
+      var favBtn=e.target.closest('[data-fav]');
+      if(favBtn){
+        var tr=favBtn.closest('tr[data-id]'), qid=tr&&tr.getAttribute('data-id');
+        var it=lxTousLieux().find(function(x){ return x.qid===qid; });
+        if(it) toggleFav(it).then(lxRenderTable);
+        return;
+      }
+      var row=e.target.closest('tr.lieu[data-id]');
+      if(row){
+        var it2=lxTousLieux().find(function(x){ return x.qid===row.getAttribute('data-id'); });
+        if(it2){ if(it2._piste) openPiste(it2); else openPanel(it2); }
+      }
+    });
+    // Puces de mention (P1) : data-men + écouteur délégué sur #mapPanel, qui persiste à
+    // travers les réécritures innerHTML de la fiche — jamais d'onclick inline reconstruit
+    // avec une valeur interpolée.
+    // Réserve 6c #3 (8 globales -> 2) : même écouteur délégué, étendu à data-act pour
+    // toggle-fav/copy-place-link/submit-comment — ces trois-là n'ont plus besoin d'exister
+    // sur window, seulement d'un attribut stable dans le HTML régénéré de la fiche.
+    var mp=$('mapPanel');
+    if(mp) mp.addEventListener('click', function(e){
+      var b=e.target.closest('[data-men]');
+      if(b){ insertMention(b.getAttribute('data-men')); return; }
+      var act=e.target.closest('[data-act]');
+      if(act){
+        if(act.tagName==='A') e.preventDefault(); // data-act="copy-place-link" est un <a href="#">
+        var action=act.getAttribute('data-act');
+        if(action==='toggle-fav') toggleFav();
+        else if(action==='copy-place-link') lxCopyPlaceLink();
+        else if(action==='submit-comment') submitComment();
+      }
+    });
+    // Réserve 6c #3 : closePanel/phMove ne sont plus posées sur window — #lxPanelClose/
+    // #ph-prev/#ph-next sont du markup STATIQUE (jamais régénéré, contrairement à la fiche),
+    // un addEventListener direct suffit.
+    var closeBtn=$('lxPanelClose');
+    if(closeBtn) closeBtn.addEventListener('click', closePanel);
+    var phPrev=$('ph-prev'), phNext=$('ph-next');
+    if(phPrev) phPrev.addEventListener('click', function(){ phMove(-1); });
+    if(phNext) phNext.addEventListener('click', function(){ phMove(1); });
+    lxRenderTypeRow();
+    lxWatchResize();
+    // Un redimensionnement de fenêtre peut aussi changer la largeur de la carte, pas
+    // seulement window.innerHeight utilisé par lxSizeCarteView() — lxResizeCarte() invalide
+    // Leaflet dans le même geste (R16), l'ancien listener ne faisait que mesurer.
+    window.addEventListener('resize', function(){ lxResizeCarte('window-resize'); });
+   }catch(e){ console.error('initLieuxSkeleton: échec — restauration de session à vérifier', e); }
+  })();
 
   // —— Feuille de route ——
   // Même principe que la carte : afficheur autonome (roadmap.html) qui lit son contenu
