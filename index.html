@@ -207,7 +207,24 @@
      pixels (720 - 238 - 44 = 438px de carte) — si cette valeur bouge, les deux doivent bouger
      ensemble, ce n'est pas un oubli de measurer-pas-deviner mais un budget déjà posé par
      Benoit et écrit dans le CSS de la maquette elle-même. */
-  #panel-lieux .mini-filtre{position:relative;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
+  /* 2026-08-15, second passage — deux défauts signalés par Benoit sur ce bandeau, corrigés ici.
+     (1) « passe sous la map » : le réglage ouvert était peint SOUS la carte. Leaflet range ses
+     panneaux en z-index 200 à 800 ; l'overlay était à 40 et .mini-filtre n'ouvrait aucun
+     contexte d'empilement (position:relative SANS z-index). La moitié gauche du réglage
+     disparaissait donc derrière la carte — visible à la capture, mais PAS au test de survol
+     (elementFromPoint renvoyait bien l'overlay : les tuiles ne captent pas le pointeur). D'où
+     un z-index franchement au-dessus de tout ce que pose Leaflet.
+     (2) « ne se réduit pas dans la liste » : sur la Liste la page défile (plus de 20 000 px) et
+     le bandeau, en flux normal, partait hors écran — une fois le réglage ouvert et la page
+     descendue, il n'y avait plus rien à cliquer pour le refermer. position:sticky le garde
+     accessible : le geste de repli existe toujours là où on est.
+     Les onglets Carte/Liste sont désormais AU-DESSUS du bandeau (ordre DOM changé) : le
+     réglage ouvert ne les recouvre plus, on peut changer de vue sans le fermer d'abord. */
+  /* z-index 1200, pas 1000 : Leaflet pose ses coins de contrôle (.leaflet-top/.leaflet-bottom)
+     à EXACTEMENT 1000. À égalité, c'est l'ordre du DOM qui tranche, et la carte vient après le
+     bandeau — les boutons +/- restaient donc peints par-dessus le réglage ouvert. Mesuré sur la
+     chaîne d'empilement, pas deviné. */
+  #panel-lieux .mini-filtre{position:sticky;top:0;z-index:1200;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-top:0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
   #panel-lieux .mini-btn{flex:1;display:flex;align-items:center;gap:.6rem;padding:0 1.1rem;background:none;border:0;font-family:var(--f-label);font-size:.83rem;color:var(--ink);text-align:left;min-width:0;cursor:pointer;}
   #panel-lieux .mini-btn .chev{color:var(--ink-faint);font-size:.85rem;transition:transform .18s var(--ease);flex:0 0 auto;}
   #panel-lieux .mini-filtre.is-open .mini-btn .chev{transform:rotate(90deg);}
@@ -224,7 +241,7 @@
      en dessous, en flux normal) — en superposition, l'overlay flotte au-dessus de la carte,
      plus rien en dessous pour fermer visuellement le bloc sans cette bordure (reprise de
      maq-filtre-repliable.html, qui la pose explicitement pour cette même raison). */
-  #panel-lieux .mini-filtre.is-open .filtre-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:40;}
+  #panel-lieux .mini-filtre.is-open .filtre-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:2;}
   #panel-lieux .overlay-foot{display:flex;justify-content:flex-end;padding:.7rem 1.1rem .9rem;background:var(--paper-warm);border-top:1px solid var(--line);}
   #panel-lieux .btn-gold{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--gold-deep);border:0;border-radius:var(--r-full);padding:.4rem 1.05rem;cursor:pointer;}
   #panel-lieux .btn-gold:hover{background:var(--gold);}
@@ -251,7 +268,9 @@
   #panel-lieux .icon-btn{width:1.75rem;height:1.75rem;border-radius:50%;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-faint);font-size:.95rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-family:var(--f-label);}
   #panel-lieux .icon-btn:hover{border-color:var(--gold);color:var(--gold-deep);}
 
-  #panel-lieux .subtabs{background:var(--paper);border:1px solid var(--line-strong);border-top:0;border-bottom:1px solid var(--line);}
+  /* Les onglets coiffent maintenant le bloc (arrondi en haut), le bandeau de filtre vient
+     ensuite, puis le contenu — cf. la note de .mini-filtre. */
+  #panel-lieux .subtabs{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;border-bottom:1px solid var(--line);}
   #panel-lieux .subtabs-in{display:flex;align-items:center;gap:1.3rem;padding:0 1.1rem;}
   #panel-lieux .subtab-nav{display:flex;gap:.2rem;}
   #panel-lieux .subtab{position:relative;font-family:var(--f-label);font-size:.86rem;font-weight:600;color:var(--ink-faint);background:none;border:0;padding:.85rem .5rem;cursor:pointer;transition:color .15s;}
@@ -917,6 +936,16 @@
 
   <div class="panel" id="panel-lieux">
 
+    <div class="subtabs">
+      <div class="subtabs-in">
+        <nav class="subtab-nav">
+          <button class="subtab" id="tab-carte" type="button">Carte</button>
+          <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
+        </nav>
+        <span class="count" id="subCount"></span>
+      </div>
+    </div>
+
     <!-- Décision 14 : bandeau replié — visible UNIQUEMENT sur la vue Carte (masqué ici par
          défaut, la vue par défaut du panneau est Liste). lxSetSubtab() y déplace/retire
          #lx-filtreBand selon la vue active, voir sa note. -->
@@ -979,16 +1008,6 @@
         <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
       </div>
     </section>
-
-    <div class="subtabs">
-      <div class="subtabs-in">
-        <nav class="subtab-nav">
-          <button class="subtab" id="tab-carte" type="button">Carte</button>
-          <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
-        </nav>
-        <span class="count" id="subCount"></span>
-      </div>
-    </div>
 
     <div class="app-wrap-lieux">
 
