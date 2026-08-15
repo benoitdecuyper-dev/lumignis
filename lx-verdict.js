@@ -52,10 +52,21 @@
   // peine d'être écrasé). Toute valeur de critère inattendue ('?' compris) retombe sur 'ask',
   // jamais sur 'miss' — c'est le point testé explicitement (une régression ici viderait le
   // filtre pour toutes les pistes équipe).
+  //
+  // FUSION, pas affectation (corrigé le 2026-08-15, migration lieux_criteres v2). Avant ce
+  // correctif, `critEtats[p.qid] = etats` écrasait TOUT ce que la vue lieux_criteres_etat avait
+  // déjà servi pour ce lieu — inoffensif tant que la vue ne servait aucune piste (0/12 avant la
+  // v2), mais dès qu'elle sert les 7 critères calculés (s1, s4, s6, s7, c2_mrnxzasm,
+  // c1_ms9fya7c, c2_ms9fzvx4) sur les 262 lieux, l'écrasement les aurait effacés pour les 12
+  // pistes, qui seraient retombées en 'ask' sur ces 7 critères — donc SERVIES pour toutes les
+  // familles sans qu'aucune règle ne l'ait décidé. C'est la classe de défaut B1 du 2026-08-11
+  // (un état vide/effacé se lit comme favorable), rejouée ici en silence. On pose désormais les
+  // clés b1..b10 des pistes PAR-DESSUS ce que critEtats[p.qid] contient déjà, sans y toucher :
+  // aucun recouvrement possible avec les clés s*/c*, les deux univers de clés sont disjoints.
   function absorbCriteresPistes(pistes, critEtats) {
     (pistes || []).forEach(function (p) {
       if (!p.criteres || !p.criteres.length) return;
-      var etats = {};
+      var etats = critEtats[p.qid] || {};
       p.criteres.forEach(function (c) {
         if (c.n == null) return;
         etats["b" + c.n] = LX_PISTE_V_ETAT[c.v] || "ask";
