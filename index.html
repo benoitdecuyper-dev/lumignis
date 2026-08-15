@@ -561,7 +561,19 @@
   #panel-lieux .hero img{width:100%;height:100%;object-fit:contain;display:block;background:#d7e3ef}
   #panel-lieux .hero .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#8c7a63;font-size:13px;font-family:var(--f-label);}
   #panel-lieux .hero .close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
-  #panel-lieux .pnav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:24px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center}
+  /* 2026-08-15 : flèches décentrées dans leur cercle. Le centrage flex était déjà là — ce qui
+     décalait, c'est le padding par défaut du <button> (jamais remis à zéro) ET le dessin des
+     glyphes ‹ › eux-mêmes, qui ne sont pas centrés dans leur chasse. Les glyphes sont donc
+     remplacés par un chevron SVG (géométrie maîtrisée, plus de dépendance à la police) et le
+     padding est explicitement annulé. Même correction de fond que la croix du compagnon. */
+  #panel-lieux .pnav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;background:rgba(0,0,0,.45);color:#fff;border:0;padding:0;border-radius:50%;width:38px;height:38px;line-height:0;cursor:pointer;display:none;align-items:center;justify-content:center}
+  #panel-lieux .pnav svg{display:block;width:18px;height:18px;}
+  /* Chargement des autres photos : une pastille discrète, au même endroit que le compteur, qui
+     dit que la galerie n'est pas encore complète. Sans elle, une fiche affichant « 1 / 1 »
+     pendant deux secondes laisse croire qu'il n'y a qu'une photo. */
+  #panel-lieux #ph-load{position:absolute;bottom:8px;left:12px;z-index:6;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:12px;padding:2px 9px;display:none;font-family:var(--f-label);align-items:center;gap:.4rem;}
+  #panel-lieux #ph-load i{width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;display:block;animation:phspin .7s linear infinite;}
+  @keyframes phspin{to{transform:rotate(360deg);}}
   #panel-lieux .pnav:hover{background:rgba(0,0,0,.7)}
   #panel-lieux #ph-prev{left:10px}#panel-lieux #ph-next{right:10px}
   #panel-lieux #ph-count{position:absolute;bottom:8px;right:12px;z-index:6;background:rgba(0,0,0,.55);color:#fff;font-size:11px;border-radius:12px;padding:2px 9px;display:none;font-family:var(--f-label);}
@@ -1020,9 +1032,10 @@
           <aside class="mappanel" id="mapPanel" aria-label="Détail du lieu">
             <div class="hero">
               <button class="close" id="lxPanelClose" aria-label="Fermer">&times;</button>
-              <button class="pnav" id="ph-prev" aria-label="Photo précédente">&#8249;</button>
-              <button class="pnav" id="ph-next" aria-label="Photo suivante">&#8250;</button>
+              <button class="pnav" id="ph-prev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="pnav" id="ph-next" aria-label="Photo suivante"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <span id="ph-count"></span>
+              <span id="ph-load"><i aria-hidden="true"></i>Recherche d’autres photos…</span>
               <div id="hero-img"></div>
             </div>
             <div class="fiche-body" id="panel-body"></div>
@@ -1835,8 +1848,9 @@
   var LX_PH={list:[],i:0,key:null};
   function lxShowPh(msg){
    var hero=$('hero-img');
-   var pc=$('ph-count'), pv=$('ph-prev'), nx=$('ph-next');
+   var pc=$('ph-count'), pv=$('ph-prev'), nx=$('ph-next'), pl=$('ph-load');
    if(!hero||!pc||!pv||!nx) return;
+   if(pl) pl.style.display=LX_PH.chargement?'inline-flex':'none';
    if(!LX_PH.list.length){ hero.innerHTML='<div class="ph">'+(msg||'Chargement des photos…')+'</div>'; pc.style.display='none'; pv.style.display='none'; nx.style.display='none'; return; }
    hero.innerHTML='<img src="'+esc(LX_PH.list[LX_PH.i])+'" alt="" onerror="lxPhErr()">';
    var multi=LX_PH.list.length>1;
@@ -1873,14 +1887,18 @@
    lxPhotoCache[it.n]=p; return p;
   }
   function lxLoadPhotos(it){
-   LX_PH={list:it.img?[it.img]:(it._thumb?[it._thumb]:[]),i:0,key:it.n};
+   // 2026-08-15 : `chargement` porte l'état « la galerie n'est pas encore complète ». Sans lui,
+   // une fiche annonce « 1 / 1 » le temps que Wikipédia et Commons répondent, et on croit que
+   // le lieu n'a qu'une photo — alors qu'il en a parfois quatre-vingts.
+   LX_PH={list:it.img?[it.img]:(it._thumb?[it._thumb]:[]),i:0,key:it.n,chargement:true};
    lxShowPh();
    lxPhotosFor(it).then(function(urls){
      if(LX_PH.key!==it.n) return;
      urls.forEach(function(u){ if(LX_PH.list.indexOf(u)<0) LX_PH.list.push(u); });
+     LX_PH.chargement=false;
      if(!LX_PH.list.length) lxShowPh('Pas de photo trouvée — voir « Plus de photos »');
      else lxShowPh();
-   });
+   })['catch'](function(){ if(LX_PH.key===it.n){ LX_PH.chargement=false; lxShowPh(); } });
   }
 
   /* ---- Préchargement des vignettes de survol (par lots de 50) ---- */
@@ -2117,11 +2135,24 @@
        + lxGauge(e) + '</div>';
      }).join('');
   }
+  // 2026-08-15 (demande de Benoit : « le lien doit ouvrir une nouvelle page avec l'annonce
+  // dedans et pas copier le lien »). Le ↗ de l'en-tête copiait le lien interne du lieu — geste
+  // devenu inutile depuis que ce lien vit en permanence dans la barre d'adresse. Il ouvre
+  // maintenant la SOURCE du lieu (l'annonce, le dossier, la page de référence) dans un nouvel
+  // onglet. Sans source connue, on ne fabrique pas un lien mort : on renvoie sur une recherche
+  // nommée, et le titre du bouton dit lequel des deux on est en train d'ouvrir.
+  function lxLienAnnonce(it){
+   var u=it.u||it.url||(it.source&&/^https?:/.test(it.source)?it.source:'');
+   var titre=u ? 'Ouvrir l’annonce / la source dans un nouvel onglet'
+               : 'Aucune source enregistrée pour ce lieu — ouvrir une recherche web';
+   if(!u) u='https://www.google.com/search?q='+encodeURIComponent((it.n||'')+' '+(it.c||''));
+   return '<a class="icon-btn2" href="'+esc(u)+'" target="_blank" rel="noopener" title="'+esc(titre)+'">↗</a>';
+  }
   function lxPanelScaffold(it,bodyHtml,linksHtml){
    var st=lxStatusFor(it);
    var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
    return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
-    '<div class="sheet-actions"><a class="icon-btn2" href="#" data-act="copy-place-link" title="Copier le lien direct de ce lieu (il est aussi dans la barre d\'adresse)">↗</a></div></div>'+
+    '<div class="sheet-actions">'+lxLienAnnonce(it)+'</div></div>'+
     '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
     lxFicheVerdictHtml(it)+
     '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
@@ -2169,6 +2200,7 @@
    }
    var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
    lxPoseLienLieu(p);
+   lxRemonteCompagnon();
    requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
    if(reussi) loadComments(p); // pas de fil d'échanges greffé sur une fiche qui n'a pas pu s'afficher
   }
@@ -2203,6 +2235,7 @@
    }
    var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
    lxPoseLienLieu(it);
+   lxRemonteCompagnon();
    requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
    if(reussi){
      loadComments(it);
@@ -2219,6 +2252,15 @@
   // rouvre la même fiche. replaceState, pas pushState : parcourir dix lieux ne doit pas
   // fabriquer dix entrées d'historique à remonter une par une. Le lien reste consommé et
   // effacé à l'arrivée par onAuthed() (cf. sa note), ce chemin-là ne change pas.
+  // 2026-08-15 (demande de Benoit : « il faut que le compagnon remonte en haut quand on clique
+  // sur un autre lieu »). Le panneau est un conteneur qui defile ; en passant d'une fiche
+  // longue a une autre, il gardait sa position et le lieu suivant s'ouvrait au milieu de sa
+  // qualification. Remise a zero explicite, sur le conteneur ET sur le corps de fiche : selon
+  // la longueur du contenu, ce n'est pas toujours le meme des deux qui porte le defilement.
+  function lxRemonteCompagnon(){
+   var mp=$('mapPanel'); if(mp) mp.scrollTop=0;
+   var pb=$('panel-body'); if(pb) pb.scrollTop=0;
+  }
   function lxPoseLienLieu(it){
    if(!it) return;
    try{ history.replaceState(null,'',location.pathname+location.search+'#lieu='+encodeURIComponent(lxFavKey(it))); }
@@ -2227,14 +2269,9 @@
   function lxEffaceLienLieu(){
    try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
   }
-  function lxCopyPlaceLink(){
-   if(!LX_CUR) return;
-   var link=location.href.split('#')[0]+'#lieu='+encodeURIComponent(lxFavKey(LX_CUR));
-   if(navigator.clipboard) navigator.clipboard.writeText(link);
-  }
-  // Réserve 6c #3 : n'est plus posée sur window — data-act="copy-place-link" sur l'écouteur
-  // délégué de #mapPanel (déjà câblé pour data-men), qui persiste à travers les réécritures
-  // innerHTML de la fiche.
+  // 2026-08-15 : lxCopyPlaceLink() est supprimée. Copier le lien n'a plus d'objet depuis que
+  // l'ouverture d'une fiche l'écrit dans la barre d'adresse (lxPoseLienLieu), et le bouton qui
+  // l'appelait sert désormais à ouvrir l'annonce (lxLienAnnonce).
 
   /* ===== Commentaires de qualification par lieu — partagés équipe uniquement. =====
      Repris intact de carte.html (R1-R6) : pas de repli localStorage, échec visible et
@@ -3448,10 +3485,13 @@
       if(b){ insertMention(b.getAttribute('data-men')); return; }
       var act=e.target.closest('[data-act]');
       if(act){
-        if(act.tagName==='A') e.preventDefault(); // data-act="copy-place-link" est un <a href="#">
+        // 2026-08-15 : ce preventDefault() servait au ↗ « copier le lien », qui était un
+        // <a href="#">. Le ↗ est devenu un vrai lien vers l'annonce et ne porte plus de
+        // data-act — il ne passe donc plus par ici et navigue normalement. La garde reste
+        // pour les futurs data-act posés sur un <a>.
+        if(act.tagName==='A') e.preventDefault();
         var action=act.getAttribute('data-act');
         if(action==='toggle-fav') toggleFav();
-        else if(action==='copy-place-link') lxCopyPlaceLink();
         else if(action==='submit-comment') submitComment();
       }
     });
