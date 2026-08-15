@@ -224,7 +224,7 @@
      à EXACTEMENT 1000. À égalité, c'est l'ordre du DOM qui tranche, et la carte vient après le
      bandeau — les boutons +/- restaient donc peints par-dessus le réglage ouvert. Mesuré sur la
      chaîne d'empilement, pas deviné. */
-  #panel-lieux .mini-filtre{position:sticky;top:0;z-index:1200;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-top:0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
+  #panel-lieux .mini-filtre{position:sticky;top:0;z-index:1200;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
   #panel-lieux .mini-btn{flex:1;display:flex;align-items:center;gap:.6rem;padding:0 1.1rem;background:none;border:0;font-family:var(--f-label);font-size:.83rem;color:var(--ink);text-align:left;min-width:0;cursor:pointer;}
   #panel-lieux .mini-btn .chev{color:var(--ink-faint);font-size:.85rem;transition:transform .18s var(--ease);flex:0 0 auto;}
   #panel-lieux .mini-filtre.is-open .mini-btn .chev{transform:rotate(90deg);}
@@ -268,9 +268,10 @@
   #panel-lieux .icon-btn{width:1.75rem;height:1.75rem;border-radius:50%;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-faint);font-size:.95rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-family:var(--f-label);}
   #panel-lieux .icon-btn:hover{border-color:var(--gold);color:var(--gold-deep);}
 
-  /* Les onglets coiffent maintenant le bloc (arrondi en haut), le bandeau de filtre vient
-     ensuite, puis le contenu — cf. la note de .mini-filtre. */
-  #panel-lieux .subtabs{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;border-bottom:1px solid var(--line);}
+  /* Ordre acté par Benoit le 2026-08-15 : les critères de filtre sont GLOBAUX aux deux vues
+     (ils décident quels lieux existent), le choix Carte/Liste n'est qu'une façon de regarder
+     le même résultat. Donc filtres d'abord, choix de vue ensuite, contenu enfin. */
+  #panel-lieux .subtabs{background:var(--paper);border:1px solid var(--line-strong);border-top:0;border-bottom:1px solid var(--line);}
   #panel-lieux .subtabs-in{display:flex;align-items:center;gap:1.3rem;padding:0 1.1rem;}
   #panel-lieux .subtab-nav{display:flex;gap:.2rem;}
   #panel-lieux .subtab{position:relative;font-family:var(--f-label);font-size:.86rem;font-weight:600;color:var(--ink-faint);background:none;border:0;padding:.85rem .5rem;cursor:pointer;transition:color .15s;}
@@ -295,10 +296,13 @@
      --map-w par lxSizeCarteView(), seule chose qui sait ce que vaut la hauteur disponible), et
      le panneau compagnon qui prend le reste. La carte ne bouge donc plus JAMAIS entre l'état
      de repos et la fiche ouverte — c'est le point non négociable de l'écran validé.
-     Le repli sur une colonne sous 1100 px n'est pas une cascade responsive (l'écran est
-     hors cible sous 1280, cf. .petit-ecran) : c'est un filet pour que la carte ne devienne
-     jamais plus large que le conteneur si --map-w n'a pas encore été posé. */
-  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:min(var(--map-w,60%),62%) minmax(0,1fr);}
+     Révisé le 2026-08-15 sur retour de Benoit : « la carte est trop petite par rapport au
+     compagnon, je veux que ce soit comme avant ». La colonne carrée rendait au panneau
+     bien plus de largeur qu'il n'en a besoin. On garde ce qui comptait — le panneau est
+     PERMANENT, la carte ne bouge donc jamais entre l'état de repos et la fiche ouverte —
+     mais la répartition revient à celle d'avant : la carte prend tout le reste, le panneau
+     garde ses 27 rem d'origine. --map-w n'est plus utilisé. */
+  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:minmax(0,1fr) 27rem;}
   /* Repos : l'invitation occupe la colonne de droite ; fiche ouverte : elle laisse la place. */
   #panel-lieux .mapcol-repos{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;border-left:1px solid var(--line-strong);background:#fffdf8;color:var(--ink-faint);text-align:center;padding:2rem 1.6rem;}
   #panel-lieux .mapcol-repos .ic{font-size:1.3rem;color:var(--gold);}
@@ -586,11 +590,10 @@
   #panel-lieux .info-line b{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#806f5b;font-family:var(--f-label);}#panel-lieux .info-line span{color:var(--lp-ink2)}
   #panel-lieux .next-action{border:1px solid #e0c99e;background:#fff8ea;border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px;line-height:1.4}
   #panel-lieux .next-action b{display:block;text-transform:uppercase;font-size:11px;letter-spacing:.06em;color:#8a6a1f;margin-bottom:4px;font-family:var(--f-label);}
-  #panel-lieux .score-card{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;border:1px solid var(--lp-line);background:#fff;border-radius:8px;padding:10px 12px;margin:10px 0 12px}
-  #panel-lieux .score-num{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f6ead5;color:#8b3c14;font-weight:900;font-size:18px;border:1px solid #e7c09d}
-  #panel-lieux .score-copy{font-size:13px;line-height:1.35;color:var(--lp-ink2)}#panel-lieux .score-copy b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6a1f;margin-bottom:3px;font-family:var(--f-label);}
   #panel-lieux .criteria-list{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
   #panel-lieux .criterion{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:start;border:1px solid var(--lp-line);background:#fff;border-radius:8px;padding:8px 9px;font-size:12.5px;line-height:1.35}
+  /* Sans numéro (2026-08-15) : deux colonnes au lieu de trois, le nom prend la place rendue. */
+  #panel-lieux .criterion.crit-2col{grid-template-columns:1fr auto;}
   #panel-lieux .criterion-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fbf5ea;color:#8a6a1f;font-weight:900;font-size:11px;font-family:var(--f-label);}
   #panel-lieux .criterion-main b{display:block;color:var(--lp-ink);font-size:12.5px;margin-bottom:2px}#panel-lieux .criterion-main span{color:#776b5d}
   #panel-lieux .criterion-note{font-weight:900;border-radius:999px;padding:2px 7px;background:#eee8dc;color:#6d6258;font-size:11px;white-space:nowrap;font-family:var(--f-label);}
@@ -936,16 +939,6 @@
 
   <div class="panel" id="panel-lieux">
 
-    <div class="subtabs">
-      <div class="subtabs-in">
-        <nav class="subtab-nav">
-          <button class="subtab" id="tab-carte" type="button">Carte</button>
-          <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
-        </nav>
-        <span class="count" id="subCount"></span>
-      </div>
-    </div>
-
     <!-- Décision 14 : bandeau replié — visible UNIQUEMENT sur la vue Carte (masqué ici par
          défaut, la vue par défaut du panneau est Liste). lxSetSubtab() y déplace/retire
          #lx-filtreBand selon la vue active, voir sa note. -->
@@ -1008,6 +1001,16 @@
         <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
       </div>
     </section>
+
+    <div class="subtabs">
+      <div class="subtabs-in">
+        <nav class="subtab-nav">
+          <button class="subtab" id="tab-carte" type="button">Carte</button>
+          <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
+        </nav>
+        <span class="count" id="subCount"></span>
+      </div>
+    </div>
 
     <div class="app-wrap-lieux">
 
@@ -1562,12 +1565,6 @@
       var delta=window.innerHeight - key.getBoundingClientRect().bottom;
       if(Math.abs(delta)>1) wrap.style.height=(wrap.getBoundingClientRect().height + delta)+'px';
     }
-    // MEP LUM-38 (2026-08-15) : la colonne carte est CARRÉE — sa largeur vaut la hauteur qu'on
-    // vient d'arrêter. C'est posé ici et nulle part ailleurs : cette fonction est déjà la seule
-    // qui connaît la hauteur disponible, dupliquer le calcul ailleurs le ferait diverger au
-    // premier ajustement de la légende ou de la barre de filtre.
-    var hFinale=Math.round(wrap.getBoundingClientRect().height);
-    if(hFinale>0) wrap.style.setProperty('--map-w', hFinale+'px');
   }
   // Point d'entrée unique pour tout redimensionnement de la carte — même motif que
   // lxMaybeFit() en R9 : mesurer la hauteur ET invalider Leaflet sont TOUJOURS le même geste,
@@ -1964,7 +1961,10 @@
   function lxSummaryFor(it){
    if(it.qualif){
     var q=it.qualif, e=q.eglise||{}, s=q.ecoleCatholique||{}, b=s.meilleureReference||s.meilleure||{};
-    return esc('Référence Église : '+(e.diocese||'à qualifier')+' — '+(e.eveque||'évêque à vérifier')+'. École : '+(b.nom?b.nom+' à '+b.distanceKm+' km':'à qualifier')+'. Score Benoit : '+((q.scoreBenoit&&q.scoreBenoit.scorePct!=null)?q.scoreBenoit.scorePct+' % provisoire':'à qualifier')+'.');
+    // 2026-08-15 : le pourcentage « Benoit & Éléonore » est retiré de toute la fiche (demande
+    // de Benoit). Un score agrégé sur des critères que chaque famille classe dans son propre
+    // ordre n'a pas de sens partagé — c'est le crible critère par critère qui informe.
+    return esc('Référence Église : '+(e.diocese||'à qualifier')+' — '+(e.eveque||'évêque à vérifier')+'. École : '+(b.nom?b.nom+' à '+b.distanceKm+' km':'à qualifier')+'.');
    }
    if(it.t==='p') return esc(it.desc||'Piste repérée par l’équipe. À qualifier avec les critères Lumignis avant contact.');
    if(it.t==='v') return esc(lxFirstText([it.pts,it.lim].filter(lxInf)) || 'Bien identifié dans la prospection. À qualifier sur le triptyque : vie spirituelle, familles, faisabilité immobilière.');
@@ -1973,87 +1973,67 @@
    var block = lxFirstText(it.lims);
    return esc(lead + (block ? ' Point bloquant à vérifier : '+block : ''));
   }
-  function lxLevelFromText(txt,base){
-   txt=(txt||'').toLowerCase();
-   if(/fort|oui|quotid|important|majeur|actif|sur place|probable|prioritaire|chaude/.test(txt)) return 3;
-   if(/moyen|possible|à vérifier|a verifier|partiel|inconnu|non précisé|non precise/.test(txt)) return 2;
-   if(/faible|non|limite|baisse|fragile|vieill|cher|travaux/.test(txt)) return 1;
-   return base||0;
-  }
-  function lxMetricHtml(label,lvl,note){
-   var l=Math.max(0,Math.min(3,lvl||0));
-   var txt=l===3?'fort':(l===2?'à vérifier':(l===1?'faible':'inconnu'));
-   return '<div class="metric"><b>'+label+'</b><div class="meter l'+l+'"><i></i><i></i><i></i></div><span>'+txt+(note?' · '+esc(note):'')+'</span></div>';
-  }
-  function lxMetricsFor(it){
-   if(it.qualif && it.qualif.criteresBenoit){
-    var by={}; it.qualif.criteresBenoit.forEach(function(c){by[c.critere]=c;});
-    function lvl(n){ var v=by[n]&&by[n].note; return v==null?0:(v>=4?3:(v>=2?2:1)); }
-    return '<div class="metrics">'+
-     lxMetricHtml('Spirituel',Math.round((lvl(2)+lvl(4)+lvl(5))/3),'crit. 2/4/5')+
-     lxMetricHtml('Familles',Math.round((lvl(1)+lvl(3)+lvl(6))/3),'crit. 1/3/6')+
-     lxMetricHtml('Accueil',lvl(7),'crit. 7')+
-     lxMetricHtml('École',lvl(8),'crit. 8')+
-     lxMetricHtml('Territoire',lvl(9),'crit. 9')+
-     lxMetricHtml('Ignis',lvl(10),'crit. 10')+
-    '</div>';
-   }
-   if(it.t==='p' && it.criteres && it.criteres.length){
-    var bp={}; it.criteres.forEach(function(c){bp[c.n]=c;});
-    var pl=function(n){ var v=bp[n]&&bp[n].v; return v==='oui'?3:(v==='partiel'?2:(v==='non'?1:0)); };
-    return '<div class="metrics">'+
-     lxMetricHtml('Spirituel',Math.round((pl(2)+pl(4)+pl(5))/3),'crit. 2/4/5')+
-     lxMetricHtml('Familles',Math.round((pl(1)+pl(3)+pl(6))/3),'crit. 1/3/6')+
-     lxMetricHtml('Accueil',pl(7),'crit. 7')+
-     lxMetricHtml('École',pl(8),'crit. 8')+
-     lxMetricHtml('Territoire',pl(9),'crit. 9')+
-     lxMetricHtml('Ignis',pl(10),'crit. 10')+
-    '</div>';
-   }
-   var spiritual=it.t==='v'?lxLevelFromText(it.chap, it.chap&&/oui|chapelle/i.test(it.chap)?3:1):3;
-   var families=lxLevelFromText([it.cad,it.cap,it.ba,it.tl].join(' '), it.cad==='v'?2:3);
-   var school=it.ecole&&it.ecole.noteCritere8 ? Math.min(3,Math.ceil(it.ecole.noteCritere8/2)) : 0;
-   var real=it.t==='v'?lxLevelFromText([it.ba,it.cap,it.prix,it.ter].join(' '),2):lxLevelFromText([it.ba,it.tl,it.fr].join(' '),2);
-   var church=it.t==='v'?1:(it.t==='a'?2:3);
-   var access=it.cad==='v'?3:(it.cad==='b'?2:1);
-   return '<div class="metrics">'+
-    lxMetricHtml('Spirituel',spiritual,it.t==='v'?'chapelle / usage':'culte existant')+
-    lxMetricHtml('Familles',families,LX_CAD[it.cad]||'cadre à préciser')+
-    lxMetricHtml('École',school,school?'proche à vérifier':'non qualifié')+
-    lxMetricHtml('Immobilier',real,it.t==='v'?'bien identifié':'capacité à qualifier')+
-    lxMetricHtml('Église',church,it.t==='v'?'hors piste diocèse':'interlocuteur à identifier')+
-    lxMetricHtml('Accès',access,LX_CAD[it.cad]||'inconnu')+
-   '</div>';
-  }
   function lxInfoLine(k,v){ return lxInf(v)?'<div class="info-line"><b>'+k+'</b><span>'+esc(v)+'</span></div>':''; }
   var LX_CRIT_NAMES={
    1:'Notre projet / gouvernance',2:'Divine Volonté',3:'Chez nous / logements',
    4:'Eucharistie + adoration <500 m',5:'Messe quotidienne',6:'Familles croyantes proches',
    7:'Accueil & rayonnement',8:'École catholique',9:'Nature / Ouest / ville',10:'Retraites Ignis'
   };
-  function lxNoteClass(v){ return v==null?'unknown':(v>=4?'ok':(v>=2?'mid':'low')); }
-  function lxNoteLabel(v){ return v==null?'?':String(v)+'/5'; }
-  function lxScoreHtml(it){
-   if(!it.qualif || !it.qualif.scoreBenoit) return '';
-   var s=it.qualif.scoreBenoit, unk=s.inconnusEliminatoires||[];
-   var label=s.scorePct==null?'?':s.scorePct+'%';
-   var line=unk.length ? ('À lever avant engagement : critères '+unk.join(', ')+'.') : 'Aucun critère éliminatoire inconnu dans la donnée actuelle.';
-   return '<div class="score-card"><div class="score-num">'+esc(label)+'</div><div class="score-copy"><b>Score Benoit &amp; Éléonore</b>'+esc(line)+'</div></div>';
+  // 2026-08-15 — qualification revue (demande de Benoit).
+  // Deux changements de fond, pas de mise en forme :
+  // (1) PLUS DE NUMÉROTATION. Le numéro laissait croire à un ordre partagé ; or chaque famille
+  //     reprend les mêmes critères dans SON ordre. Afficher « critère 5 » à côté d'un verdict
+  //     d'équipe était donc une information fausse. Seul le nom du critère reste.
+  // (2) UN ÉTAT LISIBLE, PAS UNE NOTE. « 4/5 » obligeait à connaître le seuil pour savoir si
+  //     c'est bon. On affiche oui / en partie / non / non renseigné, et surtout on les LIT à la
+  //     même source que le verdict de la carte et de la liste (LX_CRIT_ETATS, via
+  //     LxVerdict.etatEquipe) : la fiche ne peut plus contredire l'écran qui l'a amenée. Le
+  //     texte de qualification reste dessous, il porte le pourquoi.
+  var LX_ETAT_LIB={met:['oui','ok'],part:['en partie','mid'],miss:['non','low'],ask:['non renseigné','unknown']};
+  function lxCritLigne(nom, etat, texte){
+   var l=LX_ETAT_LIB[etat]||LX_ETAT_LIB.ask;
+   return '<div class="criterion crit-2col"><div class="criterion-main"><b>'+esc(nom)+'</b>'
+    +(texte?'<span>'+esc(texte)+'</span>':'')+'</div>'
+    +'<div class="criterion-note '+l[1]+'">'+l[0]+'</div></div>';
+  }
+  // Détail attendu par Benoit sur le critère école : le nom de l'établissement et la distance,
+  // pas seulement « oui ». Lu dans la qualification (annuaire Éducation nationale), jamais
+  // reconstruit — si la donnée manque, on ne l'invente pas.
+  function lxEcoleDetail(it){
+   var q=it.qualif&&it.qualif.ecoleCatholique;
+   var b=q&&(q.meilleureReference||q.meilleure);
+   if(b&&b.nom){
+    return b.nom+(b.commune?' · '+b.commune:'')+(b.distanceKm!=null?' · '+b.distanceKm+' km':'')
+      +(b.contratType==='sous_contrat'?' · sous contrat':(b.contratType==='hors_contrat'?' · hors contrat':''));
+   }
+   var e=it.ecoles&&it.ecoles.sc;
+   if(e&&e.nom) return e.nom+(e.commune?' · '+e.commune:'')+(e.km!=null?' · '+e.km+' km':'');
+   return null;
   }
   function lxCriteriaHtml(it){
-   if(it.t==='p' && it.criteres && it.criteres.length){
-    var prows=it.criteres.slice().sort(function(a,b){return a.n-b.n;}).map(function(c){
-     var cls=c.v==='oui'?'ok':(c.v==='partiel'?'mid':(c.v==='non'?'low':'unknown'));
-     var lbl=c.v==='oui'?'oui':(c.v==='partiel'?'partiel':(c.v==='non'?'non':'?'));
-     return '<div class="criterion"><div class="criterion-num">'+c.n+'</div><div class="criterion-main"><b>'+esc(LX_CRIT_NAMES[c.n]||('Critère '+c.n))+'</b><span>'+esc(c.note||'À qualifier')+'</span></div><div class="criterion-note '+cls+'">'+lbl+'</div></div>';
-    }).join('');
-    return '<div class="section-title">Crible Benoit &amp; Éléonore</div><div class="criteria-list">'+prows+'</div>';
+   // Ordre d'affichage : celui du catalogue (b1..b10), qui est l'ordre de RÉFÉRENCE du
+   // questionnaire — pas un classement, et il n'est plus affiché comme tel.
+   var ids=['b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'];
+   // Textes de qualification, quelle que soit la forme de la donnée du lieu.
+   var txt={};
+   if(it.qualif && it.qualif.criteresBenoit){
+    it.qualif.criteresBenoit.forEach(function(c){ if(c.texte) txt['b'+c.critere]=c.texte; });
    }
-   if(!it.qualif || !it.qualif.criteresBenoit) return '';
-   var rows=it.qualif.criteresBenoit.slice().sort(function(a,b){return a.critere-b.critere;}).map(function(c){
-    return '<div class="criterion"><div class="criterion-num">'+c.critere+'</div><div class="criterion-main"><b>'+esc(LX_CRIT_NAMES[c.critere]||('Critère '+c.critere))+'</b><span>'+esc(c.texte||'À qualifier')+'</span></div><div class="criterion-note '+lxNoteClass(c.note)+'">'+lxNoteLabel(c.note)+'</div></div>';
+   if(it.t==='p' && it.criteres){
+    it.criteres.forEach(function(c){ if(c.note) txt['b'+c.n]=c.note; });
+   }
+   var aQuelqueChose=false;
+   var rows=ids.map(function(cid){
+    var etat=LxVerdict.etatEquipe(LX_CRIT_ETATS, it.qid, cid);
+    if(etat!=='ask') aQuelqueChose=true;
+    var detail=txt[cid]||null;
+    if(cid==='b8'){ var ec=lxEcoleDetail(it); if(ec) detail=ec; }
+    return lxCritLigne(lxCritNom(cid), etat, detail);
    }).join('');
-   return '<div class="section-title">Crible Benoit</div><div class="criteria-list">'+rows+'</div>';
+   // Une fiche dont AUCUN critère n'est qualifié n'a rien à dire ici : on affiche la liste
+   // quand même (savoir que tout est à qualifier est une information), mais on le dit.
+   var chapeau=aQuelqueChose ? '' : '<div class="summary-box">Aucun critère n’a encore été qualifié sur ce lieu.</div>';
+   return '<div class="section-title">Les critères, un par un</div>'+chapeau+'<div class="criteria-list">'+rows+'</div>';
   }
   function lxPracticalFor(it){
    if(it.qualif){
@@ -2063,7 +2043,6 @@
      lxInfoLine('Évêque',e.eveque)+
      lxInfoLine('École catho',best.nom ? (best.nom+' · '+best.commune+' · '+best.distanceKm+' km') : 'à qualifier')+
      lxInfoLine('Contrat',best.contrat)+
-     lxInfoLine('Score Benoit',q.scoreBenoit&&q.scoreBenoit.scorePct!=null ? (q.scoreBenoit.scorePct+' % · '+q.scoreBenoit.statut) : 'à qualifier')+
      lxInfoLine('Disponibilité',q.disponibilite&&q.disponibilite.statut)+
     '</div>';
    }
@@ -2073,8 +2052,11 @@
    return '<div class="info-grid">'+lxInfoLine('Statut',it.st)+lxInfoLine('Communauté',it.co)+lxInfoLine('Fréquentation',it.fr)+lxInfoLine('Bâti',it.ba)+lxInfoLine('Potentiel',it.p)+lxInfoLine('Source','Wikipédia / source liée')+'</div>';
   }
   function lxNextActionFor(it){
+   // 2026-08-15 : les critères se nomment, ils ne se numérotent plus (même raison que dans
+   // lxCriteriaHtml — le numéro suggère un ordre que personne ne partage).
    if(it.qualif && it.qualif.scoreBenoit && it.qualif.scoreBenoit.inconnusEliminatoires && it.qualif.scoreBenoit.inconnusEliminatoires.length){
-    return 'Lever les critères éliminatoires inconnus : '+it.qualif.scoreBenoit.inconnusEliminatoires.join(', ')+'. Priorité : autonomie, Divine Volonté, logements/familles, messe quotidienne.';
+    var noms=it.qualif.scoreBenoit.inconnusEliminatoires.map(function(n){ return LX_CRIT_NAMES[n]||('critère '+n); });
+    return 'À lever avant d’engager quoi que ce soit : '+noms.join(', ')+'.';
    }
    if(it.t==='p') return it.prochaine || 'Qualifier la piste avec les critères Lumignis puis identifier le premier interlocuteur concret.';
    if(it.t==='v') return 'Vérifier disponibilité, diocèse/localisation spirituelle possible, écoles proches et ordre de grandeur travaux.';
@@ -2139,21 +2121,20 @@
    var st=lxStatusFor(it);
    var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
    return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
-    '<div class="sheet-actions"><a class="icon-btn2" href="#" data-act="copy-place-link" title="Copier le lien">↗</a></div></div>'+
+    '<div class="sheet-actions"><a class="icon-btn2" href="#" data-act="copy-place-link" title="Copier le lien direct de ce lieu (il est aussi dans la barre d\'adresse)">↗</a></div></div>'+
     '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
     lxFicheVerdictHtml(it)+
     '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
     '<div class="summary-box">'+lxSummaryFor(it)+'</div>'+
     qualifNote+
-    lxScoreHtml(it)+
-    '<div class="section-title">Qualification</div>'+lxMetricsFor(it)+
+    lxCriteriaHtml(it)+
     '<div class="section-title">Infos utiles</div>'+lxPracticalFor(it)+lxEcolesHtml(it)+
     '<div class="next-action"><b>Prochaine action</b>'+esc(lxNextActionFor(it))+'</div>'+
-    lxCriteriaHtml(it)+bodyHtml+linksHtml+lxThreadHtml(it);
+    bodyHtml+linksHtml+lxThreadHtml(it);
   }
   // Réserve 6c #1 (revue précédente) : une exception pendant la construction de la fiche
   // (lxPanelScaffold() enchaîne une dizaine de sous-fonctions — lxFicheVerdictHtml,
-  // lxMetricsFor, lxCriteriaHtml, etc. — sur une donnée réelle, jamais entièrement homogène
+  // lxCriteriaHtml, lxPracticalFor, etc. — sur une donnée réelle, jamais entièrement homogène
   // sur 262 lieux) laissait aujourd'hui #panel-body tel quel : soit vide au premier lieu
   // ouvert, soit encore sur le CONTENU DU LIEU PRÉCÉDENT ensuite — la fiche paraît répondre
   // au clic sans dire qu'elle a échoué. Message explicite, jamais un panneau muet ou figé.
@@ -2187,6 +2168,7 @@
      if(pb) pb.innerHTML=lxFicheErreurHtml(p&&p.nom);
    }
    var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
+   lxPoseLienLieu(p);
    requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
    if(reussi) loadComments(p); // pas de fil d'échanges greffé sur une fiche qui n'a pas pu s'afficher
   }
@@ -2220,6 +2202,7 @@
      if(pb) pb.innerHTML=lxFicheErreurHtml(it&&it.n);
    }
    var wrap=$('mapWrap'); if(wrap) wrap.classList.add('has-panel');
+   lxPoseLienLieu(it);
    requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
    if(reussi){
      loadComments(it);
@@ -2229,6 +2212,21 @@
    }
   }
   window.openPanel=openPanel; // cf. note à la déclaration de LX_MARKERS : hook QA minimal
+  // 2026-08-15 (demande de Benoit : « dès qu'on clique sur le lieu, je veux un lien du lieu
+  // direct ») : l'ouverture d'une fiche écrit la clé du lieu dans l'URL. La barre d'adresse
+  // porte donc en permanence le lien partageable du lieu ouvert — plus besoin de penser à
+  // cliquer « copier » avant d'envoyer un lien à quelqu'un, et le rafraîchissement de la page
+  // rouvre la même fiche. replaceState, pas pushState : parcourir dix lieux ne doit pas
+  // fabriquer dix entrées d'historique à remonter une par une. Le lien reste consommé et
+  // effacé à l'arrivée par onAuthed() (cf. sa note), ce chemin-là ne change pas.
+  function lxPoseLienLieu(it){
+   if(!it) return;
+   try{ history.replaceState(null,'',location.pathname+location.search+'#lieu='+encodeURIComponent(lxFavKey(it))); }
+   catch(e){ /* navigation privée très restrictive : le lien reste copiable par le bouton */ }
+  }
+  function lxEffaceLienLieu(){
+   try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  }
   function lxCopyPlaceLink(){
    if(!LX_CUR) return;
    var link=location.href.split('#')[0]+'#lieu='+encodeURIComponent(lxFavKey(LX_CUR));
@@ -2327,6 +2325,7 @@
   // écouteur délégué de #mapPanel que copy-place-link/toggle-fav.
   function closePanel(){
    var wrap=$('mapWrap'); if(wrap) wrap.classList.remove('has-panel');
+   lxEffaceLienLieu();
    requestAnimationFrame(function(){ if(lxMap) lxMap.invalidateSize(); });
   }
   // Réserve 6c #3 : n'est plus posée sur window — #lxPanelClose est du markup STATIQUE,
