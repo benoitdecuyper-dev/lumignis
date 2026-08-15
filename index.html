@@ -603,6 +603,22 @@
   #panel-lieux .criterion{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:start;border:1px solid var(--lp-line);background:#fff;border-radius:8px;padding:8px 9px;font-size:12.5px;line-height:1.35}
   /* Sans numéro (2026-08-15) : deux colonnes au lieu de trois, le nom prend la place rendue. */
   #panel-lieux .criterion.crit-2col{grid-template-columns:1fr auto;}
+  /* 2026-08-15, second passage — « un visuel plus frappant si c'est ok ou pas ». Le verdict ne
+     tenait qu'à une petite pastille à droite : à parcourir la liste, rien ne sautait aux yeux.
+     La carte entière porte maintenant l'état — filet de couleur à gauche et fond teinté — de
+     sorte qu'on lise l'ensemble d'un coup d'œil, sans lire les mots. La pastille reste : la
+     couleur seule n'est jamais l'unique porteuse d'une information (daltonisme). */
+  #panel-lieux .criterion.et-ok{border-left:4px solid #6f9150;background:#f6faf2;}
+  #panel-lieux .criterion.et-mid{border-left:4px solid #d8a53a;background:#fffaf0;}
+  #panel-lieux .criterion.et-low{border-left:4px solid #c0664a;background:#fdf5f2;}
+  #panel-lieux .criterion.et-unknown{border-left:4px solid var(--line-strong);background:#fafbfc;}
+  #panel-lieux .criteria-list{display:flex;flex-direction:column;gap:6px;}
+  /* Description en tête de fiche (2026-08-15) : du texte courant, pas une boîte de plus — on
+     lit d'abord ce qu'est le lieu, avant de lire s'il convient. */
+  #panel-lieux .fiche-desc{margin:.7rem 0 .2rem;font-size:13px;line-height:1.5;color:var(--lp-ink2);}
+  #panel-lieux .fiche-desc p{margin:0 0 .5rem;}
+  #panel-lieux .fiche-desc p:empty{display:none;}
+  #panel-lieux .crit-groupe{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:.9rem 0 .35rem;}
   #panel-lieux .criterion-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fbf5ea;color:#8a6a1f;font-weight:900;font-size:11px;font-family:var(--f-label);}
   #panel-lieux .criterion-main b{display:block;color:var(--lp-ink);font-size:12.5px;margin-bottom:2px}#panel-lieux .criterion-main span{color:#776b5d}
   #panel-lieux .criterion-note{font-weight:900;border-radius:999px;padding:2px 7px;background:#eee8dc;color:#6d6258;font-size:11px;white-space:nowrap;font-family:var(--f-label);}
@@ -2007,10 +2023,14 @@
   //     même source que le verdict de la carte et de la liste (LX_CRIT_ETATS, via
   //     LxVerdict.etatEquipe) : la fiche ne peut plus contredire l'écran qui l'a amenée. Le
   //     texte de qualification reste dessous, il porte le pourquoi.
-  var LX_ETAT_LIB={met:['oui','ok'],part:['en partie','mid'],miss:['non','low'],ask:['non renseigné','unknown']};
+  var LX_ETAT_LIB={met:['oui','ok'],part:['en partie','mid'],miss:['non','low'],ask:['non renseigné','unknown'],
+   // 2026-08-15 : cinquième étiquette, pour le cas « l'information existe, le jugement manque »
+   // (cf. lxCriteriaHtml, critère école). Elle se colore comme un « en partie » : ce n'est ni un
+   // oui, ni un trou.
+   trancher:['à trancher','mid']};
   function lxCritLigne(nom, etat, texte){
    var l=LX_ETAT_LIB[etat]||LX_ETAT_LIB.ask;
-   return '<div class="criterion crit-2col"><div class="criterion-main"><b>'+esc(nom)+'</b>'
+   return '<div class="criterion crit-2col et-'+l[1]+'"><div class="criterion-main"><b>'+esc(nom)+'</b>'
     +(texte?'<span>'+esc(texte)+'</span>':'')+'</div>'
     +'<div class="criterion-note '+l[1]+'">'+l[0]+'</div></div>';
   }
@@ -2045,13 +2065,41 @@
     var etat=LxVerdict.etatEquipe(LX_CRIT_ETATS, it.qid, cid);
     if(etat!=='ask') aQuelqueChose=true;
     var detail=txt[cid]||null;
-    if(cid==='b8'){ var ec=lxEcoleDetail(it); if(ec) detail=ec; }
+    if(cid==='b8'){
+     var ec=lxEcoleDetail(it);
+     if(ec){
+      detail=ec;
+      // 2026-08-15 — défaut signalé par Benoit : « non renseigné sur école alors qu'il y a bien
+      // une école privée à 18 km ». Vérifié en base : sur les 12 pistes équipe, 11 portent une
+      // école connue (0,3 à 18 km) ET un critère 8 laissé à « ? / aucune information ». Ce
+      // n'est donc pas l'écran qui perd l'information, c'est le crible qui a été rempli sans
+      // regarder le champ écoles — deux champs qui se contredisent dans la même fiche.
+      // L'écran ne tranche pas à la place de l'équipe (18 km, est-ce acceptable ? c'est un
+      // jugement), mais il cesse d'annoncer « non renseigné » alors que la donnée est là :
+      // l'école s'affiche, et l'état devient « à trancher ».
+      if(etat==='ask') etat='trancher';
+     }
+    }
     return lxCritLigne(lxCritNom(cid), etat, detail);
    }).join('');
    // Une fiche dont AUCUN critère n'est qualifié n'a rien à dire ici : on affiche la liste
    // quand même (savoir que tout est à qualifier est une information), mais on le dit.
    var chapeau=aQuelqueChose ? '' : '<div class="summary-box">Aucun critère n’a encore été qualifié sur ce lieu.</div>';
-   return '<div class="section-title">Les critères, un par un</div>'+chapeau+'<div class="criteria-list">'+rows+'</div>';
+   // « Tous les critères » : les dix du socle ci-dessus, plus ceux que des familles ont classés
+   // sans que personne ne les qualifie jamais (critères secondaires du questionnaire, critères
+   // ajoutés par une famille). Ils ne sont pas noyés dans la liste principale — ils n'ont pas
+   // d'état à montrer — mais ils ne sont plus invisibles non plus : ils disent ce qui compte
+   // pour quelqu'un et sur quoi personne ne s'est encore prononcé.
+   var autres={};
+   lxSel().forEach(function(f){ (f.order||[]).forEach(function(cid){ if(ids.indexOf(cid)<0) autres[cid]=1; }); });
+   var listeAutres=Object.keys(autres);
+   var bloc2 = listeAutres.length
+    ? '<p class="crit-groupe">Classés par une famille, jamais qualifiés sur aucun lieu</p><div class="criteria-list">'
+      + listeAutres.map(function(cid){ return lxCritLigne(lxCritNom(cid),'ask',null); }).join('')
+      + '</div>'
+    : '';
+   return '<div class="section-title">Les critères, un par un</div>'+chapeau
+    +'<div class="criteria-list">'+rows+'</div>'+bloc2;
   }
   function lxPracticalFor(it){
    if(it.qualif){
@@ -2148,12 +2196,33 @@
    if(!u) u='https://www.google.com/search?q='+encodeURIComponent((it.n||'')+' '+(it.c||''));
    return '<a class="icon-btn2" href="'+esc(u)+'" target="_blank" rel="noopener" title="'+esc(titre)+'">↗</a>';
   }
+  // 2026-08-15 (demande de Benoit : « je voudrais que le détail arrive en haut quand on clique
+  // sur un lieu, comme espèce de description »). La fiche s'ouvrait sur le crible : on savait
+  // si le lieu convenait avant de savoir ce que c'est. Un paragraphe de présentation passe donc
+  // en tête, juste sous le titre.
+  // Rien n'est inventé ici : on prend le premier texte descriptif que porte réellement la
+  // donnée, selon le type de lieu, et l'extrait Wikipédia (#wx) vient s'y ajouter quand il
+  // arrive — il était jusqu'ici relégué en bas de fiche, après tout le reste.
+  function lxDescriptionHtml(it){
+   var cands=[
+     it.desc,
+     it.pts,                                   // « pourquoi c'est une piste » (biens à vendre)
+     lxFirstText(it.forts),                    // premier point fort (sanctuaires qualifiés)
+     it.resume, it.presentation,
+     (it.p && it.p!=='—') ? it.p : '',         // potentiel
+     it.ac, it.st
+   ];
+   var txt='';
+   for(var i=0;i<cands.length;i++){ if(lxInf(cands[i]) && String(cands[i]).trim().length>20){ txt=String(cands[i]).trim(); break; } }
+   return '<div class="fiche-desc">'+(txt?'<p>'+esc(txt)+'</p>':'')+'<p id="wx"></p></div>';
+  }
   function lxPanelScaffold(it,bodyHtml,linksHtml){
    var st=lxStatusFor(it);
    var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
    return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
     '<div class="sheet-actions">'+lxLienAnnonce(it)+'</div></div>'+
     '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
+    lxDescriptionHtml(it)+
     lxFicheVerdictHtml(it)+
     '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
     '<div class="summary-box">'+lxSummaryFor(it)+'</div>'+
@@ -2227,7 +2296,7 @@
        var lims=(it.lims&&it.lims.length)?'<div class="anl lm"><h4>À vérifier / limites</h4><ul>'+it.lims.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
        body=forts+lims;
      }
-     if(pb) pb.innerHTML=lxPanelScaffold(it,body+'<div id="wx"></div>',lxActionLinks(it,gmaps,gimg));
+     if(pb) pb.innerHTML=lxPanelScaffold(it,body,lxActionLinks(it,gmaps,gimg));
      reussi=true;
    }catch(e){
      console.error('openPanel: échec de construction de la fiche', e);
