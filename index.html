@@ -296,18 +296,15 @@
      --map-w par lxSizeCarteView(), seule chose qui sait ce que vaut la hauteur disponible), et
      le panneau compagnon qui prend le reste. La carte ne bouge donc plus JAMAIS entre l'état
      de repos et la fiche ouverte — c'est le point non négociable de l'écran validé.
-     Révisé le 2026-08-15 sur retour de Benoit : « la carte est trop petite par rapport au
-     compagnon, je veux que ce soit comme avant ». La colonne carrée rendait au panneau
-     bien plus de largeur qu'il n'en a besoin. On garde ce qui comptait — le panneau est
-     PERMANENT, la carte ne bouge donc jamais entre l'état de repos et la fiche ouverte —
-     mais la répartition revient à celle d'avant : la carte prend tout le reste, le panneau
-     garde ses 27 rem d'origine. --map-w n'est plus utilisé. */
-  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:minmax(0,1fr) 27rem;}
-  /* Repos : l'invitation occupe la colonne de droite ; fiche ouverte : elle laisse la place. */
-  #panel-lieux .mapcol-repos{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;border-left:1px solid var(--line-strong);background:#fffdf8;color:var(--ink-faint);text-align:center;padding:2rem 1.6rem;}
-  #panel-lieux .mapcol-repos .ic{font-size:1.3rem;color:var(--gold);}
-  #panel-lieux .mapcol-repos p{margin:0;font-family:var(--f-label);font-size:.82rem;max-width:22rem;}
-  #panel-lieux .mapwrap.has-panel .mapcol-repos{display:none;}
+     Révisé deux fois le 2026-08-15 sur retour de Benoit : d'abord « la carte est trop petite
+     par rapport au compagnon » (la colonne carrée donnait au panneau bien plus que nécessaire),
+     puis « quand on ferme le compagnon, la carte prend toute la map ». Retour donc au
+     fonctionnement d'origine : au repos la carte occupe TOUTE la largeur, et le compagnon
+     n'ouvre sa colonne de 27 rem que lorsqu'une fiche est ouverte (.has-panel). La maquette
+     LUM-38 voulait une carte qui ne bouge jamais ; l'arbitrage de Benoit est l'inverse, et
+     c'est le sien. --map-w n'est plus utilisé. */
+  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:minmax(0,1fr);transition:grid-template-columns .18s var(--ease);}
+  #panel-lieux .mapwrap.has-panel{grid-template-columns:minmax(0,1fr) 27rem;}
   #panel-lieux .mapcol{grid-column:1;grid-row:1;position:relative;width:100%;height:100%;min-width:0;min-height:0;}
   #panel-lieux .mapkey{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.7rem 0 0;}
   #panel-lieux .mapkey span{display:inline-flex;align-items:center;gap:.35rem;}
@@ -563,7 +560,7 @@
   #panel-lieux #hero-img{height:100%}
   #panel-lieux .hero img{width:100%;height:100%;object-fit:contain;display:block;background:#d7e3ef}
   #panel-lieux .hero .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#8c7a63;font-size:13px;font-family:var(--f-label);}
-  #panel-lieux .hero .close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer}
+  #panel-lieux .hero .close{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
   #panel-lieux .pnav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:24px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center}
   #panel-lieux .pnav:hover{background:rgba(0,0,0,.7)}
   #panel-lieux #ph-prev{left:10px}#panel-lieux #ph-next{right:10px}
@@ -952,9 +949,7 @@
         <span class="mini-seg" id="lxMiniTypes"></span>
       </button>
       <span class="mini-right">Régler les filtres &rsaquo;</span>
-    </div>
-
-    <section class="filtre filtre-inline" id="lx-filtreBand" aria-label="Filtrer les lieux">
+    <section class="filtre filtre-overlay" id="lx-filtreBand" aria-label="Filtrer les lieux">
       <div class="band tools">
         <div class="in">
           <span class="srch"><span class="ico" aria-hidden="true">&#9906;</span>
@@ -963,7 +958,7 @@
           <span id="lx-typeRow" style="display:flex;gap:.4rem;flex-wrap:wrap"></span>
           <button type="button" class="tchip is-off" id="lx-favChip" aria-pressed="false"><span class="pt" style="background:var(--ember)"></span>Favoris</button>
           <span class="tsep"></span>
-          <button type="button" class="tchip" id="lx-cacheChip" aria-pressed="false"><span class="bx" aria-hidden="true">&#10003;</span>Cacher ceux qui ne servent personne</button>
+          <button type="button" class="tchip is-on" id="lx-cacheChip" aria-pressed="true"><span class="bx" aria-hidden="true">&#10003;</span>N'afficher que les lieux qui conviennent</button>
           <span class="gap"></span>
           <button type="button" class="icon-btn" id="lx-resetHard" title="Tout réafficher" aria-label="Tout réafficher">&#8635;</button>
         </div>
@@ -1001,6 +996,8 @@
         <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
       </div>
     </section>
+    </div>
+
 
     <div class="subtabs">
       <div class="subtabs-in">
@@ -1019,13 +1016,6 @@
           <div class="mapcol">
             <div id="lxMap"></div>
             <button type="button" class="mapbtn" id="lxFit"><span aria-hidden="true">&#9974;</span> Toute la France</button>
-          </div>
-          <!-- MEP LUM-38 (2026-08-15) : le panneau compagnon est désormais TOUJOURS là, à
-               largeur fixe ; il n'apparaît plus au clic et ne rétrécit plus la carte. Au repos
-               il porte une invitation sobre, exactement comme la maquette validée. -->
-          <div class="mapcol-repos" id="mapReposMsg">
-            <span class="ic" aria-hidden="true">&#10022;</span>
-            <p>Cliquez un lieu sur la carte pour voir sa fiche ici.</p>
           </div>
           <aside class="mappanel" id="mapPanel" aria-label="Détail du lieu">
             <div class="hero">
@@ -1725,16 +1715,25 @@
   // commandait rien — on avait donc les deux à l'écran, et un contrôle qui mentait. On garde
   // le comportement qui marchait (nichée dans le bandeau, ouverte en superposition) et on
   // l'applique aux deux vues ; `carte` ne sert plus qu'à refermer à chaque changement de vue.
+  // 2026-08-15, troisième passage. Deux choses tombent ici, toutes deux signalées par Benoit.
+  //
+  // (1) Le DÉPLACEMENT au runtime. La barre vivait hors du bandeau dans le HTML et n'y était
+  //     déplacée que par lxSetSubtab() — or lxSetSubtab() n'est appelé qu'au CLIC sur un
+  //     onglet. En arrivant directement sur les Lieux (vue Liste par défaut), le déplacement
+  //     n'avait donc jamais lieu : le réglage restait déplié EN DEHORS du bandeau, pendant que
+  //     le bandeau, lui, affichait l'état replié, et le clic sur le bandeau ne commandait rien
+  //     de visible. Exactement le symptôme décrit. La barre est maintenant nichée dans le
+  //     bandeau DANS LE HTML : une seule position, aucun code pour l'y mettre, donc aucun
+  //     chemin d'entrée qui puisse l'oublier.
+  //
+  // (2) La FERMETURE AUTOMATIQUE. « Je ne veux pas que la fenêtre de filtre se ferme quand je
+  //     clique sur une famille ni ailleurs, à part le bouton Fermer les filtres. » Le réglage
+  //     est global aux deux vues : changer de vue n'est pas une raison de le refermer.
+  //     Cette fonction ne ferme plus rien ; elle ne fait plus que garder le pied de bloc
+  //     cohérent.
   function lxMoveFiltreBand(carte){
-    var band=$('lx-filtreBand'), mini=$('lxMiniFiltre'), foot=$('lxOverlayFoot');
-    if(!band || !mini) return;
-    if(band.parentNode!==mini) mini.appendChild(band);
-    band.classList.add('filtre-overlay'); band.classList.remove('filtre-inline');
+    var foot=$('lxOverlayFoot');
     if(foot) foot.hidden=false;
-    // État par défaut à chaque arrivée sur une vue : replié. Vrai pour la Liste comme pour la
-    // Carte — sinon le réglage resterait ouvert par-dessus le contenu qu'on vient d'ouvrir.
-    mini.classList.remove('is-open');
-    var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
   }
   function lxSetSubtab(name){
     var tCarte=$('tab-carte'), tListe=$('tab-liste'), vCarte=$('vueCarte'), vListe=$('vueListe');
@@ -1769,9 +1768,10 @@
       // à chaque arrivée, pas seulement la première.
       var pret=LX_FILTRE_RENDU;
       vCarte.classList.toggle('attente', !pret);
+      // Le réglage NE SE REFERME PLUS au changement de vue (cf. lxMoveFiltreBand) : il est
+      // global aux deux vues, le fermer ici reviendrait à le fermer « ailleurs ».
       var mini=$('lxMiniFiltre');
-      if(mini){ mini.hidden=!pret; mini.classList.remove('is-open'); }
-      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+      if(mini) mini.hidden=!pret;
       // R8 (2026-08-10) : mesurer AVANT de construire Leaflet, pas seulement après. L.map()
       // capture la taille du conteneur à la construction ; le mesurer un cran plus tard ne
       // suffit pas à corriger une carte qui s'est initialisée sur le plancher CSS
@@ -1858,16 +1858,16 @@
    var p=lxWikiFetch(it.w,it.c).then(function(w){
      if(w&&w.thumb&&out.indexOf(w.thumb)<0) out.push(w.thumb);
      var t=(w&&w.title)?w.title:it.w;
-     var u1='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=images&gimlimit=25&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&titles='+encodeURIComponent(t);
-     var u2='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord='+it.lat+'%7C'+it.lng+'&ggsradius=800&ggslimit=25&ggsnamespace=6&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900';
-     function pull(j){ var r=[]; try{ Object.keys(j.query.pages).forEach(function(k){ var pg=j.query.pages[k]; var ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii||ii.mime!=='image/jpeg') return; var n=(pg.title||'').toLowerCase(); if(/blason|logo|carte |map|drapeau|flag|icon|wappen|plan de/.test(n)) return; r.push(ii.thumburl||ii.url); }); }catch(e){} return r; }
-     var u3='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&gsrsearch='+encodeURIComponent(it.n+' '+it.c);
+     var u1='https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=images&gimlimit=60&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&titles='+encodeURIComponent(t);
+     var u2='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord='+it.lat+'%7C'+it.lng+'&ggsradius=1500&ggslimit=60&ggsnamespace=6&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900';
+     function pull(j){ var r=[]; try{ Object.keys(j.query.pages).forEach(function(k){ var pg=j.query.pages[k]; var ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii||!/^image\/(jpeg|png|webp)$/.test(ii.mime||'')) return; var n=(pg.title||'').toLowerCase(); if(/blason|logo|carte |map|drapeau|flag|icon|wappen|plan de/.test(n)) return; r.push(ii.thumburl||ii.url); }); }catch(e){} return r; }
+     var u3='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=60&prop=imageinfo&iiprop=url%7Cmime&iiurlwidth=900&gsrsearch='+encodeURIComponent(it.n+' '+it.c);
      var reqs=[fetch(u1).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];})];
      if(it.t!=='v') reqs.push(fetch(u3).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
      if(it.cad!=='v'&&it.t!=='v') reqs.push(fetch(u2).then(function(r){return r.json();}).then(pull)['catch'](function(){return [];}));
      return Promise.all(reqs).then(function(ar){
        ar.forEach(function(l){ l.forEach(function(u){ if(out.indexOf(u)<0) out.push(u); }); });
-       return out.slice(0,20);
+       return out.slice(0,80); // 2026-08-15 : « toutes les photos possibles » — plafond de sécurité, pas un tri
      });
    })['catch'](function(){ return out; });
    lxPhotoCache[it.n]=p; return p;
@@ -2719,7 +2719,7 @@
      // 2026-08-15 : la condition `!vcNow.hidden` (vue Carte affichée) est tombée — le bandeau
      // est commun aux deux vues, il se révèle dès que le filtre est rendu, y compris quand on
      // est arrivé par la Liste (qui est la vue par défaut du panneau).
-     if(miniNow){ miniNow.hidden=false; miniNow.classList.remove('is-open'); }
+     if(miniNow) miniNow.hidden=false;
      // Réserve 6c #4 : même jalon — un lien #lieu= arrivé avant que les données ne soient
      // prêtes attend ici, pas un chemin séparé.
      if(LX_HASH_LIEU_EN_ATTENTE){ lxOuvrirDepuisHash(LX_HASH_LIEU_EN_ATTENTE); LX_HASH_LIEU_EN_ATTENTE=null; }
@@ -2926,7 +2926,7 @@
    return LxVerdict.etatEquipe(LX_CRIT_ETATS, lieuQid, cid);
   }
 
-  var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=false;
+  var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=true; // restreint par défaut (2026-08-15)
   // Devient vrai après le premier passage de lxRenderFiltre() (donc après que #lx-filtreBand
   // a reçu son contenu réel — familles, curseur, résultat). Lu par lxTraceResize() (R16) pour
   // dater, dans la trace, si une mesure de la carte a eu lieu AVANT ou APRÈS que la barre ait
@@ -2985,10 +2985,19 @@
    });
   }
   // Lieux réellement posés à l'écran : les retenus, moins ceux que « cacher » masque.
+  // 2026-08-15 (demande de Benoit : « je veux qu'il n'y ait que les lieux du filtre affichés
+  // et non les 262 »). Le filtre RESTREINT désormais, il ne classe plus : seuls les lieux qui
+  // conviennent à TOUTES les familles sélectionnées au niveau d'exigence choisi restent à
+  // l'écran, carte et liste. Avant, les autres restaient affichés « du plus au moins servant »
+  // — un tri, pas un filtre, et l'écran continuait d'annoncer 262 lieux.
+  // La puce reste l'échappatoire explicite : décochée, elle rend visibles ceux qui ne
+  // conviennent pas — c'est un choix de l'utilisateur, pas le défaut.
   function lxMontres(){
    var V=lxVisibles();
    if(!lxCacheOn) return V;
-   return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat>0; });
+   var fs=lxSel();
+   if(!fs.length) return V; // aucune famille sélectionnée : il n'y a rien à restreindre
+   return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat===fs.length; });
   }
   function lxNbPlein(n){
    return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxVisibles(), n);
@@ -3251,8 +3260,8 @@
    // tableau vide.
    var body=$('lieuxBody');
    if(body) body.innerHTML = html || '<tr><td colspan="5"><p class="empty2">'+(lxCacheOn
-      ? 'Aucun lieu ne sert de famille à ce niveau d\'exigence. Décochez « Cacher ceux qui ne servent personne » pour les revoir, ou redescendez le curseur.'
-      : 'Aucun lieu ne correspond à la recherche et aux natures cochées. Les critères des familles ne masquent jamais un lieu, seuls ces réglages du haut le font.')+'</p></td></tr>';
+      ? 'Aucun lieu ne convient à toutes les familles à ce niveau d\'exigence. Redescendez le curseur, ou décochez « N\'afficher que les lieux qui conviennent » pour revoir les autres.'
+      : 'Aucun lieu ne correspond à la recherche et aux natures cochées.')+'</p></td></tr>';
    var th=$('lx-thServies'); if(th) th.textContent = fs.length===1 ? 'Verdict' : 'Familles servies';
    var fn=$('lx-listeFootNote');
    if(fn) fn.textContent='Une famille qui a classé moins de critères que le curseur est regardée sur tous les siens. Cliquez une ligne pour voir le détail, critère par critère.';
@@ -3315,12 +3324,17 @@
     // qui vient de DANS le réglage ouvert (.filtre-overlay, nichée à l'intérieur une fois
     // ouverte) ne doit jamais le refermer : sans cette garde, chaque clic sur une puce/case du
     // filtre remonterait jusqu'ici et le fermerait aussitôt.
+    // 2026-08-15 : le bandeau OUVRE, il ne referme plus (demande explicite de Benoit). Un
+    // clic dans le réglage — sur une famille, une puce, le curseur — ne doit surtout rien
+    // fermer ; la garde .filtre-overlay le couvrait déjà, mais le bandeau lui-même se
+    // refermait au reclic, ce qui suffisait à faire disparaître le réglage par accident
+    // pendant qu'on s'en sert. La fermeture a maintenant UN seul geste : le bouton dédié.
     var mini=$('lxMiniFiltre');
     if(mini) mini.addEventListener('click', function(e){
       if(e.target.closest('.filtre-overlay')) return;
-      var ouvre=!mini.classList.contains('is-open');
-      mini.classList.toggle('is-open', ouvre);
-      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded', ouvre?'true':'false');
+      if(mini.classList.contains('is-open')) return;
+      mini.classList.add('is-open');
+      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','true');
     });
     var voirCarte=$('lxVoirCarte');
     if(voirCarte) voirCarte.addEventListener('click', function(e){
@@ -3359,8 +3373,10 @@
       // masqué) — la sélection de familles n'est PAS remise à zéro, ce n'est pas un réglage
       // d'affichage mais un choix de familles, décision distincte.
       lxCacheOn=false;
+      // 2026-08-15 : l'état par défaut de cette puce est « restreint » — le reset y revient, il
+      // ne la décoche plus (sinon « tout réafficher » réintroduirait les 262 lieux).
       var cacheChip=$('lx-cacheChip');
-      if(cacheChip){ cacheChip.classList.remove('is-on'); cacheChip.setAttribute('aria-pressed','false'); }
+      if(cacheChip){ cacheChip.classList.add('is-on'); cacheChip.setAttribute('aria-pressed','true'); }
       lxRenderFiltre();
     });
     var q=$('lx-q');
