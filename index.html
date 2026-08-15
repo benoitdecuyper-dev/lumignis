@@ -14,11 +14,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,560;9..144,600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<!-- Incrément 6b (décision 12, 2026-08-10) : regroupement des marqueurs, prérequis du 3e
-     canal visuel (couronnes) à 262 lieux — cf. cadrage. Version figée @1.5.3, intégrité
-     calculée à la main (openssl sha256, aucun hash publié par unpkg pour ce paquet). -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" integrity="sha256-YU3qCpj/P06tdPBJGPax0bm6Q1wltfwjsho5TR4+TYc=" crossorigin="" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" integrity="sha256-YSWCMtmNZNwqex4CEw1nQhvFub2lmU7vcCKP+XVwwXA=" crossorigin="" />
 <style>
   :root{
     --paper:#FFFFFF;--paper-warm:#FAF7F1;--ink:#201B15;--ink-soft:#4A443B;--ink-faint:#8A8177;
@@ -431,6 +426,10 @@
   /* Décision 13 (2026-08-10) : secteur géographique, restitué en texte sous le verdict —
      pas un nouveau badge, la même discipline visuelle que .verdict/.cur-sub sur cet écran. */
   #panel-lieux .fam-block .zone-note{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:0 0 .5rem;}
+  /* 2026-08-15 : quatre états de zone au lieu d'un. Seul le cœur se distingue (c'est le seul
+     qui valorise) ; les trois autres gardent le gris discret d'origine. */
+  #panel-lieux .fam-block .zone-note.z-coeur{color:var(--gold-deep);font-weight:600;}
+  #panel-lieux .fam-block .zone-note.z-coeur::before{content:"\2665\00a0";}
 
   /* Décision 8 : plein PC, limite basse propre sous 1280px (pas de cascade responsive). */
   #panel-lieux .petit-ecran{display:none;}
@@ -482,17 +481,6 @@
      (leaflet.css .leaflet-div-icon), à neutraliser ici. Non interactif : le clic/hover
      doivent traverser jusqu'au circleMarker en dessous. */
   #panel-lieux .lx-ring{background:transparent;border:none;pointer-events:none;}
-
-  /* Incrément 6b (décision 12) : bulle de regroupement — jamais la couleur d'un TYPE de lieu
-     (orange/bleu/vert, réservée aux marqueurs individuels), une gamme doré neutre à elle,
-     avec un compte toujours visible : c'est ce qui empêche de la lire comme un lieu unique.
-     leaflet.markercluster pose son propre fond par défaut (MarkerCluster.Default.css),
-     neutralisé ici comme pour .lx-ring. */
-  #panel-lieux .lx-cluster{background:transparent;border:none;}
-  #panel-lieux .lx-cluster-in{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--f-label);font-weight:700;color:var(--lp-ink);background:var(--lp-or);border:2px solid #fff;box-shadow:var(--sh-s);}
-  #panel-lieux .lx-cluster-s .lx-cluster-in{font-size:.76rem;}
-  #panel-lieux .lx-cluster-m .lx-cluster-in{font-size:.85rem;background:#a97a2e;color:#fff;}
-  #panel-lieux .lx-cluster-l .lx-cluster-in{font-size:.94rem;background:#8c6222;color:#fff;}
 
   /* Refus d'affichage scopé à la vue Carte (jamais de classe sur <body>, cf. CLAUDE.md /
      MutationObserver du header) : la carte et la légende se masquent, un message rédigé
@@ -1258,8 +1246,12 @@
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" integrity="sha256-Hk4dIpcqOSb0hZjgyvFOP+cEmDXUKKNE/tT542ZbNQg=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Moteur de verdict du filtre par critères (lx-verdict.js) : extrait le 2026-08-12 pour être
+     testable en Node sans navigateur (equipe/qa/test-lx-verdict.mjs). Script classique comme
+     tout le reste du site (aucun type="module" nulle part) : window.LxVerdict expose les
+     fonctions pures, les lx* ci-dessous restent de fins appels alimentés par l'état global. -->
+<script src="lx-verdict.js"></script>
 <script>
 (function(){
   "use strict";
@@ -1752,7 +1744,6 @@
   var LX_COLS={ s:"#c4561f", a:"#2f6d9e", v:"#3c7a4e" };
   function lxRad(imp){ return 5 + imp*1.7; }
   var lxMap=null;
-  var lxClusterGroup=null; // incrément 6b (décision 12) — cf. lxInit()
   var LX_DATA=[], LX_PISTES=[], LX_MARKERS=[], LX_CUR=null, LX_LOAD_ERROR=null;
   var LX_FAV={};
   // Points d'accroche minimaux pour les scénarios QA existants (scenario_carte_hover.js,
@@ -2071,7 +2062,11 @@
       // fondu dans le verdict des critères (lxEvalFam()/lxEtatEquipe() n'en savent rien et ne
       // doivent pas en savoir). Pas de cas « zone inconnue » ici : it._piste a déjà écarté les
       // seuls lieux sans département juste au-dessus.
-      var zone = lxEnZone(it, f)===false ? '<div class="zone-note">Hors de sa zone géographique</div>' : '';
+      // 2026-08-15 : les quatre états sont restitués, plus seulement le hors-zone. Le libellé
+      // vient de lx-verdict.js (une seule source), la couleur distingue le seul état qui
+      // valorise. Toujours aucun effet sur e.ok : la zone ne retire personne du décompte.
+      var ze = lxZoneEtat(it, f);
+      var zone = ze ? '<div class="zone-note z-'+ze+'">'+esc(LxVerdict.zoneLibelle(ze))+'</div>' : '';
       return '<div class="fam-block"><h4><span class="av'+(f.moi?' me':'')+'">'+esc(f.initiales)+'</span>'+esc(f.nom)+'</h4>'
        + '<div class="verdict '+(e.ok?'ok':'miss')+'">'+esc(txt)+'</div>'
        + zone
@@ -2340,33 +2335,18 @@
    }
    return out;
   }
+  // Retrait du regroupement (2026-08-12, décision Benoit — retour arrière assumé sur
+  // l'incrément 6b/décision 12 : « c'était très bien la map d'avant », superposition acceptée).
+  // Chaque lieu est de nouveau un marqueur individuel posé directement sur la carte (cf.
+  // buildAll()/lxRefresh()) : plus de bulle groupée qui pourrait représenter plusieurs lieux,
+  // donc plus besoin du garde-fou qui retirait la couronne tant qu'un marqueur restait absorbé
+  // dans une bulle (ni du bug getVisibleParent()/_path.isConnected qu'il avait fallu contourner
+  // le 2026-08-10 pour ce même garde-fou — anecdote devenue sans objet). La couronne se pose
+  // simplement sur le marqueur, comme avant l'incrément 6b.
   function lxUpdateRing(it){
    if(!lxMap || it._piste || it.lat==null || it.lng==null) return;
    var fs=lxSel();
    if(!fs.length){
-     if(it._ring && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
-     return;
-   }
-   // Incrément 6b (décision 12) : pas de couronne tant que le marqueur est absorbé dans une
-   // bulle groupée — un anneau sur une bulle qui représente plusieurs lieux mentirait sur ce
-   // qu'il compte (chaque secteur suppose UN lieu).
-   // BUG TROUVÉ ET CORRIGÉ LE 2026-08-10 (rouvre l'incrément 6b, signalé par le bras droit après
-   // capture d'écran : 46 marqueurs individualisés au Val de Loire, zéro couronne peinte).
-   // getVisibleParent(marker) — source du plugin vérifiée, pas supposée depuis la mémoire :
-   //   getVisibleParent: function(marker){ var v=marker; while(v && !v._icon) v=v.__parent;
-   //     return v || null; }
-   // Ce test regarde la propriété `_icon`, posée par L.Marker/L.DivIcon. Nos lieux sont des
-   // L.circleMarker (rendu SVG, propriété `_path`, JAMAIS `_icon`) — voir buildAll() plus haut.
-   // La boucle ne s'arrête donc JAMAIS sur le marqueur lui-même, qu'il soit groupé ou non : elle
-   // remonte toujours vers __parent, jusqu'à retourner l'icône d'une bulle parente OU null.
-   // Résultat mesuré : `getVisibleParent(it._m) !== it._m` est vrai EN PERMANENCE pour un
-   // circleMarker, dégroupé ou pas — la couronne était donc supprimée à chaque appel, y compris
-   // sur les 46 marqueurs bien individualisés de la capture. Remplacé par le signal que la
-   // vignette et ce même bug ont déjà validé ce jour (assurerIndividuel()/lireEtatCarteGroupe()
-   // dans scenario_coherence_carte_liste.js, éprouvé sur plusieurs heures de mesure réelle) :
-   // le marqueur est réellement affiché seul si son PROPRE `_path` SVG existe ET reste attaché
-   // au DOM (`.isConnected` — pas la seule référence, qui peut survivre à un retrait du DOM).
-   if(lxClusterGroup && it._m && !(it._m._path && it._m._path.isConnected)){
      if(it._ring && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
      return;
    }
@@ -2429,17 +2409,11 @@
    return {ptY:pt.y, containerTop:containerTop, viewportY:viewportY, tooltipH:LX_TOOLTIP_H,
     decision:(viewportY - LX_TOOLTIP_H < 0) ? 'bottom' : 'top'};
   };
+  // Retrait du regroupement (2026-08-12) : les marqueurs sont de nouveau posés directement sur
+  // la carte, un par un (m.addTo(lxMap)) — plus de groupe de regroupement à alimenter en bulk,
+  // donc plus de risque du bug de pose individuelle documenté par le plugin (Leaflet/Leaflet.
+  // markercluster#178) : ce risque n'existait que parce que le plugin était là.
   function buildAll(){
-   // Incrément 6b (2026-08-10, régression du cadrage) : les 262+12 marqueurs sont désormais
-   // POSÉS EN UN SEUL APPEL (addLayers, la méthode BULK documentée par le plugin), plutôt
-   // qu'un addLayer() par marqueur dans la boucle. Motif : le plugin lui-même prévient qu'une
-   // pose individuelle répétée après que le groupe est déjà sur la carte prend un chemin
-   // différent (pensé pour l'ajout ponctuel d'UN marqueur, avec animation) du chemin bulk —
-   // et un bug documenté du plugin (Leaflet/Leaflet.markercluster#178) montre qu'un marqueur
-   // posé par addLayer() peut ne pas apparaître avant le prochain pan/zoom. Que ce soit ou non
-   // la cause exacte du cadrage cassé (non confirmée avec certitude, cf. lxTraceCadrage() et
-   // le rapport), c'est le chemin que le plugin documente pour poser un LOT — pas un guess.
-   var nouveaux=[];
    LX_DATA.forEach(function(it){
     if(it.lat==null||it.lng==null) return;
     var m=L.circleMarker([it.lat,it.lng],{radius:lxRad(it.imp),color:"#fff",weight:1.5,fillColor:LX_COLS[it.t],fillOpacity:.88});
@@ -2462,7 +2436,7 @@
     });
     m.bindTooltip(lxTipHtml(it,null),{className:'s-tip',sticky:true,direction:'top',opacity:1});
     m.on('click',function(){ openPanel(it); });
-    nouveaux.push(m); LX_MARKERS.push(m);
+    m.addTo(lxMap); LX_MARKERS.push(m);
    });
    LX_PISTES.forEach(function(p){
     if(p.lat==null||p.lng==null) return;
@@ -2471,11 +2445,8 @@
     p._m=m; m._it=p;
     m.bindTooltip('<div class="tip-in tip-min"><div class="tip-nm">'+esc(p.nom)+'</div><div class="tip-sub" style="color:#a06a1f">◆ Piste équipe · '+LX_PTIER_L[p.tier]+'</div><div class="tip-line">'+esc(p.zone)+' · '+esc(p.angle)+'</div></div>',{className:'s-tip',sticky:true,direction:'top',opacity:1});
     m.on('click',function(){ openPiste(p); });
-    nouveaux.push(m); LX_MARKERS.push(m);
+    m.addTo(lxMap); LX_MARKERS.push(m);
    });
-   // Incrément 6b (décision 12) : posés dans le groupe de regroupement, pas directement sur
-   // la carte — lxClusterGroup gère lui-même l'ajout/retrait à la carte selon le zoom.
-   lxClusterGroup.addLayers(nouveaux);
   }
   // Incrément 6a : la carte pose désormais EXACTEMENT le même ensemble que lxMontres() (donc
   // que la Liste — décision 3, « même verdict sur les deux vues »). lxMontres() applique déjà
@@ -2488,16 +2459,15 @@
    var ns=0,na=0,nv=0,np=0;
    LX_MARKERS.forEach(function(m){ var it=m._it;
      var hit=!!shownQids[it.qid];
-     // Incrément 6b (décision 12) : le groupe de regroupement remplace la carte comme
-     // conteneur direct des marqueurs (cf. buildAll()) — ajout/retrait passent donc par lui.
-     // lxMap.hasLayer(m) resterait toujours faux pour un marqueur posé dans le groupe (il
-     // n'est jamais un enfant direct de la carte) : le test doit porter sur le groupe.
+     // Retrait du regroupement (2026-08-12) : les marqueurs sont de nouveau des enfants
+     // directs de la carte (cf. buildAll()) — ajout/retrait passent donc de nouveau par
+     // lxMap.hasLayer()/addTo()/removeLayer(), comme avant l'incrément 6b.
      if(hit){
-       if(lxClusterGroup && !lxClusterGroup.hasLayer(m)) lxClusterGroup.addLayer(m);
+       if(lxMap && !lxMap.hasLayer(m)) m.addTo(lxMap);
        lxStyleMarker(it); lxUpdateRing(it);
        if(it.t==='s')ns++; else if(it.t==='a')na++; else if(it.t==='p')np++; else nv++;
      } else {
-       if(lxClusterGroup && lxClusterGroup.hasLayer(m)) lxClusterGroup.removeLayer(m);
+       if(lxMap && lxMap.hasLayer(m)) lxMap.removeLayer(m);
        if(it._ring && lxMap && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
      }
    });
@@ -2583,21 +2553,6 @@
   // une vignette est actuellement ouverte, on reprend le MÊME chemin fermer/rouvrir que R15
   // (déjà éprouvé — aucun nouveau mécanisme empilé), pour que Leaflet recalcule sa position
   // dans le repère à jour.
-  // Incrément 6b (décision 12) : bulle de regroupement — porte un compte, ne doit jamais
-  // laisser croire à un lieu unique. Trois paliers de taille/teinte (plus le nombre grandit,
-  // plus la bulle grandit et fonce), sur la même gamme doré que le reste de l'écran — jamais
-  // la couleur d'un TYPE de lieu (orange/bleu/vert), réservée aux marqueurs individuels : la
-  // bulle doit se lire comme une AUTRE chose qu'un lieu, pas comme un lieu de plus.
-  function lxClusterIcon(cluster){
-   var n=cluster.getChildCount();
-   var taille = n<10 ? 's' : (n<50 ? 'm' : 'l');
-   var d = n<10 ? 30 : (n<50 ? 38 : 46);
-   return L.divIcon({
-     html:'<div class="lx-cluster-in">'+n+'</div>',
-     className:'lx-cluster lx-cluster-'+taille,
-     iconSize:L.point(d,d)
-   });
-  }
   function lxWatchTooltipReposition(){
    lxMap.on('moveend zoomend', function(){
     LX_MARKERS.forEach(function(m){
@@ -2615,19 +2570,6 @@
   }
   function lxInit(){
    try{
-     // Incrément 6b (2026-08-10, carte plus jamais construite) : CAUSE TROUVÉE, confirmée par
-     // la documentation du plugin (Leaflet/Leaflet.markercluster, issues #46/#894 — même
-     // mécanisme). MarkerClusterGroup.onAdd() exige `isFinite(map.getMaxZoom())` et LÈVE
-     // (une chaîne, pas une Error — donc invisible à une écoute window.onerror, seulement à
-     // console.error) sinon. Le maxZoom de la carte est établi par la première couche qui en
-     // porte un (ici la tuile CARTO, maxZoom:19) — au tour précédent, j'avais déplacé la
-     // création du groupe de regroupement AVANT l'ajout de cette couche pour tester l'hypo-
-     // thèse du lead tech sur l'ordre fitBounds/groupe : ça a réintroduit exactement ce piège,
-     // à un autre endroit. Double correctif, pas un seul : (a) maxZoom:19 posé directement sur
-     // les options de L.map() — la carte a un maxZoom fini DÈS sa construction, quel que soit
-     // l'ordre d'ajout des couches ensuite ; (b) ordre restauré à celui qui tenait depuis R8/R9
-     // (tuile avant regroupement) — l'hypothèse fitBounds/groupe n'a jamais été confirmée et le
-     // correctif qui l'a testée s'est révélé être la cause de cette régression-ci.
      // Décision Benoit 2026-08-11 (gain gratuit pris maintenant, refonte de forme en
      // maquette séparée) : zoomSnap:0.25 laisse fitBounds() choisir un niveau de zoom
      // FRACTIONNAIRE au lieu d'être forcé sur un entier (défaut Leaflet zoomSnap:1). Mesuré
@@ -2637,7 +2579,9 @@
      // mais explicite ici) pour que +/- et le clavier gardent un pas entier — cf. note R9
      // au-dessus : ce réglage ne touche PAS l'écart de forme conteneur/France (~2,8:1 contre
      // quasi carré), seulement l'arrondi perdu sur l'axe contraint. La marge gauche/droite
-     // restante est un sujet de maquette, pas de ce réglage.
+     // restante est un sujet de maquette, pas de ce réglage. Conservé tel quel au retrait du
+     // regroupement (2026-08-12) : ce cadrage étale les points plutôt qu'il ne les tasse, il
+     // va dans le sens de la demande de Benoit, pas contre elle.
      lxMap=L.map('lxMap',{zoomControl:true,maxZoom:19,zoomSnap:0.25,zoomDelta:1});
      window.map=lxMap; // posé tout de suite, avant tout appel qui pourrait lever — cf. note
      // à la déclaration de LX_MARKERS : ce hook doit rester fiable même si la suite échoue.
@@ -2647,33 +2591,6 @@
      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
       attribution:'&copy; OpenStreetMap, &copy; CARTO',maxZoom:19,subdomains:'abcd'}).addTo(lxMap);
      lxTraceCadrage('apres-tileLayer');
-     // Incrément 6b (décision 12) : regroupement des marqueurs, prérequis du 3e canal
-     // (couronnes) à 262 lieux qui se recouvrent déjà à l'échelle France. disableClustering
-     // AtZoom:10 choisi délibérément SOUS le zoom 11 que les scénarios QA de vignette
-     // utilisent déjà (scenario_carte_bas.js/scenario_carte_hover.js, setView(latlng,11,...)).
-     lxClusterGroup=L.markerClusterGroup({
-      maxClusterRadius:70,
-      disableClusteringAtZoom:10,
-      showCoverageOnHover:false,
-      iconCreateFunction:lxClusterIcon
-     }).addTo(lxMap);
-     // Hook QA en lecture seule, même discipline que markers/map/openPanel/lxTipDiag/lxSel
-     // (cf. leur note commune) — nécessaire pour instrumenter un doute entre deux hypothèses
-     // lors de l'écriture du garde-fou de sortie de l'incrément 6 (scenario_coherence_carte_
-     // liste.js) : le scénario doit pouvoir compter les 'animationend' réellement reçus pour
-     // distinguer « la carte n'a jamais dégroupé » de « les couronnes ne se reposent pas après
-     // dégroupement ». Aucune mutation, aucun accès en écriture ajouté par ce hook.
-     window.lxClusterGroup=lxClusterGroup;
-     lxTraceCadrage('apres-clusterGroup-addTo');
-     // Les couronnes (3e canal) suivent le regroupement : quand une bulle se scinde ou se
-     // reforme au zoom, on recalcule qui doit en porter une (lxUpdateRing() sort tôt si le
-     // marqueur reste groupé — voir sa note). 'animationend' est l'évènement du PLUGIN, posé
-     // après qu'il a fini de réévaluer le regroupement suite à un zoom/déplacement — pas un
-     // évènement Leaflet natif.
-     lxClusterGroup.on('animationend', function(){
-      LX_DATA.forEach(function(it){ if(it._m) lxUpdateRing(it); });
-      lxTraceCadrage('apres-animationend');
-     });
      lxWatchTooltipReposition();
    }catch(e){ console.error('lxInit: échec création de la carte', e); lxShowLoadError('Le chargement de la carte a échoué. Réessaie dans un instant.'); return; }
    // Ordre imposé : loadFav() AVANT buildAll() (réserve R7 du lead tech) — sinon la
@@ -2732,7 +2649,7 @@
      lxResizeCarte('sync-filtre-rendu');
      // Incrément 6b (2026-08-10, cadrage à zoom 0) : fitBounds() à la construction (dans le
      // try{} plus haut) reste nécessaire — buildAll() a besoin d'une carte qui a DÉJÀ une vue
-     // valide pour poser les marqueurs dans lxClusterGroup, bien avant que le conteneur n'ait
+     // valide pour poser les marqueurs, bien avant que le conteneur n'ait
      // sa taille définitive. À CE MOMENT-LÀ le conteneur est encore à sa hauteur provisoire
      // (recouvert par .attente, jamais peint) : fitBounds() calcule alors le plus petit zoom
      // possible pour faire tenir les bornes dans un conteneur quasi nul.
@@ -2785,26 +2702,20 @@
     return (nom||'').trim().slice(0,2).toUpperCase();
   }
 
-  // Incrément 6c (décision 13) : normalisation dupliquée de normalizeDepts() (site/
-  // questionnaire/template.html, lu le 2026-08-10) — même bloc protégé que LX_FILTRE_CRIT
-  // ci-dessus, même raison de duplication (rien exposé sur window). Deux formes en base :
-  // tableau de codes (l'ancien « département ouvert », binaire — relu niveau 1/favorable,
-  // rien n'existe en cœur pour ces réponses-là) ou objet {code: niveau} où niveau vaut 1
-  // (favorable) ou 2 (cœur). Décision 13 : les deux niveaux comptent PAREIL dans le verdict
-  // (la réponse Plaut est antérieure à l'introduction du niveau cœur — la distinguer la
-  // pénaliserait par un artefact de calendrier) ; cette fonction ne les distingue donc que
-  // pour rester fidèle à la donnée, jamais pour peser différemment ensuite.
-  function lxNormalizeDepts(v){
-    if(Array.isArray(v)){
-      var o={}; v.forEach(function(c){ o[c]=1; }); return o;
-    }
-    if(v&&typeof v==='object'){
-      var out={};
-      Object.keys(v).forEach(function(c){ var lvl=+v[c]; if(lvl===1||lvl===2) out[c]=lvl; });
-      return out;
-    }
-    return {};
-  }
+  // 2026-08-15 — révision de la décision 13. La normalisation des départements et la lecture
+  // des trois états de saisie vivaient ici, dupliquées depuis site/questionnaire/template.html
+  // et volontairement aplaties (« les deux niveaux comptent pareil ») ; elles vivent désormais
+  // dans lx-verdict.js, testées sans navigateur, et ce fichier n'en garde AUCUNE copie — même
+  // discipline que lxEvalFam() : une règle, une implémentation, deux points d'appel.
+  // Ce qui a changé, et pourquoi : la raison écrite de l'aplatissement était « la réponse
+  // Plaut est antérieure au niveau cœur, la distinguer la pénaliserait par un artefact de
+  // calendrier ». Au 2026-08-15, 3 des 4 réponses publiées portent un niveau cœur ; l'égalité
+  // efface donc le signal explicite de trois familles pour en protéger une. Le cas Plaut est
+  // maintenant NOMMÉ ('favnr' = favorable, cœur non renseigné) au lieu d'être absorbé, et il
+  // ne pèse toujours rien. Invariant conservé : la zone ne retire jamais une famille du
+  // décompte servi (evalFam/bilan n'en savent toujours rien).
+  // 'coeur' | 'fav' | 'favnr' | 'hors' | null (département du lieu inconnu).
+  function lxZoneEtat(it, fam){ return LxVerdict.zoneEtat(fam.depts, it.d); }
   // Décision 13 : un lieu sans département connu (les 12 pistes équipe, data->>'d' absent)
   // n'est ni « en zone » ni « hors zone » — c'est un troisième état, explicite, qui ne
   // dégrade JAMAIS le verdict. Rien n'est dérivé depuis la commune (ce serait une déduction
@@ -2812,9 +2723,8 @@
   // inconnu, comme pour les critères non qualifiés (C1/C2, décision 2).
   // Renvoie true (en zone), false (hors zone, avéré) ou null (zone inconnue).
   function lxEnZone(it, fam){
-    if(!it.d) return null;
-    var depts=lxNormalizeDepts(fam.depts);
-    return Object.prototype.hasOwnProperty.call(depts, it.d);
+    var e=lxZoneEtat(it, fam);
+    return e===null ? null : e!=='hors';
   }
 
   var LX_FAMS=[]; // {id (user_id), nom, initiales, order:[], depts:{}, moi:bool}
@@ -2911,27 +2821,22 @@
   // note — il n'y a pas de note sur 5 ici, l'état est déjà écrit en toutes lettres ; ceci ne
   // fait que traduire son vocabulaire vers celui des 250 autres (met/part/miss/ask). Le seuil
   // de note reste et reste seul dans la vue SQL, pour les 250 lieux qualifiés par l'équipe.
-  var LX_PISTE_V_ETAT={oui:'met', partiel:'part', non:'miss'}; // '?' et toute valeur absente/inconnue retombent sur 'ask' (défaut de lxEtatEquipe(), rien à coder ici)
+  // Défini dans lx-verdict.js (window.LxVerdict) — même valeur, une seule implémentation.
+  var LX_PISTE_V_ETAT=LxVerdict.LX_PISTE_V_ETAT; // '?' et toute valeur absente/inconnue retombent sur 'ask' (défaut de lxEtatEquipe(), rien à coder ici)
   // Appelée après loadData() (LX_PISTES rempli) ET après lxLoadCritEtats() (qui repart de
   // zéro à chaque appel — l'appeler avant écraserait ce qui suit) : cf. l'ordre dans lxInit().
+  // Logique dans lx-verdict.js (LxVerdict.absorbCriteresPistes) : mute LX_CRIT_ETATS en place,
+  // comme le faisait cette fonction avant extraction.
   function lxAbsorbCriteresPistes(){
-   LX_PISTES.forEach(function(p){
-     if(!p.criteres || !p.criteres.length) return;
-     var etats={};
-     p.criteres.forEach(function(c){
-       if(c.n==null) return;
-       etats['b'+c.n]=LX_PISTE_V_ETAT[c.v]||'ask';
-     });
-     LX_CRIT_ETATS[p.qid]=etats;
-   });
+   LxVerdict.absorbCriteresPistes(LX_PISTES, LX_CRIT_ETATS);
   }
 
   // Un critère absent de l'état d'équipe (s1..s7, critères ajoutés à la main : jamais
   // qualifiés par personne sur aucun lieu, décision 2 / contrainte C2 du cadrage) retombe
   // naturellement sur 'ask' — propriété de la vue SQL elle-même, aucune liste à tenir.
+  // Logique dans lx-verdict.js (LxVerdict.etatEquipe).
   function lxEtatEquipe(lieuQid, cid){
-   var e=LX_CRIT_ETATS[lieuQid];
-   return (e && e[cid]) || 'ask';
+   return LxVerdict.etatEquipe(LX_CRIT_ETATS, lieuQid, cid);
   }
 
   var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=false;
@@ -2949,33 +2854,20 @@
   // pour retrouver quel critère occupe quelle position. Aucune mutation, aucun seuil : juste la
   // même liste de familles sélectionnées, déjà calculée.
   window.lxSel=lxSel;
-  function lxMaxN(){ return lxSel().reduce(function(a,f){ return Math.max(a, f.order.length); }, 1); }
+  // Logique dans lx-verdict.js (LxVerdict.maxN) : valeur de repli 1 quand aucune famille n'est
+  // sélectionnée, pas un vrai plafond (cf. la note dans lxRenderCurseur() qui exploite ça).
+  function lxMaxN(){ return LxVerdict.maxN(lxSel()); }
 
   // C1 (cadrage) : seul 'miss' fait perdre le niveau — 'ask' ne compte NULLE PART dans
   // miss. C'est le point sur lequel tout repose : le critère 2 est non qualifié sur les
   // 250 lieux. S'il comptait comme manqué, curseur à 2 renverrait zéro lieu partout et la
-  // feature serait mort-née. Vérifié par test Node isolé avant livraison (voir rapport).
+  // feature serait mort-née. Logique + tests Node dans lx-verdict.js / equipe/qa/test-lx-verdict.mjs.
   function lxEvalFam(it, f, n){
-   var k=Math.min(n, f.order.length), st=[], met=0, part=0, ask=0, miss=[];
-   for(var i=0;i<k;i++){
-     var e=lxEtatEquipe(it.qid, f.order[i]);
-     st.push(e);
-     if(e==='met') met++;
-     else if(e==='part') part++;
-     else if(e==='ask') ask++;
-     else miss.push(f.order[i]);
-   }
-   return {st:st, k:k, met:met, part:part, ask:ask, miss:miss, ok:miss.length===0, tronq:f.order.length<n};
+   return LxVerdict.evalFam(LX_CRIT_ETATS, it, f, n);
   }
 
   function lxBilan(it, n){
-   var fs=lxSel(), sat=0, ask={};
-   fs.forEach(function(f){
-     var e=lxEvalFam(it, f, n);
-     if(e.ok) sat++;
-     for(var i=0;i<e.k;i++) if(e.st[i]==='ask') ask[f.order[i]]=1;
-   });
-   return {sat:sat, ask:Object.keys(ask), tot:fs.length};
+   return LxVerdict.bilan(LX_CRIT_ETATS, lxSel(), it, n);
   }
 
   function lxTousLieux(){ return LX_DATA.concat(LX_PISTES); }
@@ -3012,24 +2904,22 @@
    return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat>0; });
   }
   function lxNbPlein(n){
-   return lxVisibles().filter(function(it){ return lxBilan(it, n).sat===lxSel().length; }).length;
+   return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxVisibles(), n);
   }
 
   /* ----- Rendu : familles, curseur, résultat, critères (transposé de la maquette) ----- */
-  function lxDeFam(f){
-   return /^Famille /.test(f.nom) ? "de la "+f.nom.replace("Famille ","famille ") : "de "+f.nom;
-  }
+  // Logique dans lx-verdict.js (LxVerdict.deFam).
+  function lxDeFam(f){ return LxVerdict.deFam(f); }
   // Accord singulier/pluriel « 1 premier critère » vs « N premiers critères » — point de
   // vérité unique, réutilisé partout où ce libellé se compose (bande déployée, bandeau
   // replié, bande résultat, titre de groupe, fiche du lieu). Le cas n=1 redevient atteignable
   // dès que B2 corrige le rabattement du curseur (cf. lxRenderCurseur()) : sans cet accord,
   // « 1 premiers critères » restait faux sur un écran lu par des familles, pas des devs.
-  function lxMotPremiers(n){ return n===1 ? 'premier critère' : 'premiers critères'; }
+  // Logique dans lx-verdict.js (LxVerdict.motPremiers / LxVerdict.libelleNiveau).
+  function lxMotPremiers(n){ return LxVerdict.motPremiers(n); }
   function lxLibelleNiveau(n){
    n = (n==null) ? lxFiltreN : n;
-   var mot=lxMotPremiers(n), fs=lxSel();
-   if(fs.length===1) return fs[0].moi ? mot+" de votre classement" : mot+" "+lxDeFam(fs[0]);
-   return mot+" de chaque famille";
+   return LxVerdict.libelleNiveau(n, lxSel());
   }
   function lxRenderFams(){
    var row=$('famRow'); if(!row) return;
@@ -3176,13 +3066,18 @@
   // périmètre de cette table de toute façon), un ajout visible seulement pour le cas qui
   // compte : hors zone avérée.
   function lxZoneTexte(it, f){
-   return lxEnZone(it, f)===false ? ', hors de sa zone géographique' : '';
+   var ze=lxZoneEtat(it, f);
+   if(ze==='hors') return ', hors de sa zone géographique';
+   if(ze==='coeur') return ', dans un département de cœur';
+   return '';
   }
-  // Décision 13 : la zone dégrade sans éliminer — jamais dans bilan.sat, seulement ici, comme
-  // départage entre lieux à égalité de familles servies (lxRenderTable()). Ne compte que le
-  // hors-zone AVÉRÉ (false) ; la zone inconnue (null, pistes équipe) ne pénalise jamais.
-  function lxHorsZoneCount(it, fs){
-   var n=0; fs.forEach(function(f){ if(lxEnZone(it,f)===false) n++; }); return n;
+  // Décision 13, révisée le 2026-08-15 : la zone dégrade OU valorise sans jamais éliminer —
+  // jamais dans bilan.sat, seulement ici, comme départage entre lieux à égalité de familles
+  // servies (lxRenderTable()). Sur-ensemble strict de l'ancien comptage hors-zone : 'hors'
+  // pèse toujours +1, le cœur ajoute -1, et l'inconnu (pistes équipe) comme le « cœur non
+  // renseigné » valent 0 — une information qui manque ne pénalise personne.
+  function lxZoneScore(it, fs){
+   return LxVerdict.zoneScoreTotal(it.d, fs);
   }
   function lxLigneTable(it){
    var fs=lxSel(), b=lxBilan(it, lxFiltreN);
@@ -3241,14 +3136,15 @@
    // met*2+part agrégé sur toutes les familles. lxBilan() ne l'agrège pas (il ne retient que
    // sat/ask, cf. rapport) — le départage se fait ici sur le nom, pas sur ce poids. Signalé,
    // pas absorbé en silence.
-   // Décision 13 : le secteur géographique départage à sat égal (moins de familles hors zone
-   // d'abord) — jamais avant sat, jamais à sa place. C'est tout ce que « dégrade sans
+   // Décision 13 (révisée le 2026-08-15) : le secteur géographique départage à sat égal —
+   // meilleur score de zone d'abord, c'est-à-dire les départements de cœur devant, les hors
+   // zone derrière — jamais avant sat, jamais à sa place. C'est tout ce que « dégrade sans
    // éliminer » veut dire pour ce tri.
    arr.sort(function(a,z){
     if(lxFiltreSort==='nom') return a.it.n.localeCompare(z.it.n,'fr');
     if(lxFiltreSort==='fav') return lxFavEmails(z.it).length-lxFavEmails(a.it).length || z.b.sat-a.b.sat;
     if(lxFiltreSort==='verif') return a.b.ask.length-z.b.ask.length || z.b.sat-a.b.sat;
-    return z.b.sat-a.b.sat || lxHorsZoneCount(a.it,fs)-lxHorsZoneCount(z.it,fs) || a.it.n.localeCompare(z.it.n,'fr');
+    return z.b.sat-a.b.sat || lxZoneScore(a.it,fs)-lxZoneScore(z.it,fs) || a.it.n.localeCompare(z.it.n,'fr');
    });
    var html='', courant=null;
    arr.forEach(function(o){
