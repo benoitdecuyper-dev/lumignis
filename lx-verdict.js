@@ -172,6 +172,30 @@
     return (selFams || []).reduce(function (a, f) { return a + zoneScore(zoneEtat(f.depts, deptLieu)); }, 0);
   }
 
+  // 2026-08-15 — la géographie devient un FILTRE, en plus du départage (demande de Benoit :
+  // « rajouter dans les critères si on ne garde que les lieux de cœur ou tous les lieux dans la
+  // zone whitelistée, une case à cocher dans les filtres »).
+  //   mode 'zone'  : on garde les lieux qui sont dans la zone retenue d'une famille, quel que
+  //                  soit le niveau (favorable OU cœur). C'est le défaut.
+  //   mode 'coeur' : on ne garde que les départements de cœur.
+  // Deux neutralités, et ce sont elles qui font que la règle ne se retourne pas contre
+  // quelqu'un : un lieu sans département connu (pistes équipe) ne peut être exclu par un
+  // critère géographique qu'on ne sait pas évaluer ; et une famille dont le cœur n'est pas
+  // renseigné (ancienne forme de réponse) ne fait jamais échouer le mode 'coeur' — sinon la
+  // seule réponse antérieure au niveau cœur viderait le filtre pour tout le monde.
+  // Comme partout ailleurs : la sélection vide ne restreint rien.
+  function zoneRetenue(deptLieu, selFams, mode) {
+    var fs = selFams || [];
+    if (!fs.length) return true;
+    for (var i = 0; i < fs.length; i++) {
+      var e = zoneEtat(fs[i].depts, deptLieu);
+      if (e === null) continue;
+      if (e === "hors") return false;
+      if (mode === "coeur" && e !== "coeur" && e !== "favnr") return false;
+    }
+    return true;
+  }
+
   function libelleNiveau(n, selFams) {
     var mot = motPremiers(n), fs = selFams || [];
     if (fs.length === 1) return fs[0].moi ? mot + " de votre classement" : mot + " " + deFam(fs[0]);
@@ -193,6 +217,7 @@
     zoneEtat: zoneEtat,
     zoneScore: zoneScore,
     zoneLibelle: zoneLibelle,
-    zoneScoreTotal: zoneScoreTotal
+    zoneScoreTotal: zoneScoreTotal,
+    zoneRetenue: zoneRetenue
   };
 });

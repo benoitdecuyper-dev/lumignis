@@ -987,6 +987,10 @@
           <button type="button" class="tchip is-off" id="lx-favChip" aria-pressed="false"><span class="pt" style="background:var(--ember)"></span>Favoris</button>
           <span class="tsep"></span>
           <button type="button" class="tchip is-on" id="lx-cacheChip" aria-pressed="true"><span class="bx" aria-hidden="true">&#10003;</span>N'afficher que les lieux qui conviennent</button>
+          <!-- 2026-08-15 : la géographie devient un filtre. Décochée, la case laisse toute la
+               zone retenue (favorable + cœur) ; cochée, elle ne garde que les départements de
+               cœur. La règle vit dans lx-verdict.js (LxVerdict.zoneRetenue), testée. -->
+          <button type="button" class="tchip" id="lx-coeurChip" aria-pressed="false"><span class="bx" aria-hidden="true">&#10003;</span>Seulement les départements de cœur</button>
           <span class="gap"></span>
           <button type="button" class="icon-btn" id="lx-resetHard" title="Tout réafficher" aria-label="Tout réafficher">&#8635;</button>
         </div>
@@ -3033,6 +3037,9 @@
   }
 
   var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=true; // restreint par défaut (2026-08-15)
+  // 2026-08-15 : 'zone' (defaut) = toute la zone retenue, favorable et coeur confondus ;
+  // 'coeur' = uniquement les departements de coeur. Case a cocher dans la barre de filtre.
+  var lxZoneMode='zone';
   // Devient vrai après le premier passage de lxRenderFiltre() (donc après que #lx-filtreBand
   // a reçu son contenu réel — familles, curseur, résultat). Lu par lxTraceResize() (R16) pour
   // dater, dans la trace, si une mesure de la carte a eu lieu AVANT ou APRÈS que la barre ait
@@ -3100,8 +3107,12 @@
   // conviennent pas — c'est un choix de l'utilisateur, pas le défaut.
   function lxMontres(){
    var V=lxVisibles();
-   if(!lxCacheOn) return V;
+   if(!lxCacheOn) return V.filter(function(it){ return LxVerdict.zoneRetenue(it.d, lxSel(), lxZoneMode); });
    var fs=lxSel();
+   // La geographie filtre INDEPENDAMMENT des criteres : elle s'applique meme sans famille
+   // selectionnee (auquel cas zoneRetenue ne restreint rien, cf. sa note) et meme si l'on a
+   // decoche « n'afficher que les lieux qui conviennent ».
+   V=V.filter(function(it){ return LxVerdict.zoneRetenue(it.d, fs, lxZoneMode); });
    if(!fs.length) return V; // aucune famille sélectionnée : il n'y a rien à restreindre
    return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat===fs.length; });
   }
@@ -3453,6 +3464,17 @@
       var b=e.target.closest('[data-lx-type]');
       if(b){ lxToggleType(b.getAttribute('data-lx-type')); lxRenderFiltre(); }
     });
+    // 2026-08-15 : case « seulement les départements de cœur ». Décochée, on garde toute la
+    // zone retenue (favorable + cœur) ; cochée, on ne garde que le cœur. La règle elle-même
+    // vit dans lx-verdict.js (LxVerdict.zoneRetenue), avec ses tests.
+    var coeur=$('lx-coeurChip');
+    if(coeur) coeur.addEventListener('click', function(){
+      lxZoneMode = (lxZoneMode==='coeur') ? 'zone' : 'coeur';
+      var on = lxZoneMode==='coeur';
+      coeur.classList.toggle('is-on', on);
+      coeur.setAttribute('aria-pressed', on?'true':'false');
+      lxRenderFiltre();
+    });
     var fav=$('lx-favChip');
     if(fav) fav.addEventListener('click', function(){
       lxFavOn=!lxFavOn;
@@ -3478,11 +3500,17 @@
       // « Tout réafficher » reprend aussi la case cacher (même intention : rien ne reste
       // masqué) — la sélection de familles n'est PAS remise à zéro, ce n'est pas un réglage
       // d'affichage mais un choix de familles, décision distincte.
-      lxCacheOn=false;
       // 2026-08-15 : l'état par défaut de cette puce est « restreint » — le reset y revient, il
       // ne la décoche plus (sinon « tout réafficher » réintroduirait les 262 lieux).
+      // Corrigé dans la foulée : le drapeau était remis à false pendant que la puce s'affichait
+      // cochée — l'écran et l'état disaient le contraire l'un de l'autre.
+      lxCacheOn=true;
       var cacheChip=$('lx-cacheChip');
       if(cacheChip){ cacheChip.classList.add('is-on'); cacheChip.setAttribute('aria-pressed','true'); }
+      // La géographie revient elle aussi à son défaut : toute la zone retenue.
+      lxZoneMode='zone';
+      var coeurChip=$('lx-coeurChip');
+      if(coeurChip){ coeurChip.classList.remove('is-on'); coeurChip.setAttribute('aria-pressed','false'); }
       lxRenderFiltre();
     });
     var q=$('lx-q');
