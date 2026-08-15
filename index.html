@@ -162,13 +162,6 @@
   .tab:hover{color:var(--ink-soft);}
   .tab.is-active{color:var(--ink);}
   .tab.is-active::after{transform:scaleX(1);}
-  .methode-box{border:1px solid var(--line-strong);border-radius:var(--r-s);background:var(--paper);margin:0 0 1.4rem;padding:.2rem .9rem;}
-  .methode-box>summary{font-family:var(--f-label);font-size:.8rem;letter-spacing:.03em;color:var(--ink-soft);cursor:pointer;padding:.7rem .1rem;list-style:none;}
-  .methode-box>summary::-webkit-details-marker{display:none;}
-  .methode-box>summary::before{content:"▸";color:var(--gold);margin-right:.5rem;display:inline-block;transition:transform .15s;}
-  .methode-box[open]>summary::before{transform:rotate(90deg);}
-  .methode-box .page-sec{border:0;border-top:1px solid var(--line);border-radius:0;padding:1.2rem .1rem;margin:0;background:none;}
-  .methode-box .page-sec:first-child{border-top:0;}
   .panel{display:none;padding-bottom:4.5rem;} .panel.is-active{display:block;animation:fadein .25s var(--ease);}
   @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
   .lead{font-size:1.12rem;color:var(--ink);}
@@ -269,15 +262,30 @@
      ligne agrandit .subtabs et mange la marge de 14 px de la décision 8. */
   #panel-lieux .subtabs .count{margin-left:auto;font-family:var(--f-label);font-size:.79rem;color:var(--ink-soft);white-space:nowrap;}
 
-  #panel-lieux .methode-box{margin:1rem 0;}
 
   /* Vue Carte : la carte occupe la hauteur restante sous la barre commune, calculée en
      JS (lxSizeCarteView) faute d'un modèle 100vh utilisable — #panel-lieux est un onglet
      parmi d'autres dans une page qui défile, pas une page dédiée comme la maquette. La
      carte est inlinée (incrément 5) : .mapcol contient #lxMap (Leaflet), plus d'iframe. */
-  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:minmax(0,1fr);transition:grid-template-columns .18s var(--ease);}
-  #panel-lieux .mapwrap.has-panel{grid-template-columns:minmax(0,1fr) 27rem;}
-  #panel-lieux .mapcol{position:relative;width:100%;height:100%;min-width:0;min-height:0;}
+  /* MEP LUM-38 (2026-08-15) — transposition de la maquette validée
+     (maquettes/2026-08-12-vue-carte/maq-vue-carte.html).
+     Ce qui change par rapport à la décision d'origine : la carte occupait toute la largeur et
+     RÉTRÉCISSAIT quand on ouvrait une fiche. Le cadre était une bande d'environ 2,8:1 pour une
+     France quasi carrée : ~820 px de largeur ne servaient qu'à montrer de l'Europe sans lieu.
+     Désormais deux colonnes FIXES : la carte, carrée (sa largeur = sa hauteur, posée en
+     --map-w par lxSizeCarteView(), seule chose qui sait ce que vaut la hauteur disponible), et
+     le panneau compagnon qui prend le reste. La carte ne bouge donc plus JAMAIS entre l'état
+     de repos et la fiche ouverte — c'est le point non négociable de l'écran validé.
+     Le repli sur une colonne sous 1100 px n'est pas une cascade responsive (l'écran est
+     hors cible sous 1280, cf. .petit-ecran) : c'est un filet pour que la carte ne devienne
+     jamais plus large que le conteneur si --map-w n'a pas encore été posé. */
+  #panel-lieux .mapwrap{border:1px solid var(--line-strong);border-top:0;border-radius:0 0 var(--r-m) var(--r-m);background:var(--paper);box-shadow:var(--sh-s);overflow:hidden;position:relative;min-height:200px;display:grid;grid-template-columns:min(var(--map-w,60%),62%) minmax(0,1fr);}
+  /* Repos : l'invitation occupe la colonne de droite ; fiche ouverte : elle laisse la place. */
+  #panel-lieux .mapcol-repos{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;border-left:1px solid var(--line-strong);background:#fffdf8;color:var(--ink-faint);text-align:center;padding:2rem 1.6rem;}
+  #panel-lieux .mapcol-repos .ic{font-size:1.3rem;color:var(--gold);}
+  #panel-lieux .mapcol-repos p{margin:0;font-family:var(--f-label);font-size:.82rem;max-width:22rem;}
+  #panel-lieux .mapwrap.has-panel .mapcol-repos{display:none;}
+  #panel-lieux .mapcol{grid-column:1;grid-row:1;position:relative;width:100%;height:100%;min-width:0;min-height:0;}
   #panel-lieux .mapkey{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.7rem 0 0;}
   #panel-lieux .mapkey span{display:inline-flex;align-items:center;gap:.35rem;}
   #panel-lieux .mapkey .d{width:.7rem;height:.7rem;border-radius:50%;flex:0 0 auto;}
@@ -434,7 +442,7 @@
   /* Décision 8 : plein PC, limite basse propre sous 1280px (pas de cascade responsive). */
   #panel-lieux .petit-ecran{display:none;}
   @media(max-width:1279px){
-    #panel-lieux .filtre,#panel-lieux .mini-filtre,#panel-lieux .subtabs,#panel-lieux .methode-box,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
+    #panel-lieux .filtre,#panel-lieux .mini-filtre,#panel-lieux .subtabs,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
     #panel-lieux .petit-ecran{display:block;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper-warm);padding:2rem;text-align:center;font-size:.95rem;color:var(--ink-soft);}
   }
 
@@ -523,7 +531,10 @@
 
   /* Fiche unique (décision 6) — panneau latéral quand la carte est ouverte sur un lieu.
      Contenu et logique repris de carte.html tels quels (panelScaffold et consorts). */
-  #panel-lieux .mappanel{display:none;border-left:1px solid var(--line-strong);background:#fffdf8;overflow-y:auto;font-family:var(--f-body);color:var(--lp-ink);}
+  /* LUM-38 : le panneau occupe toujours la même colonne (la 2e), qu'il soit rempli ou non —
+     il n'est masqué qu'au repos, où l'invitation prend sa place au même endroit et à la même
+     largeur. Rien ne déplace la carte. */
+  #panel-lieux .mappanel{display:none;grid-column:2;grid-row:1;border-left:1px solid var(--line-strong);background:#fffdf8;overflow-y:auto;font-family:var(--f-body);color:var(--lp-ink);}
   #panel-lieux .mapwrap.has-panel .mappanel{display:block;}
   #panel-lieux .hero{position:relative;height:250px;background:#2e231a;overflow:hidden}
   #panel-lieux #hero-img{height:100%}
@@ -963,7 +974,9 @@
            carte (fermeture explicite, en plus du reclic sur le bandeau) — masqué sur la vue
            Liste, où la barre reste dépliée en ligne sans rien à fermer. -->
       <div class="overlay-foot" id="lxOverlayFoot" hidden>
-        <button type="button" class="btn-gold" id="lxVoirCarte">Voir la carte &rsaquo;</button>
+        <!-- 2026-08-15 : libellé neutre — le réglage se ferme désormais aussi bien sur la
+             Liste que sur la Carte, « Voir la carte » y était faux une fois sur deux. -->
+        <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
       </div>
     </section>
 
@@ -977,8 +990,6 @@
       </div>
     </div>
 
-    <details class="methode-box"><summary>Notre méthode &amp; nos 10 critères</summary><div id="methode-content"><p class="loading">Chargement…</p></div></details>
-
     <div class="app-wrap-lieux">
 
       <section id="vueCarte" hidden>
@@ -986,6 +997,13 @@
           <div class="mapcol">
             <div id="lxMap"></div>
             <button type="button" class="mapbtn" id="lxFit"><span aria-hidden="true">&#9974;</span> Toute la France</button>
+          </div>
+          <!-- MEP LUM-38 (2026-08-15) : le panneau compagnon est désormais TOUJOURS là, à
+               largeur fixe ; il n'apparaît plus au clic et ne rétrécit plus la carte. Au repos
+               il porte une invitation sobre, exactement comme la maquette validée. -->
+          <div class="mapcol-repos" id="mapReposMsg">
+            <span class="ic" aria-hidden="true">&#10022;</span>
+            <p>Cliquez un lieu sur la carte pour voir sa fiche ici.</p>
           </div>
           <aside class="mappanel" id="mapPanel" aria-label="Détail du lieu">
             <div class="hero">
@@ -1466,21 +1484,11 @@
   // —— Lieux ——
   var lieuxLoaded=false;
 
-  var methodeLoaded=false;
-  async function loadMethode(){
-    if(methodeLoaded) return; methodeLoaded=true;
-    var box=document.getElementById('methode-content'); if(!box) return;
-    var r=await sb.from('pages').select('*').order('sort');
-    if(r.error||!r.data){ methodeLoaded=false; return; }
-    var w=r.data.filter(function(p){return p.slug==='methode'||p.slug==='criteres';});
-    box.innerHTML = w.length ? w.map(function(p){return '<section class="page-sec"><h2>'+esc(p.title)+'</h2>'+p.body_html+'</section>';}).join('') : '<p class="loading">—</p>';
-  }
   // La carte des lieux est inlinée (incrément 5) : elle lit ses données depuis Supabase
   // avec le client déjà authentifié de la page hôte (plus de second client, plus d'iframe).
   function buildLieux(){
     if(lieuxLoaded) return;
     lieuxLoaded=true;
-    loadMethode();
     lxInit();
   }
 
@@ -1535,6 +1543,12 @@
       var delta=window.innerHeight - key.getBoundingClientRect().bottom;
       if(Math.abs(delta)>1) wrap.style.height=(wrap.getBoundingClientRect().height + delta)+'px';
     }
+    // MEP LUM-38 (2026-08-15) : la colonne carte est CARRÉE — sa largeur vaut la hauteur qu'on
+    // vient d'arrêter. C'est posé ici et nulle part ailleurs : cette fonction est déjà la seule
+    // qui connaît la hauteur disponible, dupliquer le calcul ailleurs le ferait diverger au
+    // premier ajustement de la légende ou de la barre de filtre.
+    var hFinale=Math.round(wrap.getBoundingClientRect().height);
+    if(hFinale>0) wrap.style.setProperty('--map-w', hFinale+'px');
   }
   // Point d'entrée unique pour tout redimensionnement de la carte — même motif que
   // lxMaybeFit() en R9 : mesurer la hauteur ET invalider Leaflet sont TOUJOURS le même geste,
@@ -1626,7 +1640,25 @@
     // la vue n'est pas montrée (lxSetSubtab('carte') rappelle de toute façon cette fonction
     // dès qu'elle le devient).
     var vc=$('vueCarte');
-    if(lxMap && vc && !vc.hidden) lxMap.invalidateSize();
+    if(lxMap && vc && !vc.hidden){
+      lxMap.invalidateSize();
+      // 2026-08-15 — carte « dézoomée au maximum, on voit 4 ou 5 fois le monde », signalée par
+      // Benoit en prod. Cause : fitBounds() n'est fiable qu'au seul appel posé dans la passe
+      // rAF de lxInit() (fragilité documentée là-bas, non expliquée) ; si CET appel-là tombe
+      // pendant que le conteneur n'a pas encore sa taille (onglet ouvert en arrière-plan, rAF
+      // ralenti, retour sur la vue), le zoom reste celui calculé pour un conteneur quasi nul
+      // et plus personne ne le recorrige. Le correctif ne cherche pas à gagner la course : il
+      // rend le cadrage RÉPARABLE. Tant qu'un cadrage n'a pas été obtenu sur un conteneur de
+      // taille plausible, chaque passage ici le rejoue. Un booléen, pas un minuteur.
+      if(!LX_CADRAGE_OK){
+        var t=lxMap.getSize();
+        if(t && t.x>=320 && t.y>=200){
+          lxMap.fitBounds(LX_FRANCE_BOUNDS);
+          LX_CADRAGE_OK=true;
+          lxTraceCadrage('recadrage-repare:'+source);
+        }
+      }
+    }
     lxTraceResize(source);
   }
   // R13 (2026-08-10) : le diagnostic a montré ecart:0 aux trois appels de lxSizeCarteView()
@@ -1671,20 +1703,22 @@
   // un nœud DÉJÀ DANS LE DOM le déplacent sans le recréer : aucune perte d'état (valeur des
   // champs de recherche, <details open>, écouteurs déjà attachés par initLieuxSkeleton()).
   // Point d'entrée unique, appelé uniquement depuis lxSetSubtab() — pas de chemin parallèle.
+  // 2026-08-15 (demande de Benoit) : UNE seule barre, au-dessus de la Carte comme de la Liste,
+  // repliée par défaut et repliable sur les deux vues. La décision 14 laissait la Liste avec
+  // la barre dépliée EN LIGNE : le bandeau de 44 px y était bien affiché, mais le chevron ne
+  // commandait rien — on avait donc les deux à l'écran, et un contrôle qui mentait. On garde
+  // le comportement qui marchait (nichée dans le bandeau, ouverte en superposition) et on
+  // l'applique aux deux vues ; `carte` ne sert plus qu'à refermer à chaque changement de vue.
   function lxMoveFiltreBand(carte){
     var band=$('lx-filtreBand'), mini=$('lxMiniFiltre'), foot=$('lxOverlayFoot');
     if(!band || !mini) return;
-    if(carte){
-      if(band.parentNode!==mini) mini.appendChild(band);
-      band.classList.add('filtre-overlay'); band.classList.remove('filtre-inline');
-      if(foot) foot.hidden=false;
-    } else {
-      if(band.parentNode===mini && mini.parentNode) mini.parentNode.insertBefore(band, mini.nextSibling);
-      band.classList.add('filtre-inline'); band.classList.remove('filtre-overlay');
-      if(foot) foot.hidden=true;
-      mini.classList.remove('is-open');
-      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
-    }
+    if(band.parentNode!==mini) mini.appendChild(band);
+    band.classList.add('filtre-overlay'); band.classList.remove('filtre-inline');
+    if(foot) foot.hidden=false;
+    // État par défaut à chaque arrivée sur une vue : replié. Vrai pour la Liste comme pour la
+    // Carte — sinon le réglage resterait ouvert par-dessus le contenu qu'on vient d'ouvrir.
+    mini.classList.remove('is-open');
+    var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
   }
   function lxSetSubtab(name){
     var tCarte=$('tab-carte'), tListe=$('tab-liste'), vCarte=$('vueCarte'), vListe=$('vueListe');
@@ -1695,6 +1729,11 @@
     (carte?tCarte:tListe).setAttribute('aria-current','page');
     vCarte.hidden=!carte; vListe.hidden=carte;
     lxMoveFiltreBand(carte);
+    // 2026-08-15 : le bandeau est désormais commun aux deux vues — il se révèle dès que le
+    // filtre a été rendu une fois, quelle que soit la vue active (avant, il n'apparaissait
+    // que par la branche `carte` ci-dessous, d'où une Liste sans barre repliable).
+    var miniCommun=$('lxMiniFiltre');
+    if(miniCommun) miniCommun.hidden=!LX_FILTRE_RENDU;
     if(carte){
       // R16 (2026-08-10, 2e passage) : le fond du défaut n'était pas seulement « personne ne
       // recorrige derrière » (traité au 1er passage avec lxResizeCarte()/le ResizeObserver
@@ -1744,6 +1783,10 @@
   var LX_COLS={ s:"#c4561f", a:"#2f6d9e", v:"#3c7a4e" };
   function lxRad(imp){ return 5 + imp*1.7; }
   var lxMap=null;
+  // 2026-08-15 : passe à true dès qu'un fitBounds a été obtenu sur un conteneur de taille
+  // plausible. Tant que c'est false, lxResizeCarte() rejoue le cadrage — c'est ce qui rend le
+  // « planisphère répété » réparable au lieu de définitif (cf. sa note).
+  var LX_CADRAGE_OK=false;
   var LX_DATA=[], LX_PISTES=[], LX_MARKERS=[], LX_CUR=null, LX_LOAD_ERROR=null;
   var LX_FAV={};
   // Points d'accroche minimaux pour les scénarios QA existants (scenario_carte_hover.js,
@@ -2324,14 +2367,20 @@
   // positionné à la même latlng que le circleMarker — pas de retouche du circleMarker
   // lui-même (hover/tooltip/click stabilisés en R14/R15, aucune raison d'y risquer une
   // régression pour un ajout purement visuel).
-  function lxCouronneSvg(sat, tot, r, w){
+  // 2026-08-15 — couronne décentrée, signalée par Benoit (« des points encerclés d'un cercle
+  // décentré »). La couronne était tracée en cx=cy=r alors que la boîte de l'icône fait
+  // d=(r+2)*2 : son centre est en d/2 = r+2. L'anneau était donc peint 2 px en haut à gauche
+  // du disque, sur TOUS les marqueurs — d'autant plus visible que le lieu est petit (r faible,
+  // décalage constant). Le centre est maintenant passé explicitement : une seule valeur
+  // gouverne la géométrie de la boîte, du tracé et de l'ancre.
+  function lxCouronneSvg(sat, tot, r, w, cx){
    if(tot<=0) return '';
    var c=2*Math.PI*r, slot=c/tot, gap=Math.min(.9, slot*.28), dash=Math.max(0, slot-gap);
    var out='';
    for(var i=0;i<tot;i++){
-     out+='<circle cx="'+r+'" cy="'+r+'" r="'+r+'" fill="none" stroke="'+(i<sat?'#5C7A4A':'#DFD6C4')+'" '
+     out+='<circle cx="'+cx+'" cy="'+cx+'" r="'+r+'" fill="none" stroke="'+(i<sat?'#5C7A4A':'#DFD6C4')+'" '
        +'stroke-width="'+w+'" stroke-dasharray="'+dash.toFixed(2)+' '+(c-dash).toFixed(2)+'" '
-       +'stroke-dashoffset="'+(-i*slot).toFixed(2)+'" transform="rotate(-90 '+r+' '+r+')"/>';
+       +'stroke-dashoffset="'+(-i*slot).toFixed(2)+'" transform="rotate(-90 '+cx+' '+cx+')"/>';
    }
    return out;
   }
@@ -2353,7 +2402,7 @@
    var b=lxBilan(it, lxFiltreN);
    var baseR=lxRad(it.imp), ringR=baseR+4, d=(ringR+2)*2;
    var svg='<svg width="'+d+'" height="'+d+'" viewBox="0 0 '+d+' '+d+'" style="overflow:visible">'
-     +lxCouronneSvg(b.sat, fs.length, ringR, 1.6)+'</svg>';
+     +lxCouronneSvg(b.sat, fs.length, ringR, 1.6, d/2)+'</svg>';
    var icon=L.divIcon({className:'lx-ring',html:svg,iconSize:[d,d],iconAnchor:[d/2,d/2]});
    if(!it._ring){
      it._ring=L.marker([it.lat,it.lng],{icon:icon,interactive:false,keyboard:false,zIndexOffset:-1});
@@ -2582,14 +2631,26 @@
      // restante est un sujet de maquette, pas de ce réglage. Conservé tel quel au retrait du
      // regroupement (2026-08-12) : ce cadrage étale les points plutôt qu'il ne les tasse, il
      // va dans le sens de la demande de Benoit, pas contre elle.
-     lxMap=L.map('lxMap',{zoomControl:true,maxZoom:19,zoomSnap:0.25,zoomDelta:1});
+     // 2026-08-15 — garde-fous de cadrage, en plus du recadrage réparable de lxResizeCarte().
+     // Ils ne dépendent d'aucune course : même si un fitBounds tombe au mauvais moment, la
+     // carte ne peut PLUS montrer le monde entier ni plusieurs copies de la Terre.
+     //   minZoom 4      : à ce niveau la France occupe déjà l'écran ; en dessous commençait la
+     //                    vue « planisphère » que Benoit a constatée.
+     //   maxBounds      : bornes France élargies d'environ un tiers, pour laisser respirer le
+     //                    déplacement sans jamais partir en plein océan.
+     //   viscosity 0.9  : le bord résiste sans être un mur sec (0 = aucun effet, 1 = rigide).
+     lxMap=L.map('lxMap',{zoomControl:true,minZoom:4,maxZoom:19,zoomSnap:0.25,zoomDelta:1,
+       maxBounds:L.latLngBounds(LX_FRANCE_BOUNDS).pad(0.35),maxBoundsViscosity:0.9});
      window.map=lxMap; // posé tout de suite, avant tout appel qui pourrait lever — cf. note
      // à la déclaration de LX_MARKERS : ce hook doit rester fiable même si la suite échoue.
      lxTraceCadrage('apres-construction-map');
      lxMap.fitBounds(LX_FRANCE_BOUNDS); // cadre France fixe, cf. R9 — pas un ajustement aux marqueurs
      lxTraceCadrage('apres-fitBounds');
+     // noWrap:true (2026-08-15) : sans lui, Leaflet répète le planisphère horizontalement dès
+     // qu'un zoom bas laisse de la place — c'est littéralement le « on voit 4 ou 5 fois le
+     // monde à plat ». Avec, il n'existe qu'UNE Terre : le pire cas devient du fond vide.
      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-      attribution:'&copy; OpenStreetMap, &copy; CARTO',maxZoom:19,subdomains:'abcd'}).addTo(lxMap);
+      attribution:'&copy; OpenStreetMap, &copy; CARTO',maxZoom:19,subdomains:'abcd',noWrap:true}).addTo(lxMap);
      lxTraceCadrage('apres-tileLayer');
      lxWatchTooltipReposition();
    }catch(e){ console.error('lxInit: échec création de la carte', e); lxShowLoadError('Le chargement de la carte a échoué. Réessaie dans un instant.'); return; }
@@ -2637,7 +2698,10 @@
      // lxMoveFiltreBand(false) : révéler le bandeau ici le montrerait vide. lxSetSubtab('carte')
      // le révèlera correctement au moment où l'utilisateur y arrivera, pret étant déjà vrai).
      var miniNow=$('lxMiniFiltre');
-     if(miniNow && vcNow && !vcNow.hidden){ miniNow.hidden=false; miniNow.classList.remove('is-open'); }
+     // 2026-08-15 : la condition `!vcNow.hidden` (vue Carte affichée) est tombée — le bandeau
+     // est commun aux deux vues, il se révèle dès que le filtre est rendu, y compris quand on
+     // est arrivé par la Liste (qui est la vue par défaut du panneau).
+     if(miniNow){ miniNow.hidden=false; miniNow.classList.remove('is-open'); }
      // Réserve 6c #4 : même jalon — un lien #lieu= arrivé avant que les données ne soient
      // prêtes attend ici, pas un chemin séparé.
      if(LX_HASH_LIEU_EN_ATTENTE){ lxOuvrirDepuisHash(LX_HASH_LIEU_EN_ATTENTE); LX_HASH_LIEU_EN_ATTENTE=null; }
@@ -2665,6 +2729,11 @@
      requestAnimationFrame(function(){
        lxResizeCarte('raf-init-tail');
        lxMap.fitBounds(LX_FRANCE_BOUNDS); // le seul appel qui corrige effectivement le zoom, mesuré
+       // 2026-08-15 : on ne le déclare réussi que si le conteneur avait vraiment une taille au
+       // moment de l'appel. Sinon LX_CADRAGE_OK reste false et lxResizeCarte() rejouera — c'est
+       // exactement le cas qui produisait le planisphère répété.
+       var tRaf=lxMap.getSize();
+       if(tRaf && tRaf.x>=320 && tRaf.y>=200) LX_CADRAGE_OK=true;
        lxTraceCadrage('apres-resizeCarte-raf');
      });
    }).catch(function(e){
