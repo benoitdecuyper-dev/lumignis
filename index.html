@@ -626,6 +626,25 @@
   #panel-lieux .criterion.et-low{border-left:4px solid #c0664a;background:#fdf5f2;}
   #panel-lieux .criterion.et-unknown{border-left:4px solid var(--line-strong);background:#fafbfc;}
   #panel-lieux .criteria-list{display:flex;flex-direction:column;gap:6px;}
+  /* LUM-48 — notes de famille. Volontairement DISCRÈTES sous le nom du critère : la pastille
+     d'équipe reste ce qu'on lit d'abord (c'est le relevé sourcé), les avis viennent ensuite.
+     Chaque note porte son mot en clair, la couleur n'est qu'un renfort — même règle que les
+     états de critère juste au-dessus. */
+  #panel-lieux .crit-notes{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:5px;}
+  #panel-lieux .crit-notes .cn{font-family:var(--f-label);font-size:10.5px;color:#776b5d;
+      border-left:3px solid var(--line-strong);padding-left:5px;line-height:1.25;}
+  #panel-lieux .crit-notes .n-met{border-left-color:#6f9150;}
+  #panel-lieux .crit-notes .n-part{border-left-color:#d8a53a;}
+  #panel-lieux .crit-notes .n-miss{border-left-color:#c0664a;}
+  #panel-lieux .crit-notes .n-ask{border-left-color:var(--line-strong);}
+  #panel-lieux .crit-ma-note{display:inline-flex;align-items:center;gap:.35rem;margin-top:6px;
+      font-family:var(--f-label);font-size:10.5px;color:var(--ink-faint);}
+  #panel-lieux .crit-ma-note select{border:1px solid var(--lp-line);border-radius:6px;
+      background:#fffdf8;font-family:var(--f-label);font-size:11px;color:var(--lp-ink);
+      padding:2px 4px;cursor:pointer;}
+  #panel-lieux .crit-ma-note select:focus{outline:none;border-color:var(--lp-or);
+      box-shadow:0 0 0 3px rgba(189,138,62,.15);}
+  #panel-lieux .crit-ma-note select:disabled{opacity:.55;cursor:progress;}
   /* Liste déroulante du filtre géographique (2026-08-15). Reprend la forme des puces .tchip
      — même hauteur, même bordure, même typo — pour qu'elle se lise comme un réglage de la
      barre et non comme un formulaire posé au milieu. */
@@ -2156,11 +2175,52 @@
    // (cf. lxCriteriaHtml, critère école). Elle se colore comme un « en partie » : ce n'est ni un
    // oui, ni un trou.
    trancher:['à trancher','mid']};
-  function lxCritLigne(nom, etat, texte){
+  function lxCritLigne(nom, etat, texte, extra){
    var l=LX_ETAT_LIB[etat]||LX_ETAT_LIB.ask;
    return '<div class="criterion crit-2col et-'+l[1]+'"><div class="criterion-main"><b>'+esc(nom)+'</b>'
-    +(texte?'<span>'+esc(texte)+'</span>':'')+'</div>'
+    +(texte?'<span>'+esc(texte)+'</span>':'')+(extra||'')+'</div>'
     +'<div class="criterion-note '+l[1]+'">'+l[0]+'</div></div>';
+  }
+
+  /* ===== LUM-48 — notes de famille dans la fiche =======================================
+     Deux choses distinctes sur la même ligne, et c'est tout l'enjeu de lisibilité :
+       · la pastille de DROITE reste la note de l'ÉQUIPE — le relevé documentaire sourcé,
+         qu'aucune famille ne modifie (décision 7 : jamais de moyenne, jamais d'écrasement) ;
+       · en dessous du nom, ce que les familles ont dit, s'il y a quelque chose, et le
+         sélecteur de sa propre note pour qui a une réponse publiée.
+     Sans cette séparation, un utilisateur verrait « tenu » à droite et « bute sur ce
+     critère » dans le verdict du haut sans comprendre pourquoi : la ligne des familles est
+     ce qui rend le désaccord lisible au lieu de le rendre suspect. */
+  var LX_NOTE_LIB={met:'tenu', part:'en partie', miss:'manqué', ask:'je ne sais pas'};
+
+  // Qui a noté quoi sur ce critère, dans l'ordre d'affichage des familles. Rendu seulement
+  // s'il y a au moins une note : une ligne « personne n'a rien dit » sur dix critères ferait
+  // dix lignes de bruit.
+  function lxNotesFamHtml(it, cid){
+   var parCrit=(LX_NOTES[it.qid]||{})[cid]||{};
+   var dites=LX_FAMS.filter(function(f){ return !!parCrit[f.id]; });
+   if(!dites.length) return '';
+   return '<div class="crit-notes">'+dites.map(function(f){
+     var e=parCrit[f.id];
+     return '<span class="cn n-'+esc(e)+'">'+esc(f.nom)+(f.moi?' (vous)':'')+' : '+esc(LX_NOTE_LIB[e]||e)+'</span>';
+   }).join('')+'</div>';
+  }
+
+  // Le sélecteur de SA note. « Note de l'équipe » (valeur vide) n'est pas un cinquième état :
+  // c'est la SUPPRESSION de sa ligne, donc le retour au socle. Il est distinct de « je ne
+  // sais pas », qui est une note à part entière et écrase le relevé d'équipe — confondre les
+  // deux retirerait à une famille la seule façon de dire son doute.
+  function lxMaNoteHtml(it, cid){
+   var ma=lxMaFamille();
+   if(!ma) return '';
+   var mienne=LxVerdict.noteFamille(LX_NOTES, it.qid, cid, ma.id) || '';
+   var opts=[['','Note de l’équipe']].concat(['met','part','miss','ask'].map(function(e){ return [e, LX_NOTE_LIB[e]]; }));
+   return '<label class="crit-ma-note"><span>Ma note</span>'
+    +'<select data-note-crit="'+esc(cid)+'" aria-label="Ma note sur : '+esc(lxCritNom(cid))+'">'
+    + opts.map(function(o){
+        return '<option value="'+esc(o[0])+'"'+(o[0]===mienne?' selected':'')+'>'+esc(o[1])+'</option>';
+      }).join('')
+    +'</select></label>';
   }
   // Détail attendu par Benoit sur le critère école : le nom de l'établissement et la distance,
   // pas seulement « oui ». Lu dans la qualification (annuaire Éducation nationale), jamais
@@ -2176,6 +2236,60 @@
    if(e&&e.nom) return e.nom+(e.commune?' · '+e.commune:'')+(e.km!=null?' · '+e.km+' km':'');
    return null;
   }
+  // Écriture d'une note de famille. `val` vide = suppression (retour au relevé d'équipe).
+  // Discipline désormais commune à toutes les écritures de cet écran (commentaires incrément 2,
+  // favoris LUM-44, marquage lu LUM-35) : RIEN n'est affiché avant que la base ait confirmé, et
+  // un refus remet le contrôle sur sa valeur d'avant plutôt que de laisser à l'écran une note
+  // que personne d'autre ne verra jamais.
+  async function lxEcrisNote(sel){
+   var ma=lxMaFamille(), cid=sel.getAttribute('data-note-crit');
+   if(!ma || !LX_CUR || !cid) return;
+   var qid=LX_CUR.qid;
+   if(!qid){ alert('Ce lieu n’a pas d’identifiant exploitable : impossible d’y attacher une note.'); return; }
+   var val=sel.value, avant=LxVerdict.noteFamille(LX_NOTES, qid, cid, ma.id) || '';
+   if(val===avant) return;
+   sel.disabled=true;
+   var r;
+   try{
+     r = val
+       ? await sb.from('notes_familles').upsert(
+           {compte_id:ma.id, lieu_id:qid, critere:cid, etat:val},
+           {onConflict:'compte_id,lieu_id,critere'})
+       : await sb.from('notes_familles').delete()
+           .eq('compte_id',ma.id).eq('lieu_id',qid).eq('critere',cid);
+   }catch(e){
+     console.error('lxEcrisNote: exception', e); r={error:e};
+   }
+   sel.disabled=false;
+   if(r && r.error){
+     console.error('lxEcrisNote: refus de la base', r.error);
+     sel.value=avant;
+     alert('Ta note n’a pas pu être enregistrée. Réessaie dans un instant.');
+     return;
+   }
+   // Confirmé : on range la note dans le même index que celui servi par lx-verdict.js, en
+   // maintenant sa forme exacte ({lieu: {critere: {compte: etat}}}) plutôt qu'en rechargeant
+   // toute la table — un aller-retour réseau pour une valeur qu'on connaît déjà.
+   var parLieu=LX_NOTES[qid]||(LX_NOTES[qid]={});
+   var parCrit=parLieu[cid]||(parLieu[cid]={});
+   if(val) parCrit[ma.id]=val; else delete parCrit[ma.id];
+
+   // Trois repeints, parce que trois écrans lisent cette note : la ligne du critère (qui a dit
+   // quoi), le verdict de la fiche, et la carte + la Liste + la bande résultat (lxRenderFiltre).
+   var ligne=sel.closest('.criterion');
+   if(ligne){
+     var vieux=ligne.querySelector('.crit-notes');
+     if(vieux) vieux.remove();
+     var html=lxNotesFamHtml(LX_CUR, cid);
+     if(html){
+       var lab=ligne.querySelector('.crit-ma-note');
+       if(lab) lab.insertAdjacentHTML('beforebegin', html);
+     }
+   }
+   var vd=$('fiche-verdict'); if(vd) vd.innerHTML=lxFicheVerdictHtml(LX_CUR);
+   lxRenderFiltre();
+  }
+
   function lxCriteriaHtml(it){
    // Ordre d'affichage : celui du catalogue (b1..b10), qui est l'ordre de RÉFÉRENCE du
    // questionnaire — pas un classement, et il n'est plus affiché comme tel.
@@ -2208,11 +2322,21 @@
       if(etat==='ask') etat='trancher';
      }
     }
-    return lxCritLigne(lxCritNom(cid), etat, detail);
+    return lxCritLigne(lxCritNom(cid), etat, detail, lxNotesFamHtml(it, cid)+lxMaNoteHtml(it, cid));
    }).join('');
    // Une fiche dont AUCUN critère n'est qualifié n'a rien à dire ici : on affiche la liste
    // quand même (savoir que tout est à qualifier est une information), mais on le dit.
    var chapeau=aQuelqueChose ? '' : '<div class="summary-box">Aucun critère n’a encore été qualifié sur ce lieu.</div>';
+   // LUM-48 — ce que l'écran doit dire de lui-même, sinon la pastille d'équipe et le verdict
+   // du haut se contredisent en apparence. Trois états, trois messages, jamais de silence :
+   // les notes n'ont pas chargé / je peux noter / je ne peux pas encore.
+   var ma=lxMaFamille();
+   var note=LX_NOTES_ERR
+    ? '<div class="summary-box">'+esc(LX_NOTES_ERR)+'</div>'
+    : (ma
+       ? '<p class="crit-groupe">À droite, la qualification de l’équipe — le relevé documentaire, que personne ne réécrit. Ta note prime sur elle pour ton propre verdict ; « Note de l’équipe » la retire et te remet sur le relevé.</p>'
+       : '<p class="crit-groupe">À droite, la qualification de l’équipe. Publie ta réponse au questionnaire pour poser tes propres notes : elles n’ont de sens que rapportées à ton classement de critères.</p>');
+   chapeau=chapeau+note;
    // « Tous les critères » : les dix du socle ci-dessus, plus ceux que des familles ont classés
    // sans que personne ne les qualifie jamais (critères secondaires du questionnaire, critères
    // ajoutés par une famille). Ils ne sont pas noyés dans la liste principale — ils n'ont pas
@@ -2364,7 +2488,10 @@
     '<div class="sheet-actions">'+lxLienAnnonce(it)+'</div></div>'+
     '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
     lxDescriptionHtml(it)+
-    lxFicheVerdictHtml(it)+
+    // LUM-48 : conteneur nommé, pour que l'écriture d'une note puisse repeindre le VERDICT
+    // sans reconstruire la fiche entière (ce qui relancerait photos et fil d'échanges, et
+    // ferait perdre le focus du sélecteur qu'on vient d'utiliser).
+    '<div id="fiche-verdict">'+lxFicheVerdictHtml(it)+'</div>'+
     '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
     '<div class="summary-box">'+lxSummaryFor(it)+'</div>'+
     qualifNote+
@@ -2534,7 +2661,11 @@
   }
   // Destinataires proposés : tout compte sauf soi-même et sauf la recette.
   function lxDestinataires(){
-   return LX_ANNUAIRE.filter(function(a){ return a.compte_id!==ME.id && !a.est_qa; });
+   // 2026-08-16, demande de Benoit : « Équipe Ignis à enlever ». Le filtre porte sur
+   // `est_service`, servi par l'annuaire (compte de recette OU `members.masque_annuaire`), et
+   // non sur une adresse écrite ici — une liste de gens dans le code est exactement ce que
+   // LUM-34 vient de supprimer, elle recommencerait à mentir au premier compte qui bouge.
+   return LX_ANNUAIRE.filter(function(a){ return a.compte_id!==ME.id && !a.est_service; });
   }
   function lxNomCompte(id){
    var a=LX_ANNUAIRE.find(function(x){ return x.compte_id===id; });
@@ -3028,8 +3159,12 @@
    // échec (même garde-fou que loadData(), voir sa note). Ce .catch() ne reste que pour une
    // exception qu'aucune des deux fonctions n'aurait attrapée elle-même ; il ne doit jamais
    // avaler ce cas en silence non plus.
-   var famsP=Promise.all([lxLoadFams(), lxLoadCritEtats()]).catch(function(e){
-     console.error('lxInit: chargement familles/états', e);
+   // LUM-48 : lxLoadNotes() entre dans le MÊME Promise.all, pas dans une chaîne à part. Le
+   // verdict lit LX_CRIT_ETATS et LX_NOTES ensemble ; si les notes arrivaient après le premier
+   // lxRenderFiltre(), l'écran peindrait d'abord le verdict d'équipe puis le corrigerait sous
+   // les yeux de l'utilisateur — le « saut » que ce jalon unique existe pour empêcher.
+   var famsP=Promise.all([lxLoadFams(), lxLoadCritEtats(), lxLoadNotes()]).catch(function(e){
+     console.error('lxInit: chargement familles/états/notes', e);
      if(!LX_LOAD_ERROR) LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
    });
    loadData().then(function(){ return loadFav(); }).then(function(){
@@ -3243,6 +3378,50 @@
    }
   }
 
+  /* ===== LUM-48 — les notes de famille (décision 7 du cadrage) =========================
+     La note d'équipe (ci-dessus) reste le socle documentaire ; une famille pose la sienne
+     sur le critère qu'elle veut, et c'est SA note qui fait foi pour SON verdict. Tant
+     qu'elle n'a rien dit, la note d'équipe vaut pour elle. La règle de priorité vit dans
+     lx-verdict.js (`etatPourFamille`), avec ses tests — ici, uniquement le chargement.
+
+     Décision 11 : `select` ouvert à tout membre (chacune voit les notes des autres),
+     `insert`/`update`/`delete` réservés à ses propres lignes. On lit donc TOUT, sans filtre
+     sur le compte : l'écran montre qui a noté quoi, c'est l'objet de la fonctionnalité.
+
+     Pourquoi PAS de LX_LOAD_ERROR ici, à la différence de lxLoadCritEtats() : un échec de
+     chargement des notes fait retomber chaque famille sur la note d'équipe — c'est-à-dire
+     sur l'état exact du produit avant ce lot. Dégradé, mais jamais faux. Refuser d'afficher
+     la carte entière parce qu'une surcouche d'avis n'a pas chargé serait disproportionné.
+     En revanche l'écran le DIT (bandeau dans la fiche), il ne fait pas comme si de rien. */
+  var LX_NOTES={}, LX_NOTES_ERR='';
+  async function lxLoadNotes(){
+   LX_NOTES={}; LX_NOTES_ERR='';
+   try{
+     var r=await sb.from('notes_familles').select('compte_id,lieu_id,critere,etat',{count:'exact'});
+     if(r.error){
+       console.error('lxLoadNotes: échec', r.error);
+       LX_NOTES_ERR='Les notes des familles n’ont pas pu être chargées : ce que tu vois est la qualification de l’équipe seule.';
+       return;
+     }
+     // Même garde-fou de troncature que les critères : une lecture partielle rendrait des
+     // notes à certaines familles et pas à d'autres, ce qui est pire qu'aucune note — on
+     // préfère n'en appliquer aucune et le dire.
+     if(r.count!=null && r.data.length!==r.count){
+       LX_NOTES_ERR='Chargement incomplet des notes des familles ('+r.data.length+' sur '+r.count+') : elles sont ignorées, seule la qualification de l’équipe est affichée.';
+       return;
+     }
+     LX_NOTES=LxVerdict.indexeNotes(r.data||[]);
+   }catch(e){
+     console.error('lxLoadNotes: exception', e);
+     LX_NOTES_ERR='Les notes des familles n’ont pas pu être chargées : ce que tu vois est la qualification de l’équipe seule.';
+   }
+  }
+  // La famille du compte connecté, ou null : c'est la SEULE qui peut écrire une note. Un
+  // membre sans réponse publiée au questionnaire (compte d'organisation, nouveau membre) n'a
+  // pas de classement de critères, donc pas de verdict, donc rien à noter — l'écran le lui
+  // dit au lieu de lui montrer un contrôle qui n'agirait sur rien.
+  function lxMaFamille(){ return LX_FAMS.filter(function(f){ return f.moi; })[0] || null; }
+
   // Les pistes équipe (t='p') ne passent JAMAIS par lieux_qualifications donc jamais par la
   // vue lieux_criteres_etat (0 sur 12 constaté en base) — elles sont qualifiées à la main
   // dans carte_lieux.data.criteres, un tableau [{n, v, note}] où n est le numéro du critère
@@ -3295,12 +3474,17 @@
   // miss. C'est le point sur lequel tout repose : le critère 2 est non qualifié sur les
   // 250 lieux. S'il comptait comme manqué, curseur à 2 renverrait zéro lieu partout et la
   // feature serait mort-née. Logique + tests Node dans lx-verdict.js / equipe/qa/test-lx-verdict.mjs.
+  // LUM-48 : LX_NOTES est passé aux TROIS points d'appel du verdict, pas à un seul. C'est
+  // exactement la classe d'erreur du 2026-08-11 (un correctif prouvé sur un chemin, laissé
+  // ouvert sur les autres) : si la Liste tenait compte des notes et pas la bande résultat, le
+  // même lieu serait servi ici et manqué là, sans qu'aucun des deux écrans ne mente
+  // visiblement. Les trois lisent la même chose ou aucun ne la lit.
   function lxEvalFam(it, f, n){
-   return LxVerdict.evalFam(LX_CRIT_ETATS, it, f, n);
+   return LxVerdict.evalFam(LX_CRIT_ETATS, it, f, n, LX_NOTES);
   }
 
   function lxBilan(it, n){
-   return LxVerdict.bilan(LX_CRIT_ETATS, lxSel(), it, n);
+   return LxVerdict.bilan(LX_CRIT_ETATS, lxSel(), it, n, LX_NOTES);
   }
 
   function lxTousLieux(){ return LX_DATA.concat(LX_PISTES); }
@@ -3355,7 +3539,7 @@
    return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat===fs.length; });
   }
   function lxNbPlein(n){
-   return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxVisibles(), n);
+   return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxVisibles(), n, LX_NOTES);
   }
 
   /* ----- Rendu : familles, curseur, résultat, critères (transposé de la maquette) ----- */
@@ -3833,6 +4017,13 @@
     // toggle-fav/copy-place-link/submit-comment — ces trois-là n'ont plus besoin d'exister
     // sur window, seulement d'un attribut stable dans le HTML régénéré de la fiche.
     var mp=$('mapPanel');
+    // LUM-48 : les notes se posent avec un <select>, donc un écouteur `change` — même
+    // délégation que les clics (le contenu de la fiche est régénéré en innerHTML à chaque
+    // lieu, un addEventListener direct mourrait au premier changement de fiche).
+    if(mp) mp.addEventListener('change', function(e){
+      var sel=e.target.closest('[data-note-crit]');
+      if(sel) lxEcrisNote(sel);
+    });
     if(mp) mp.addEventListener('click', function(e){
       // LUM-34 : la puce ne tape plus « @prénom » dans le texte — elle coche un COMPTE. Le
       // texte du commentaire et la liste des personnes prévenues sont deux choses distinctes :

@@ -83,13 +83,84 @@
     return (selFams || []).reduce(function (a, f) { return Math.max(a, f.order.length); }, 1);
   }
 
+  // ---------------------------------------------------------------------------------------
+  // LUM-48 (2026-08-16) — la note par famille (décision 7 du cadrage, tranchée par Benoit le
+  // 2026-08-09 : « je veux une note par famille c'est tout l'intérêt »).
+  //
+  // Modèle, repris mot pour mot du cadrage :
+  //   · la note de l'ÉQUIPE reste le socle — c'est la qualification documentaire des 250 lieux,
+  //     avec sa source et son niveau de confiance ;
+  //   · une famille peut poser SA note sur n'importe quel critère, dans le même vocabulaire ;
+  //   · tant qu'elle n'a rien dit, la note de l'équipe vaut pour elle ;
+  //   · le filtre lit, pour chaque famille, SA note si elle existe, sinon celle de l'équipe.
+  //     Un même lieu peut donc tenir pour une famille et tomber pour une autre : c'est l'objet
+  //     de la fonctionnalité, pas un effet de bord.
+  //   · la note d'équipe n'est JAMAIS la moyenne des notes des familles (une moyenne confond
+  //     « on n'est pas d'accord » avec « on est d'accord que c'est moyen », alors que tout
+  //     l'écran repose sur le désaccord). Rien ici n'agrège quoi que ce soit.
+  //
+  // LE POINT QUI SE JOUE ICI, ET QUI N'EST PAS ÉVIDENT : « je ne sais pas » (ask) posé
+  // EXPLICITEMENT par une famille est une note, pas une absence de note. Il ÉCRASE donc un
+  // 'met' d'équipe — la famille dit « je ne reprends pas votre relevé à mon compte ». C'est
+  // pour ça que revenir à la note d'équipe est une SUPPRESSION de ligne, jamais un 'ask' :
+  // confondre les deux ferait disparaître, sans le dire, la seule façon d'exprimer un doute.
+  //
+  // Forme attendue de `notesFam` : {lieu_id: {critere: {compte_id: 'met'|'part'|'miss'|'ask'}}}
+  // — exactement ce que la table notes_familles (compte_id, lieu_id, critere, etat) rend une
+  // fois indexée. Absent/incomplet -> on retombe sur l'équipe, jamais sur une valeur inventée.
+  var ETATS_NOTE = { met: 1, part: 1, miss: 1, ask: 1 };
+
+  // La note propre d'un compte sur un critère d'un lieu, ou null s'il n'a rien dit. Une valeur
+  // hors vocabulaire est traitée comme « rien dit » : une donnée abîmée ne doit pas décider
+  // d'un verdict (même discipline que absorbCriteresPistes, qui retombe sur 'ask' et jamais
+  // sur 'miss').
+  function noteFamille(notesFam, lieuQid, cid, compteId) {
+    if (!notesFam || !compteId) return null;
+    var parLieu = notesFam[lieuQid];
+    if (!parLieu) return null;
+    var parCrit = parLieu[cid];
+    if (!parCrit) return null;
+    var e = parCrit[compteId];
+    return ETATS_NOTE[e] ? e : null;
+  }
+
+  // Range les lignes plates de notes_familles (compte_id, lieu_id, critere, etat) dans la forme
+  // qu'attendent les fonctions ci-dessus. Ici plutôt que dans index.html parce que c'est le
+  // CONTRAT de forme entre la table et la règle : si les deux divergent, tout retombe en
+  // silence sur la note d'équipe et personne ne voit rien — exactement la classe de défaut
+  // « un état vide se lit comme un fait » du 2026-08-11. Testable, donc testé.
+  // Une ligne dont l'état est hors vocabulaire est ÉCARTÉE à l'indexation (la contrainte
+  // notes_familles_etat_chk l'interdit déjà en base : ce filtre couvre le cas où la contrainte
+  // serait relâchée un jour, pas une donnée attendue).
+  function indexeNotes(rows) {
+    var out = {};
+    (rows || []).forEach(function (r) {
+      if (!r || !r.lieu_id || !r.critere || !r.compte_id) return;
+      if (!ETATS_NOTE[r.etat]) return;
+      var l = out[r.lieu_id] || (out[r.lieu_id] = {});
+      var c = l[r.critere] || (l[r.critere] = {});
+      c[r.compte_id] = r.etat;
+    });
+    return out;
+  }
+
+  // L'état qui FAIT FOI pour une famille donnée : sa note si elle en a posé une, sinon celle
+  // de l'équipe. C'est le seul endroit du projet où cette priorité est écrite.
+  function etatPourFamille(critEtats, notesFam, lieuQid, cid, compteId) {
+    return noteFamille(notesFam, lieuQid, cid, compteId) || etatEquipe(critEtats, lieuQid, cid);
+  }
+
   // C1 (cadrage) : seul 'miss' fait perdre le niveau — 'ask' ne compte NULLE PART dans miss.
   // Le critère 2 est non qualifié sur les 250 lieux ; s'il comptait comme manqué, curseur à 2
   // renverrait zéro lieu partout et la fonctionnalité serait morte-née à l'écran.
-  function evalFam(critEtats, it, f, n) {
+  //
+  // `notesFam` est OPTIONNEL et ajouté en dernier argument (LUM-48) : omis, la fonction se
+  // comporte exactement comme avant les notes par famille — c'est ce qui permet aux tests
+  // écrits avant ce lot de rester valides tels quels, et de prouver la non-régression.
+  function evalFam(critEtats, it, f, n, notesFam) {
     var k = Math.min(n, f.order.length), st = [], met = 0, part = 0, ask = 0, miss = [];
     for (var i = 0; i < k; i++) {
-      var e = etatEquipe(critEtats, it.qid, f.order[i]);
+      var e = etatPourFamille(critEtats, notesFam, it.qid, f.order[i], f.id);
       st.push(e);
       if (e === "met") met++;
       else if (e === "part") part++;
@@ -99,10 +170,10 @@
     return { st: st, k: k, met: met, part: part, ask: ask, miss: miss, ok: miss.length === 0, tronq: f.order.length < n };
   }
 
-  function bilan(critEtats, selFams, it, n) {
+  function bilan(critEtats, selFams, it, n, notesFam) {
     var fs = selFams || [], sat = 0, ask = {};
     fs.forEach(function (f) {
-      var e = evalFam(critEtats, it, f, n);
+      var e = evalFam(critEtats, it, f, n, notesFam);
       if (e.ok) sat++;
       for (var i = 0; i < e.k; i++) if (e.st[i] === "ask") ask[f.order[i]] = 1;
     });
@@ -111,9 +182,9 @@
 
   // visibles : liste déjà filtrée (recherche/nature/favoris) par l'appelant — cette fonction ne
   // sait rien du DOM ni de la recherche texte, elle ne fait que compter.
-  function nbPlein(critEtats, selFams, visibles, n) {
+  function nbPlein(critEtats, selFams, visibles, n, notesFam) {
     var fs = selFams || [];
-    return (visibles || []).filter(function (it) { return bilan(critEtats, fs, it, n).sat === fs.length; }).length;
+    return (visibles || []).filter(function (it) { return bilan(critEtats, fs, it, n, notesFam).sat === fs.length; }).length;
   }
 
   function motPremiers(n) { return n === 1 ? "premier critère" : "premiers critères"; }
@@ -248,7 +319,11 @@
 
   return {
     LX_PISTE_V_ETAT: LX_PISTE_V_ETAT,
+    ETATS_NOTE: ETATS_NOTE,
     etatEquipe: etatEquipe,
+    noteFamille: noteFamille,
+    etatPourFamille: etatPourFamille,
+    indexeNotes: indexeNotes,
     absorbCriteresPistes: absorbCriteresPistes,
     maxN: maxN,
     evalFam: evalFam,
