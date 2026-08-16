@@ -613,6 +613,15 @@
   #panel-lieux .criterion.et-low{border-left:4px solid #c0664a;background:#fdf5f2;}
   #panel-lieux .criterion.et-unknown{border-left:4px solid var(--line-strong);background:#fafbfc;}
   #panel-lieux .criteria-list{display:flex;flex-direction:column;gap:6px;}
+  /* Liste déroulante du filtre géographique (2026-08-15). Reprend la forme des puces .tchip
+     — même hauteur, même bordure, même typo — pour qu'elle se lise comme un réglage de la
+     barre et non comme un formulaire posé au milieu. */
+  #panel-lieux .tsel{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line-strong);
+      border-radius:var(--r-full);padding:.16rem .5rem .16rem .7rem;background:var(--paper);
+      font-family:var(--f-label);font-size:.76rem;color:var(--ink-soft);white-space:nowrap;}
+  #panel-lieux .tsel select{border:0;background:none;font-family:var(--f-label);font-size:.76rem;
+      color:var(--ink);cursor:pointer;padding:.1rem .1rem;}
+  #panel-lieux .tsel select:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
   /* Description en tête de fiche (2026-08-15) : du texte courant, pas une boîte de plus — on
      lit d'abord ce qu'est le lieu, avant de lire s'il convient. */
   #panel-lieux .fiche-desc{margin:.7rem 0 .2rem;font-size:13px;line-height:1.5;color:var(--lp-ink2);}
@@ -987,10 +996,17 @@
           <button type="button" class="tchip is-off" id="lx-favChip" aria-pressed="false"><span class="pt" style="background:var(--ember)"></span>Favoris</button>
           <span class="tsep"></span>
           <button type="button" class="tchip is-on" id="lx-cacheChip" aria-pressed="true"><span class="bx" aria-hidden="true">&#10003;</span>N'afficher que les lieux qui conviennent</button>
-          <!-- 2026-08-15 : la géographie devient un filtre. Décochée, la case laisse toute la
-               zone retenue (favorable + cœur) ; cochée, elle ne garde que les départements de
-               cœur. La règle vit dans lx-verdict.js (LxVerdict.zoneRetenue), testée. -->
-          <button type="button" class="tchip" id="lx-coeurChip" aria-pressed="false"><span class="bx" aria-hidden="true">&#10003;</span>Seulement les départements de cœur</button>
+          <!-- 2026-08-15, révisé le même jour : la case à deux états ne disait pas la troisième
+               possibilité, « ne pas filtrer du tout ». Une liste à trois positions la rend
+               explicite, et le défaut reste « sans filtre » — la géographie ne restreint que si
+               on le demande. La règle vit dans lx-verdict.js (LxVerdict.zoneRetenue), testée. -->
+          <label class="tsel" for="lx-zoneSel"><span>Géographie</span>
+            <select id="lx-zoneSel" aria-label="Filtre géographique">
+              <option value="off" selected>sans filtre</option>
+              <option value="zone">dans la zone retenue</option>
+              <option value="coeur">départements de cœur</option>
+            </select>
+          </label>
           <span class="gap"></span>
           <button type="button" class="icon-btn" id="lx-resetHard" title="Tout réafficher" aria-label="Tout réafficher">&#8635;</button>
         </div>
@@ -3037,9 +3053,9 @@
   }
 
   var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=true; // restreint par défaut (2026-08-15)
-  // 2026-08-15 : 'zone' (defaut) = toute la zone retenue, favorable et coeur confondus ;
-  // 'coeur' = uniquement les departements de coeur. Case a cocher dans la barre de filtre.
-  var lxZoneMode='zone';
+  // 2026-08-15 : 'off' (defaut) = pas de filtre geographique ; 'zone' = zone retenue
+  // (favorable + coeur) ; 'coeur' = departements de coeur. Liste deroulante de la barre.
+  var lxZoneMode='off';
   // Devient vrai après le premier passage de lxRenderFiltre() (donc après que #lx-filtreBand
   // a reçu son contenu réel — familles, curseur, résultat). Lu par lxTraceResize() (R16) pour
   // dater, dans la trace, si une mesure de la carte a eu lieu AVANT ou APRÈS que la barre ait
@@ -3206,8 +3222,14 @@
       : plein===1 ? 'lieu sur '+V+' tient '+quoi+'.'
       : 'lieu ne tient '+quoi+'.';
     } else {
-     txt.innerHTML = plein>1 ? 'lieux conviennent aux <b>'+fs.length+' familles à la fois</b>. Les '+(V-plein)+' autres restent affichés, du plus au moins servant.'
-      : plein===1 ? 'lieu convient aux <b>'+fs.length+' familles à la fois</b>. Les autres restent affichés, du plus au moins servant.'
+     // 2026-08-15 : le texte disait « les N autres restent affichés » — c'était vrai quand le
+     // filtre classait, ce n'est plus vrai depuis qu'il RESTREINT. Un écran qui décrit un
+     // comportement qu'il n'a plus est pire qu'un écran muet : on lui fait confiance.
+     var reste = lxCacheOn
+       ? ' Les '+(V-plein)+' autres sont masqués — décochez « n’afficher que les lieux qui conviennent » pour les revoir.'
+       : ' Les '+(V-plein)+' autres restent affichés, du plus au moins servant.';
+     txt.innerHTML = plein>1 ? 'lieux conviennent aux <b>'+fs.length+' familles à la fois</b>.'+reste
+      : plein===1 ? 'lieu convient aux <b>'+fs.length+' familles à la fois</b>.'+reste
       : 'lieu ne convient aux <b>'+fs.length+' familles à la fois</b>. La liste reste classée par nombre de familles servies.';
     }
    }
@@ -3467,12 +3489,9 @@
     // 2026-08-15 : case « seulement les départements de cœur ». Décochée, on garde toute la
     // zone retenue (favorable + cœur) ; cochée, on ne garde que le cœur. La règle elle-même
     // vit dans lx-verdict.js (LxVerdict.zoneRetenue), avec ses tests.
-    var coeur=$('lx-coeurChip');
-    if(coeur) coeur.addEventListener('click', function(){
-      lxZoneMode = (lxZoneMode==='coeur') ? 'zone' : 'coeur';
-      var on = lxZoneMode==='coeur';
-      coeur.classList.toggle('is-on', on);
-      coeur.setAttribute('aria-pressed', on?'true':'false');
+    var zoneSel=$('lx-zoneSel');
+    if(zoneSel) zoneSel.addEventListener('change', function(){
+      lxZoneMode = zoneSel.value;
       lxRenderFiltre();
     });
     var fav=$('lx-favChip');
@@ -3507,10 +3526,9 @@
       lxCacheOn=true;
       var cacheChip=$('lx-cacheChip');
       if(cacheChip){ cacheChip.classList.add('is-on'); cacheChip.setAttribute('aria-pressed','true'); }
-      // La géographie revient elle aussi à son défaut : toute la zone retenue.
-      lxZoneMode='zone';
-      var coeurChip=$('lx-coeurChip');
-      if(coeurChip){ coeurChip.classList.remove('is-on'); coeurChip.setAttribute('aria-pressed','false'); }
+      // La géographie revient elle aussi à son défaut : aucun filtre.
+      lxZoneMode='off';
+      var zoneSelR=$('lx-zoneSel'); if(zoneSelR) zoneSelR.value='off';
       lxRenderFiltre();
     });
     var q=$('lx-q');

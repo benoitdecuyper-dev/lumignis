@@ -195,16 +195,49 @@
   // renseigné (ancienne forme de réponse) ne fait jamais échouer le mode 'coeur' — sinon la
   // seule réponse antérieure au niveau cœur viderait le filtre pour tout le monde.
   // Comme partout ailleurs : la sélection vide ne restreint rien.
+  // Révisé le 2026-08-15 sur retour de Benoit : « le fonctionnement, c'est de cœur PAR RAPPORT
+  // À LA FAMILLE SÉLECTIONNÉE ». La première version exigeait que TOUTES les familles
+  // sélectionnées aient le lieu dans leur zone — une intersection, qui ne répond pas à la
+  // question posée : quand on coche une famille, on veut voir SA zone. La règle est donc
+  // « au moins une des familles sélectionnées », ce qui redonne exactement la zone de la
+  // famille quand une seule est cochée, et l'union quand plusieurs le sont.
+  //
+  // Trois modes, pilotés par la liste déroulante de la barre de filtre :
+  //   'off'   : aucune restriction géographique (comportement d'avant le 15/08).
+  //   'zone'  : le lieu est dans la zone retenue d'au moins une famille (favorable OU cœur).
+  //   'coeur' : le lieu est dans un département de cœur d'au moins une famille.
+  //
+  // Deux garde-fous, pour que la règle ne se retourne jamais contre quelqu'un :
+  //  - un lieu sans département connu (pistes équipe) n'est exclu par AUCUN mode : on ne
+  //    disqualifie pas sur un critère qu'on ne sait pas évaluer ;
+  //  - si AUCUNE des familles sélectionnées n'a renseigné de cœur (cas d'une réponse en
+  //    ancienne forme, comme Famille Plaut), le mode 'coeur' retombe sur 'zone' au lieu de
+  //    vider l'écran. Un écran vide sans explication se lit comme « aucun lieu ne convient »,
+  //    alors que la vraie cause est « cette famille n'a pas dit son cœur ».
   function zoneRetenue(deptLieu, selFams, mode) {
     var fs = selFams || [];
+    if (mode !== "zone" && mode !== "coeur") return true;
     if (!fs.length) return true;
-    for (var i = 0; i < fs.length; i++) {
-      var e = zoneEtat(fs[i].depts, deptLieu);
-      if (e === null) continue;
-      if (e === "hors") return false;
-      if (mode === "coeur" && e !== "coeur" && e !== "favnr") return false;
+    if (deptLieu == null || deptLieu === "") return true;
+
+    var i, e;
+    if (mode === "coeur") {
+      var unCoeurConnu = false;
+      for (i = 0; i < fs.length; i++) {
+        var d = normalizeDepts(fs[i].depts);
+        if (!d.coeurConnu) continue;
+        for (var k in d.n) { if (d.n[k] === 2) { unCoeurConnu = true; break; } }
+        if (unCoeurConnu) break;
+      }
+      if (!unCoeurConnu) mode = "zone"; // repli explicite, cf. note ci-dessus
     }
-    return true;
+
+    for (i = 0; i < fs.length; i++) {
+      e = zoneEtat(fs[i].depts, deptLieu);
+      if (mode === "coeur") { if (e === "coeur") return true; }
+      else if (e !== "hors") return true;
+    }
+    return false;
   }
 
   function libelleNiveau(n, selFams) {
