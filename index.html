@@ -230,24 +230,65 @@
      à EXACTEMENT 1000. À égalité, c'est l'ordre du DOM qui tranche, et la carte vient après le
      bandeau — les boutons +/- restaient donc peints par-dessus le réglage ouvert. Mesuré sur la
      chaîne d'empilement, pas deviné. */
-  #panel-lieux .mini-filtre{position:sticky;top:0;z-index:1200;flex:0 0 auto;height:44px;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;box-shadow:0 1px 2px rgba(32,24,14,.05);display:flex;align-items:stretch;}
-  #panel-lieux .mini-btn{flex:1;display:flex;align-items:center;gap:.6rem;padding:0 1.1rem;background:none;border:0;font-family:var(--f-label);font-size:.83rem;color:var(--ink);text-align:left;min-width:0;cursor:pointer;}
-  #panel-lieux .mini-btn .chev{color:var(--ink-faint);font-size:.85rem;transition:transform .18s var(--ease);flex:0 0 auto;}
-  #panel-lieux .mini-filtre.is-open .mini-btn .chev{transform:rotate(90deg);}
-  #panel-lieux .mini-fam{display:inline-flex;align-items:center;gap:.4rem;font-weight:600;flex:0 0 auto;}
-  #panel-lieux .mini-fam .av{width:1.35rem;height:1.35rem;border-radius:50%;background:var(--tint-gold);border:1px solid var(--gold);color:var(--gold-deep);font-size:.58rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
-  #panel-lieux .mini-dot{width:.28rem;height:.28rem;border-radius:50%;background:var(--line-strong);flex:0 0 auto;}
-  #panel-lieux .mini-seg{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-  #panel-lieux .mini-seg.actif{color:var(--gold-deep);font-weight:600;}
-  #panel-lieux .mini-right{flex:0 0 auto;display:flex;align-items:center;gap:.4rem;padding:0 1.4rem 0 .9rem;font-family:var(--f-label);font-size:.78rem;font-weight:600;color:var(--gold-deep);border-left:1px solid var(--line);white-space:nowrap;cursor:pointer;}
-  #panel-lieux .mini-filtre.is-open{background:var(--paper-warm);}
+  /* ===== REFONTE 2026-08-16 — deux niveaux au lieu de trois bandes juxtaposées ==========
+     Transposée de maquettes/2026-08-16-filtre-refonte/maq-filtre.html, validée par Benoit.
+     Le conteneur garde l'id #lxMiniFiltre : tout ce qui le pilote (lxSetSubtab, l'observateur
+     de hauteur, le refus d'affichage sous 1152px) continue de le trouver, on ne rebranche
+     que ce qui change vraiment. */
+  #panel-lieux .lx-filterhead{position:sticky;top:0;z-index:1200;flex:0 0 auto;background:var(--paper);
+      border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;
+      box-shadow:0 1px 2px rgba(32,24,14,.05);}
 
-  #panel-lieux .filtre-overlay{display:none;}
+  /* Barre PERMANENTE : recherche à gauche, décompte à droite. Elle ne se replie jamais —
+     c'est la demande « la recherche et le décompte doivent sortir du filtrage ». */
+  #panel-lieux .lx-permabar{height:42px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;border-radius:var(--r-m) var(--r-m) 0 0;}
+  #panel-lieux .lx-permabar .in{width:100%;padding:0 1.1rem;display:flex;align-items:center;gap:.7rem;}
+  #panel-lieux .lx-permabar .spacer{flex:1;}
+  #panel-lieux .lx-srch{position:relative;display:flex;align-items:center;flex:0 0 auto;}
+  #panel-lieux .lx-srch .ico{position:absolute;left:.55rem;color:var(--ink-faint);font-size:.76rem;pointer-events:none;}
+  #panel-lieux .lx-srch input{font-family:var(--f-label);font-size:.79rem;color:var(--ink);background:var(--paper-warm);
+      border:1px solid var(--line-strong);border-radius:var(--r-s);padding:.28rem .7rem .28rem 1.75rem;width:17.5rem;}
+  #panel-lieux .lx-srch input::placeholder{color:var(--ink-faint);}
+  #panel-lieux .lx-srch input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,47,.15);}
+  /* tabular-nums : le chiffre change à chaque réglage, il ne doit pas faire danser la ligne. */
+  #panel-lieux .lx-count{display:flex;align-items:baseline;gap:.4rem;font-family:var(--f-label);font-size:.79rem;color:var(--ink-soft);white-space:nowrap;}
+  #panel-lieux .lx-count .n{font-family:var(--f-display);font-size:1.15rem;font-weight:600;color:var(--gold-deep);font-variant-numeric:tabular-nums;}
+  #panel-lieux .lx-count .of{color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+  #panel-lieux .lx-count b{color:var(--ink);font-weight:600;}
+
+  /* Bandeau de réglage : dit l'état actif, ouvre ET referme (inversion assumée de la décision
+     du 2026-08-15, redemandée par Benoit le 16). */
+  #panel-lieux .lx-togglebar{height:40px;position:relative;background:var(--paper);}
+  #panel-lieux .lx-togglebar.is-open{background:var(--tint-gold);}
+  #panel-lieux .lx-togglebtn{width:100%;height:100%;display:flex;align-items:center;gap:.55rem;padding:0 1.1rem;
+      background:none;border:0;font-family:var(--f-label);font-size:.81rem;color:var(--ink);text-align:left;min-width:0;cursor:pointer;}
+  #panel-lieux .lx-togglebtn .chev{color:var(--ink-faint);font-size:.82rem;transition:transform .16s var(--ease);flex:0 0 auto;}
+  #panel-lieux .lx-togglebar.is-open .lx-togglebtn .chev{transform:rotate(90deg);}
+  #panel-lieux .lx-fam-sum{display:inline-flex;align-items:center;gap:.35rem;font-weight:600;flex:0 0 auto;}
+  #panel-lieux .lx-fam-sum .stack{display:flex;}
+  /* Pastilles superposées : dit « plusieurs familles » sans écrire cinq noms dans 40 px. */
+  #panel-lieux .lx-fam-sum .av{width:1.3rem;height:1.3rem;border-radius:50%;background:var(--tint-gold);
+      border:1.5px solid var(--paper);outline:1px solid var(--gold);color:var(--gold-deep);
+      font-size:.56rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-left:-.45rem;flex:0 0 auto;}
+  #panel-lieux .lx-fam-sum .av:first-child{margin-left:0;}
+  #panel-lieux .lx-segs{display:inline-flex;align-items:center;gap:.55rem;min-width:0;overflow:hidden;}
+  #panel-lieux .lx-dot{width:.26rem;height:.26rem;border-radius:50%;background:var(--line-strong);flex:0 0 auto;}
+  #panel-lieux .lx-seg{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  #panel-lieux .lx-seg.actif{color:var(--gold-deep);font-weight:600;}
+  #panel-lieux .lx-togglebtn .go{margin-left:auto;font-size:.75rem;color:var(--ink-faint);flex:0 0 auto;padding-left:.6rem;}
+
+  /* Pas d'élément « rideau » : la fermeture au clic extérieur est un écouteur sur le document
+     (voir lxOuvrirFiltre dans initLieuxSkeleton). Première version essayée puis RETIRÉE le
+     2026-08-16 : un div en position:fixed inset:0 recouvrait TOUT, y compris la barre de
+     recherche et les onglets Carte/Liste, alors que l'arbitrage validé dit exactement
+     l'inverse. Mesuré au banc, pas supposé — la boîte du rideau commençait à y=0 quand le bas
+     du champ de recherche était à y=103. Un écouteur n'a pas de géométrie : il ne peut pas
+     recouvrir ce qu'il ne doit pas. */
+  #panel-lieux .lx-overlay{display:none;}
   /* border-bottom explicite : .filtre le met à 0 (pensé pour la soudure avec .subtabs juste
      en dessous, en flux normal) — en superposition, l'overlay flotte au-dessus de la carte,
-     plus rien en dessous pour fermer visuellement le bloc sans cette bordure (reprise de
-     maq-filtre-repliable.html, qui la pose explicitement pour cette même raison). */
-  #panel-lieux .mini-filtre.is-open .filtre-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:2;}
+     plus rien en dessous pour fermer visuellement le bloc sans cette bordure. */
+  #panel-lieux .lx-togglebar.is-open .lx-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:2;}
   #panel-lieux .overlay-foot{display:flex;justify-content:flex-end;padding:.7rem 1.1rem .9rem;background:var(--paper-warm);border-top:1px solid var(--line);}
   #panel-lieux .btn-gold{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--gold-deep);border:0;border-radius:var(--r-full);padding:.4rem 1.05rem;cursor:pointer;}
   #panel-lieux .btn-gold:hover{background:var(--gold);}
@@ -329,7 +370,9 @@
   #panel-lieux .tchip .bx{width:.82rem;height:.82rem;border-radius:.18rem;border:1px solid var(--ink-faint);background:var(--paper);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:.6rem;line-height:1;color:var(--paper);}
   #panel-lieux .tchip.is-on .bx{background:var(--ink-soft);border-color:var(--ink-soft);}
 
-  #panel-lieux .fam-row{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;}
+  /* 2026-08-16 : .fam-row et .fam-row .sep sont retirées — les familles ne sont plus une
+     rangée de puces mais une liste à cocher (.fam-list, plus bas). Les .chip restent : elles
+     servent encore au volet des critères (.crit-grid) et au bandeau. */
   #panel-lieux .chip{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--f-label);font-size:.84rem;font-weight:500;color:var(--ink-soft);background:var(--paper-warm);border:1px solid var(--line-strong);border-radius:var(--r-full);padding:.34rem .85rem .34rem .34rem;cursor:pointer;transition:background .14s var(--ease),border-color .14s var(--ease),color .14s var(--ease);}
   #panel-lieux .chip:hover{border-color:var(--gold);color:var(--ink);}
   #panel-lieux .chip .av{width:1.55rem;height:1.55rem;border-radius:50%;background:var(--paper);border:1px solid var(--line-strong);color:var(--ink-faint);font-size:.62rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
@@ -337,18 +380,33 @@
   #panel-lieux .chip.is-on .av{background:var(--paper);border-color:var(--gold);color:var(--gold-deep);}
   #panel-lieux .chip .horiz{font-size:.72rem;font-weight:400;color:var(--ink-faint);}
   #panel-lieux .chip.is-on .horiz{color:var(--gold-deep);}
-  #panel-lieux .fam-row .sep{width:1px;align-self:stretch;background:var(--line);margin:0 .35rem;}
   #panel-lieux .lnk{font-family:var(--f-label);font-size:.78rem;font-weight:500;color:var(--gold-deep);background:none;border:0;padding:.3rem .2rem;cursor:pointer;text-decoration:underline;text-underline-offset:.18em;}
   #panel-lieux .lnk:hover{color:var(--ink);}
 
-  #panel-lieux .cur-band .in{display:grid;grid-template-columns:minmax(0,1fr) 23rem;gap:0;padding:0;}
-  #panel-lieux .cur-left{padding:.6rem 2rem .7rem;min-width:0;}
-  #panel-lieux .cur-right{border-left:1px solid var(--line);background:var(--paper-warm);padding:.6rem 1.5rem;display:flex;flex-direction:column;justify-content:center;}
-  #panel-lieux .cur-head{display:flex;align-items:baseline;gap:.55rem;font-family:var(--f-label);font-size:.95rem;color:var(--ink-soft);margin:0;flex-wrap:wrap;}
-  #panel-lieux .cur-head .n{font-family:var(--f-display);font-size:1.75rem;font-weight:600;color:var(--gold-deep);line-height:1.05;font-variant-numeric:tabular-nums;}
+  /* Deux colonnes : à gauche QUI on croise, à droite JUSQU'OÙ. La colonne « résultat » qui
+     tenait 23rem à droite a disparu — son grand nombre vit dans la barre permanente. */
+  #panel-lieux .cur-band .in{display:grid;grid-template-columns:minmax(0,1fr) 21rem;gap:0;padding:0;}
+  #panel-lieux .fam-col{padding:.55rem 1.1rem .6rem;min-width:0;}
+  #panel-lieux .niv-col{border-left:1px solid var(--line);background:var(--paper-warm);padding:.55rem 1.2rem .6rem;min-width:0;}
+  #panel-lieux .band-lbl{font-family:var(--f-label);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 .3rem;}
+  #panel-lieux .cur-head{display:flex;align-items:baseline;gap:.5rem;font-family:var(--f-label);font-size:.87rem;color:var(--ink-soft);margin:0 0 .2rem;flex-wrap:wrap;}
+  #panel-lieux .cur-head .n{font-family:var(--f-display);font-size:1.35rem;font-weight:600;color:var(--gold-deep);line-height:1;font-variant-numeric:tabular-nums;}
   #panel-lieux .cur-head b{color:var(--ink);font-weight:600;}
-  #panel-lieux .cur-sub{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.3rem 0 0;}
-  #panel-lieux .cur-left .fam-row{margin:0 0 .45rem;}
+  #panel-lieux .cur-sub{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:.25rem 0 0;}
+
+  /* Liste à cocher des familles (demande de Benoit : « une liste où on peut cocher les
+     familles pour gagner en clarté »). Disposée en LIGNE avec retour à la ligne, et non en
+     colonne strictement empilée : à 5 familles comme à 8, la hauteur reste tenable — c'est
+     l'arbitrage 1 de la maquette, validé. */
+  #panel-lieux .fam-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.1rem 1.1rem;}
+  #panel-lieux .fam-list li{flex:0 0 auto;}
+  #panel-lieux .fam-check{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--f-label);font-size:.81rem;color:var(--ink-soft);padding:.18rem 0;cursor:pointer;}
+  #panel-lieux .fam-check input{width:.85rem;height:.85rem;accent-color:var(--gold-deep);flex:0 0 auto;cursor:pointer;}
+  #panel-lieux .fam-check .av{width:1.15rem;height:1.15rem;border-radius:50%;background:var(--paper-warm);border:1px solid var(--line-strong);color:var(--ink-faint);font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  #panel-lieux .fam-check.is-on{color:var(--ink);font-weight:600;}
+  #panel-lieux .fam-check.is-on .av{background:var(--tint-gold);border-color:var(--gold);color:var(--gold-deep);}
+  #panel-lieux .fam-check .horiz{font-size:.7rem;font-weight:400;color:var(--gold-deep);}
+  #panel-lieux .fam-tools{display:flex;align-items:center;gap:.7rem;margin-top:.3rem;}
   #panel-lieux .slider{-webkit-appearance:none;appearance:none;width:100%;height:1.15rem;background:transparent;cursor:pointer;display:block;margin:.1rem 0 0;}
   #panel-lieux .slider::-webkit-slider-runnable-track{height:.4rem;border-radius:var(--r-full);background:var(--trk,var(--line-strong));}
   #panel-lieux .slider::-webkit-slider-thumb{-webkit-appearance:none;width:1.15rem;height:1.15rem;margin-top:-.38rem;border-radius:50%;background:var(--paper);border:2px solid var(--gold-deep);box-shadow:var(--sh-s);}
@@ -359,15 +417,21 @@
   #panel-lieux .ticks button:hover{color:var(--gold-deep);background:var(--tint-gold);}
   #panel-lieux .ticks button.is-on{color:var(--ink);font-weight:600;}
 
-  #panel-lieux .res-n{font-family:var(--f-display);font-size:2.1rem;font-weight:600;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
-  #panel-lieux .res-txt{font-family:var(--f-label);font-size:.84rem;color:var(--ink-soft);margin:.2rem 0 0;line-height:1.4;}
+  /* Ligne d'explication du résultat, pleine largeur sous les deux colonnes. Elle ne porte
+     PLUS de grand nombre : uniquement ce qui explique celui de la barre permanente. */
+  #panel-lieux .res-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:.3rem .9rem;
+      padding:.45rem 1.1rem .55rem;border-top:1px solid var(--line);background:var(--paper);}
+  #panel-lieux .res-txt{font-family:var(--f-label);font-size:.78rem;color:var(--ink-soft);margin:0;line-height:1.4;}
   #panel-lieux .res-txt b{color:var(--ink);font-weight:600;}
-  #panel-lieux .res-note{font-family:var(--f-label);font-size:.74rem;color:var(--ink-faint);margin:.35rem 0 0;line-height:1.35;}
+  #panel-lieux .res-note{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:0;line-height:1.35;}
   #panel-lieux .res-note i{font-style:normal;color:var(--gold-deep);}
+  #panel-lieux .res-line .btn-ember{margin-left:auto;}
   #panel-lieux .lnk-mini{font-family:var(--f-label);font-size:.74rem;font-weight:600;color:var(--gold-deep);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:.16em;}
   #panel-lieux .lnk-mini:hover{color:var(--ink);}
-  #panel-lieux .res.pulse .res-n{animation:lxPop .4s var(--ease);}
-  @keyframes lxPop{0%{transform:scale(.9);opacity:.5;}100%{transform:scale(1);opacity:1;}}
+  /* 2026-08-16 : `.res.pulse .res-n` et son @keyframes lxPop sont retirés ensemble. La règle
+     animait le grand nombre, parti dans la barre permanente ; et aucun code n'a jamais posé
+     la classe .pulse — c'était du CSS mort depuis l'incrément 6a. Vérifié avant de supprimer
+     (une seule occurrence de « pulse », une seule de « lxPop », toutes deux ici). */
   #panel-lieux .btn-ember{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--ember);border:0;border-radius:var(--r-full);padding:.34rem .8rem;cursor:pointer;margin-top:.55rem;align-self:flex-start;}
   #panel-lieux .btn-ember:hover{background:#A9421A;}
 
@@ -475,7 +539,7 @@
      l'écran qui décide, pas l'épaisseur d'une barre de défilement. */
   #panel-lieux .petit-ecran{display:none;}
   @media(max-width:1151px){
-    #panel-lieux .filtre,#panel-lieux .mini-filtre,#panel-lieux .subtabs,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
+    #panel-lieux .filtre,#panel-lieux .lx-filterhead,#panel-lieux .subtabs,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
     #panel-lieux .petit-ecran{display:block;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper-warm);padding:2rem;text-align:center;font-size:.95rem;color:var(--ink-soft);}
   }
 
@@ -1052,22 +1116,40 @@
     <!-- Décision 14 : bandeau replié — visible UNIQUEMENT sur la vue Carte (masqué ici par
          défaut, la vue par défaut du panneau est Liste). lxSetSubtab() y déplace/retire
          #lx-filtreBand selon la vue active, voir sa note. -->
-    <div class="mini-filtre" id="lxMiniFiltre" hidden>
-      <button type="button" class="mini-btn" id="lxMiniBtn" aria-expanded="false">
-        <span class="chev" aria-hidden="true">&rsaquo;</span>
-        <span id="lxMiniFam"></span>
-        <span class="mini-dot" id="lxMiniDot1" hidden></span>
-        <span class="mini-seg actif" id="lxMiniSeg"></span>
-        <span class="mini-dot" id="lxMiniDot2" hidden></span>
-        <span class="mini-seg" id="lxMiniTypes"></span>
-      </button>
-      <span class="mini-right">Régler les filtres &rsaquo;</span>
-    <section class="filtre filtre-overlay" id="lx-filtreBand" aria-label="Filtrer les lieux">
-      <div class="band tools">
+    <!-- REFONTE DU 2026-08-16 (maquette maquettes/2026-08-16-filtre-refonte/, validée par
+         Benoit). Trois bandes juxtaposées deviennent DEUX NIVEAUX :
+           · une barre PERMANENTE (42 px) — recherche et décompte, qui « sortent du filtrage »
+             et restent donc lisibles volet fermé comme volet ouvert ;
+           · un bandeau de réglage (40 px) qui dit l'état actif et ouvre/ferme le volet.
+         Le décompte n'existe plus qu'À UN SEUL ENDROIT : c'est ce qui rend structurellement
+         impossible le défaut « deux chiffres en désaccord » signalé par Benoit. -->
+    <div class="lx-filterhead" id="lxMiniFiltre" hidden>
+      <div class="lx-permabar">
         <div class="in">
-          <span class="srch"><span class="ico" aria-hidden="true">&#9906;</span>
+          <span class="lx-srch"><span class="ico" aria-hidden="true">&#9906;</span>
             <input type="search" id="lx-q" placeholder="Rechercher un lieu, une commune, un ordre…" aria-label="Rechercher un lieu, une commune, un ordre" />
           </span>
+          <span class="spacer"></span>
+          <!-- aria-live : le chiffre change sans que rien ne soit cliqué à cet endroit-là
+               (c'est le réglage, ailleurs, qui le fait bouger) — un lecteur d'écran doit
+               l'apprendre. 'polite' et non 'assertive' : ça n'interrompt pas une saisie. -->
+          <span class="lx-count" id="lxCount" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="lx-togglebar" id="lxToggleBar">
+        <button type="button" class="lx-togglebtn" id="lxMiniBtn" aria-expanded="false" aria-controls="lx-filtreBand">
+          <span class="chev" aria-hidden="true">&rsaquo;</span>
+          <span class="lx-fam-sum" id="lxMiniFam"></span>
+          <!-- Les segments du résumé sont construits en une fois (lxRenderMiniFiltre) plutôt
+               qu'en spans fixes avec des puces à masquer une par une : le nombre de segments
+               varie (géographie active ou non, natures filtrées ou non), et la version en
+               spans fixes avait déjà oublié d'en afficher un. -->
+          <span class="lx-segs" id="lxMiniSegs"></span>
+          <span class="go" id="lxMiniGo">Régler les filtres &rsaquo;</span>
+        </button>
+    <section class="filtre lx-overlay" id="lx-filtreBand" aria-label="Filtrer les lieux">
+      <div class="band tools">
+        <div class="in">
           <span id="lx-typeRow" style="display:flex;gap:.4rem;flex-wrap:wrap"></span>
           <button type="button" class="tchip is-off" id="lx-favChip" aria-pressed="false"><span class="pt" style="background:var(--ember)"></span>Favoris</button>
           <span class="tsep"></span>
@@ -1091,21 +1173,32 @@
         </div>
       </div>
 
+      <!-- Deux colonnes : à gauche QUI on croise, à droite JUSQU'OÙ. Le grand nombre de
+           résultat qui occupait la colonne de droite est parti dans la barre permanente ;
+           il ne reste ici que ce qui EXPLIQUE le chiffre (la phrase, la note sur les
+           critères jamais qualifiés, le repli suggéré) — jamais un second décompte. -->
       <div class="band cur-band">
         <div class="in">
-          <div class="cur-left">
-            <div class="fam-row" id="famRow"></div>
+          <div class="fam-col">
+            <p class="band-lbl">Familles dont on croise les critères</p>
+            <ul class="fam-list" id="famRow"></ul>
+            <div class="fam-tools" id="lxFamTools">
+              <button type="button" class="lnk" id="lx-allFams">Toutes</button>
+              <button type="button" class="lnk" id="lx-meFam">Seulement moi</button>
+            </div>
+          </div>
+          <div class="niv-col">
+            <p class="band-lbl">Exigence</p>
             <p class="cur-head"><span class="n" id="curN"></span> <span id="curLbl"></span></p>
             <input type="range" class="slider" id="lx-slider" min="1" max="10" value="1" step="1" aria-label="Nombre de critères sur lesquels on ne transige pas" />
             <div class="ticks" id="ticks"></div>
             <p class="cur-sub" id="curSub"></p>
           </div>
-          <div class="cur-right res" id="res">
-            <div><span class="res-n" id="resN"></span></div>
-            <p class="res-txt" id="resTxt"></p>
-            <p class="res-note" id="resNote"></p>
-            <button class="btn-ember" id="resBtn" type="button" hidden></button>
-          </div>
+        </div>
+        <div class="res-line" id="res">
+          <p class="res-txt" id="resTxt"></p>
+          <p class="res-note" id="resNote"></p>
+          <button class="btn-ember" id="resBtn" type="button" hidden></button>
         </div>
       </div>
 
@@ -1123,7 +1216,8 @@
         <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
       </div>
     </section>
-    </div>
+      </div><!-- /.lx-togglebar -->
+    </div><!-- /.lx-filterhead -->
 
 
     <div class="subtabs">
@@ -1132,7 +1226,13 @@
           <button class="subtab" id="tab-carte" type="button">Carte</button>
           <button class="subtab is-active" id="tab-liste" type="button" aria-current="page">Liste</button>
         </nav>
-        <span class="count" id="subCount"></span>
+        <!-- 2026-08-16 (validé par Benoit, arbitrage 2 de la maquette) : le décompte qui
+             vivait ici est SUPPRIMÉ. Il redisait, en plus petit et à un autre endroit, ce que
+             la barre permanente affiche déjà — donc une seconde source de vérité, exactement
+             ce que la refonte existe pour fermer. #subCount reste dans le DOM, vide et masqué,
+             uniquement parce que lxRefresh() s'en sert encore comme canal d'un message
+             d'état vide (« Aucun lieu à afficher »), qui n'est pas un décompte. -->
+        <span class="count" id="subCount" hidden></span>
       </div>
     </div>
 
@@ -1869,10 +1969,14 @@
   // invalidateSize()) à CHAQUE ouverture/fermeture du réglage — exactement le « nouveau cycle
   // de redimensionnement à chaque ouverture » que la décision 14 interdit, puisque le réglage
   // se pose maintenant EN SUPERPOSITION et ne doit plus jamais faire bouger le cadre de la
-  // carte. #lxMiniFiltre, lui, a une hauteur FIXE (44px, posée en CSS) qui ne varie JAMAIS
-  // avec l'ouverture/fermeture de son overlay (position:absolute, sorti du flux — ne compte
-  // pas dans la hauteur de son parent) : c'est LUI qui détermine réellement l'espace laissé à
-  // la carte sur la vue Carte, donc le bon élément à observer.
+  // carte. #lxMiniFiltre, lui, a une hauteur FIXE qui ne varie JAMAIS avec
+  // l'ouverture/fermeture de son overlay (position:absolute, sorti du flux — ne compte pas
+  // dans la hauteur de son parent) : c'est LUI qui détermine réellement l'espace laissé à la
+  // carte sur la vue Carte, donc le bon élément à observer.
+  // 2026-08-16 : cette hauteur passe de 44 px (bandeau seul) à **82 px** — 42 px de barre
+  // permanente + 40 px de bandeau de réglage. Elle reste FIXE, donc le raisonnement ci-dessus
+  // tient à l'identique ; seule la valeur change, et la carte dispose de 38 px de moins.
+  // C'est le prix, assumé, de « la recherche et le décompte sortent du filtrage ».
   var lxKeyObserver=null;
   function lxWatchResize(){
     if(lxKeyObserver || typeof ResizeObserver==='undefined') return;
@@ -2329,6 +2433,14 @@
    // questionnaire — pas un classement, et il n'est plus affiché comme tel.
    var ids=['b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'];
    // Textes de qualification, quelle que soit la forme de la donnée du lieu.
+   // Priorité des textes, du moins au plus récent — le dernier posé gagne :
+   //   1. legacy (lieux_qualifications.criteresBenoit) : la qualification documentaire d'origine ;
+   //   2. piste équipe (carte_lieux.data.criteres) : saisie à la main sur les 12 pistes ;
+   //   3. LA VUE (2026-08-16) : la phrase qui accompagne l'état réellement servi.
+   // L'ordre compte. Le 2026-08-16, la requalification a changé des ÉTATS sans changer les
+   // textes legacy : une fiche affichait « La messe chaque jour — oui » sous la phrase
+   // « Messe quotidienne et prêtre résident à négocier avec l'évêque ». L'état venait de la vue,
+   // la phrase d'avant. Un texte qui explique un état doit venir de la même source que lui.
    var txt={};
    if(it.qualif && it.qualif.criteresBenoit){
     it.qualif.criteresBenoit.forEach(function(c){ if(c.texte) txt['b'+c.critere]=c.texte; });
@@ -2336,6 +2448,8 @@
    if(it.t==='p' && it.criteres){
     it.criteres.forEach(function(c){ if(c.note) txt['b'+c.n]=c.note; });
    }
+   var vueTxt=LX_CRIT_TEXTES[it.qid]||{};
+   Object.keys(vueTxt).forEach(function(cid){ if(vueTxt[cid]) txt[cid]=vueTxt[cid]; });
    var aQuelqueChose=false;
    var rows=ids.map(function(cid){
     var etat=LxVerdict.etatEquipe(LX_CRIT_ETATS, it.qid, cid);
@@ -2358,6 +2472,18 @@
     }
     return lxCritLigne(lxCritNom(cid), etat, detail, lxNotesFamHtml(it, cid)+lxMaNoteHtml(it, cid));
    }).join('');
+   // Les critères hors socle sont calculés ICI, avant le chapeau : depuis le 2026-08-16 ils
+   // portent de vrais états, donc ils comptent pour décider si « aucun critère n'est qualifié ».
+   // Les laisser après aurait fait dire à la fiche « aucun critère qualifié » juste au-dessus
+   // d'une liste de critères qualifiés.
+   var autres={};
+   lxSel().forEach(function(f){ (f.order||[]).forEach(function(cid){ if(ids.indexOf(cid)<0) autres[cid]=1; }); });
+   var listeAutres=Object.keys(autres);
+   var lignesAutres=listeAutres.map(function(cid){
+    var e=LxVerdict.etatEquipe(LX_CRIT_ETATS, it.qid, cid);
+    if(e!=='ask') aQuelqueChose=true;
+    return lxCritLigne(lxCritNom(cid), e, txt[cid]||null);
+   }).join('');
    // Une fiche dont AUCUN critère n'est qualifié n'a rien à dire ici : on affiche la liste
    // quand même (savoir que tout est à qualifier est une information), mais on le dit.
    var chapeau=aQuelqueChose ? '' : '<div class="summary-box">Aucun critère n’a encore été qualifié sur ce lieu.</div>';
@@ -2372,17 +2498,19 @@
        : '<p class="crit-groupe">À droite, la qualification de l’équipe. Publie ta réponse au questionnaire pour poser tes propres notes : elles n’ont de sens que rapportées à ton classement de critères.</p>');
    chapeau=chapeau+note;
    // « Tous les critères » : les dix du socle ci-dessus, plus ceux que des familles ont classés
-   // sans que personne ne les qualifie jamais (critères secondaires du questionnaire, critères
-   // ajoutés par une famille). Ils ne sont pas noyés dans la liste principale — ils n'ont pas
-   // d'état à montrer — mais ils ne sont plus invisibles non plus : ils disent ce qui compte
-   // pour quelqu'un et sur quoi personne ne s'est encore prononcé.
-   var autres={};
-   lxSel().forEach(function(f){ (f.order||[]).forEach(function(cid){ if(ids.indexOf(cid)<0) autres[cid]=1; }); });
-   var listeAutres=Object.keys(autres);
+   // hors de ce socle (critères secondaires du questionnaire, critères ajoutés par une famille).
+   //
+   // 🔑 CORRIGÉ le 2026-08-16 — ce bloc codait `'ask'` EN DUR et s'intitulait « jamais qualifiés
+   // sur aucun lieu ». C'était vrai à l'écriture ; ça ne l'est plus depuis que s1, s4, s6, s7,
+   // c1 et les critères de famille sont qualifiés sur les 255 lieux. Mesuré sur l'abbaye
+   // Notre-Dame du Bec : la base disait s1=tenu, s4=tenu, s6=en partie, s7=MANQUÉ, et la fiche
+   // affichait « non renseigné » pour les quatre — pendant que le verdict du haut, lui, comptait
+   // bien s7 comme manqué. Le crible contredisait le verdict sur la même fiche.
+   // On lit donc le vrai état, à la même source que le verdict, et le titre ne promet plus rien.
+   // (Les lignes sont construites plus haut, avant le chapeau — cf. le commentaire là-bas.)
    var bloc2 = listeAutres.length
-    ? '<p class="crit-groupe">Classés par une famille, jamais qualifiés sur aucun lieu</p><div class="criteria-list">'
-      + listeAutres.map(function(cid){ return lxCritLigne(lxCritNom(cid),'ask',null); }).join('')
-      + '</div>'
+    ? '<p class="crit-groupe">Les autres critères classés par une famille</p><div class="criteria-list">'
+      + lignesAutres + '</div>'
     : '';
    return '<div class="section-title">Les critères, un par un</div>'+chapeau
     +'<div class="criteria-list">'+rows+'</div>'+bloc2;
@@ -3049,12 +3177,19 @@
        if(it._ring && lxMap && lxMap.hasLayer(it._ring)) lxMap.removeLayer(it._ring);
      }
    });
-   // Un seul compteur, court (décision : pas de doublon barre-outils/sous-onglets — R8, la
-   // barre outils est saturée et un texte long y a contribué à la faire passer sur deux
-   // lignes ; on ne reproduit pas le même risque dans les sous-onglets).
-   var shown=ns+na+nv+np;
+   // 2026-08-16 (arbitrage 2 de la maquette, validé par Benoit) : ce décompte-ci est SUPPRIMÉ.
+   // La barre permanente en affiche un, à un seul endroit ; en garder un second ici, calculé
+   // autrement (marqueurs posés, et non population du filtre), c'est refabriquer la
+   // divergence que la refonte vient de fermer. La variable `shown` disparaît avec lui.
+   // #subCount ne sert plus qu'à un MESSAGE D'ÉTAT VIDE (« Aucun lieu à afficher. », posé en
+   // sortie de lxInit()) — jamais à un chiffre. Il n'est révélé que lorsqu'il porte ce texte.
+   // Garde d'ordre, pas de commodité : lxInit() écrit « Aucun lieu à afficher. » dans ce même
+   // élément, et lxRefresh() tourne APRÈS lui à chaque changement de filtre. Effacer
+   // inconditionnellement ici reviendrait à supprimer ce message dès le premier re-rendu —
+   // le cas exact où l'écran a le plus besoin de parler. On ne nettoie donc que lorsqu'il y a
+   // vraiment quelque chose à afficher.
    var subEl=$('subCount');
-   if(subEl) subEl.textContent = LX_MARKERS.length ? (shown+' affiché'+(shown>1?'s':'')+' sur '+LX_MARKERS.length) : '';
+   if(subEl && LX_MARKERS.length){ subEl.textContent=''; subEl.hidden=true; }
   }
   // R9 (2026-08-10) : le diagnostic a montré que le mécanisme de cadrage automatique
   // fonctionnait — conteneur correctement dimensionné (1227x435) au moment du fitBounds.
@@ -3239,7 +3374,7 @@
      // prêtes attend ici, pas un chemin séparé.
      if(LX_HASH_LIEU_EN_ATTENTE){ lxOuvrirDepuisHash(LX_HASH_LIEU_EN_ATTENTE); LX_HASH_LIEU_EN_ATTENTE=null; }
      if(LX_LOAD_ERROR){ lxShowLoadError(LX_LOAD_ERROR); }
-     else if(!LX_MARKERS.length){ var sc=$('subCount'); if(sc) sc.textContent='Aucun lieu à afficher.'; }
+     else if(!LX_MARKERS.length){ var sc=$('subCount'); if(sc){ sc.textContent='Aucun lieu à afficher.'; sc.hidden=false; } }
      // Reprise du garde-fou R8 : les données réelles (comptes de type, favoris, familles,
      // curseur) changent la hauteur de la barre de filtre — on re-mesure ici, au point où le
      // réseau vient de finir de la peupler. lxResizeCarte() : point d'entrée unique (R16).
@@ -3389,8 +3524,9 @@
   // Le seuil de note ne se réimplémente JAMAIS ici : LX_CRIT_ETATS vient directement de
   // public.lieux_criteres_etat.etats, calculé en SQL (incrément 4a).
   var LX_CRIT_ETATS={}; // lieu_qid -> {critere: 'met'|'part'|'miss'|'ask'}
+  var LX_CRIT_TEXTES={}; // lieu_qid -> {critere: phrase qui explique l'état}
   async function lxLoadCritEtats(){
-   LX_CRIT_ETATS={};
+   LX_CRIT_ETATS={}; LX_CRIT_TEXTES={};
    try{
      // B1 (revue lead-tech 2026-08-11) : c'est la SEULE source du verdict — un échec avalé
      // ici laisse LX_CRIT_ETATS vide, lxEtatEquipe() rend 'ask' partout, et comme 'ask' ne
@@ -3398,7 +3534,11 @@
      // ok=true. Même garde-fou que loadData() (count exact + contrôle de troncature), même
      // canal de refus d'affichage — LX_LOAD_ERROR, consommé à la sortie de lxInit()
      // (:2680 `if(LX_LOAD_ERROR){ lxShowLoadError(LX_LOAD_ERROR); }`), pas un second mécanisme.
-     var r=await sb.from('lieux_criteres_etat').select('lieu_id,etats',{count:'exact'});
+     // `textes` (2026-08-16) : la vue sert désormais AUSSI la phrase qui explique chaque état,
+     // même règle de priorité que `etats` (la qualification neuve l'emporte sur le legacy).
+     // Sans elle, le crible retombait sur qualif.criteresBenoit et pouvait afficher « oui »
+     // au-dessus d'un texte disant « à négocier avec l'évêque » : l'état neuf, la phrase d'avant.
+     var r=await sb.from('lieux_criteres_etat').select('lieu_id,etats,textes',{count:'exact'});
      if(r.error){
        console.error('lxLoadCritEtats: échec', r.error);
        LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
@@ -3408,7 +3548,10 @@
        LX_LOAD_ERROR='Chargement incomplet des critères qualifiés ('+r.data.length+' sur '+r.count+'). Un verdict faux est pire qu\'un écran vide.';
        return;
      }
-     (r.data||[]).forEach(function(row){ LX_CRIT_ETATS[row.lieu_id]=row.etats||{}; });
+     (r.data||[]).forEach(function(row){
+       LX_CRIT_ETATS[row.lieu_id]=row.etats||{};
+       LX_CRIT_TEXTES[row.lieu_id]=row.textes||{};
+     });
    }catch(e){
      console.error('lxLoadCritEtats: exception', e);
      LX_LOAD_ERROR='Le chargement des critères qualifiés a échoué. Réessaie dans un instant.';
@@ -3623,19 +3766,25 @@
    // LX_LOAD_ERROR signale une PANNE (RPC en échec) — .lx-filtre-neutralise grise la bande
    // mais ne change pas son texte, donc sans ce garde le message légitime resterait affiché,
    // grisé, sous une bande qui prétend savoir qu'aucune famille n'a répondu.
-   if(!LX_FAMS.length && LX_LOAD_ERROR){ row.innerHTML='<span class="cur-sub">'+esc(LX_LOAD_ERROR)+'</span>'; return; }
-   if(!LX_FAMS.length){ row.innerHTML='<span class="cur-sub">Aucune réponse publiée au questionnaire pour l\'instant — le filtre a besoin d\'au moins une famille.</span>'; return; }
-   row.innerHTML='<span class="band-lbl" style="margin:0 .3rem 0 0">Critères de</span>'
-    + LX_FAMS.map(function(f){
-      var on=lxFiltreFams.indexOf(f.id)>=0;
-      return '<button type="button" class="chip'+(on?' is-on':'')+'" data-fam="'+esc(f.id)+'" aria-pressed="'+on+'" title="'+esc(f.nom)+'">'
-       + '<span class="av">'+esc(f.initiales)+'</span>'+esc(f.nom)
-       + (f.moi ? ' <span class="horiz">vous</span>' : '')
-       + '</button>';
-     }).join('')
-    + '<span class="sep"></span>'
-    + '<button type="button" class="lnk" id="lx-allFams">Toutes</button>'
-    + (LX_FAM_ME_UID && LX_FAMS.some(function(f){return f.moi;}) ? '<button type="button" class="lnk" id="lx-meFam">Seulement moi</button>' : '');
+   var outils=$('lxFamTools');
+   if(!LX_FAMS.length && LX_LOAD_ERROR){ row.innerHTML='<li><span class="cur-sub">'+esc(LX_LOAD_ERROR)+'</span></li>'; if(outils) outils.hidden=true; return; }
+   if(!LX_FAMS.length){ row.innerHTML='<li><span class="cur-sub">Aucune réponse publiée au questionnaire pour l\'instant — le filtre a besoin d\'au moins une famille.</span></li>'; if(outils) outils.hidden=true; return; }
+   if(outils) outils.hidden=false;
+   // 2026-08-16 (demande de Benoit, maquette validée) : liste à COCHER, plus des puces.
+   // Une case dit « on peut en cocher plusieurs » sans qu'il faille l'essayer, là où une puce
+   // qui s'allume se lit aussi bien comme un choix exclusif. Le <label> englobe la case ET le
+   // nom : toute la ligne est cliquable, sans écouteur supplémentaire.
+   row.innerHTML=LX_FAMS.map(function(f){
+     var on=lxFiltreFams.indexOf(f.id)>=0;
+     return '<li><label class="fam-check'+(on?' is-on':'')+'">'
+      + '<input type="checkbox" data-fam="'+esc(f.id)+'"'+(on?' checked':'')+' />'
+      + '<span class="av">'+esc(f.initiales)+'</span>'+esc(f.nom)
+      + (f.moi ? ' <span class="horiz">vous</span>' : '')
+      + '</label></li>';
+    }).join('');
+   // « Seulement moi » n'a de sens que si le compte connecté A une famille publiée.
+   var me=$('lx-meFam');
+   if(me) me.hidden=!(LX_FAM_ME_UID && LX_FAMS.some(function(f){return f.moi;}));
   }
   function lxRenderCurseur(){
    // B2 (revue lead-tech 2026-08-11 + capture carte-couronnes-corrigees.png) : lxMaxN()
@@ -3666,12 +3815,15 @@
    var ticks=$('ticks'); if(ticks) ticks.innerHTML=t;
   }
   function lxRenderResultat(){
-   var resN=$('resN'), txt=$('resTxt'), note=$('resNote'), btn=$('resBtn');
+   // 2026-08-16 : le décompte a quitté ce bloc pour la barre permanente (#lxCount) — un seul
+   // endroit, donc plus aucun moyen d'avoir deux chiffres qui se contredisent. Ce qui reste
+   // ici EXPLIQUE le chiffre, il ne le redit pas.
+   var cnt=$('lxCount'), txt=$('resTxt'), note=$('resNote'), btn=$('resBtn');
    // Même classe que le retour anticipé de lxRenderTable() : la bande résultat affiche un
    // décompte (lxNbPlein) calculé sur LX_CRIT_ETATS/LX_FAMS — sous panne, ce décompte est
    // faux, pas seulement absent. Réutilise le SEUL message (LX_LOAD_ERROR), pas une variante.
    if(LX_LOAD_ERROR){
-    if(resN) resN.textContent='—';
+    if(cnt) cnt.innerHTML='<span class="n">&mdash;</span>';
     if(txt) txt.innerHTML=esc(LX_LOAD_ERROR);
     if(note) note.innerHTML='';
     if(btn) btn.hidden=true;
@@ -3681,15 +3833,28 @@
    // géographie comprise). Sinon « 13 sur 255 » annoncerait 13 retenus sur un ensemble de 255
    // dont 207 avaient déjà été écartés par la géographie — un rapport faux dans les deux sens.
    var fs=lxSel(), n=lxFiltreN, plein=lxNbPlein(n), V=lxPopulation().length;
-   if(resN) resN.textContent=plein;
+   // Le décompte de la barre permanente. Il porte le chiffre ET le niveau d'exigence, parce
+   // que « 13 lieux » sans « à 6 critères » ne veut rien dire — et parce que c'est la seule
+   // ligne visible quand le volet est replié.
+   if(cnt){
+    cnt.innerHTML = fs.length
+      ? '<span class="n">'+plein+'</span><span class="of">sur '+V+'</span> lieu'+(plein>1?'x':'')+' &middot; <b>'+n+'</b> '+lxMotPremiers(n)
+      : '<span class="of">'+V+' lieu'+(V>1?'x':'')+' &middot; aucune famille sélectionnée</span>';
+   }
    if(txt){
+    // 2026-08-16 — LA PHRASE EST REDEVENUE AUTONOME. Elle était écrite pour être lue À LA
+    // SUITE du grand nombre qui la précédait dans la colonne de droite : « [67] lieux
+    // conviennent aux 5 familles ». Ce nombre est parti dans la barre permanente, et la
+    // phrase s'est retrouvée à commencer par « lieux conviennent… », sans sujet. Vu sur
+    // CAPTURE, jamais par une assertion : aucun test ne regardait la première lettre.
+    // Elle EXPLIQUE désormais le chiffre affiché plus haut au lieu de le prolonger.
     if(!fs.length){ txt.innerHTML='Sélectionnez au moins une famille pour voir un résultat.'; }
     else if(fs.length===1){
      var motN=lxMotPremiers(n);
      var quoi=fs[0].moi ? 'vos <b>'+n+' '+motN+'</b>' : 'les <b>'+n+' '+motN+'</b> '+lxDeFam(fs[0]);
-     txt.innerHTML = plein>1 ? 'lieux sur '+V+' tiennent '+quoi+'.'
-      : plein===1 ? 'lieu sur '+V+' tient '+quoi+'.'
-      : 'lieu ne tient '+quoi+'.';
+     txt.innerHTML = plein
+      ? 'Ce sont les lieux qui tiennent '+quoi+'.'
+      : 'Aucun lieu ne tient '+quoi+'.';
     } else {
      // 2026-08-15 : le texte disait « les N autres restent affichés » — c'était vrai quand le
      // filtre classait, ce n'est plus vrai depuis qu'il RESTREINT. Un écran qui décrit un
@@ -3697,9 +3862,9 @@
      var reste = lxCacheOn
        ? ' Les '+(V-plein)+' autres sont masqués — décochez « n’afficher que les lieux qui conviennent » pour les revoir.'
        : ' Les '+(V-plein)+' autres restent affichés, du plus au moins servant.';
-     txt.innerHTML = plein>1 ? 'lieux conviennent aux <b>'+fs.length+' familles à la fois</b>.'+reste
-      : plein===1 ? 'lieu convient aux <b>'+fs.length+' familles à la fois</b>.'+reste
-      : 'lieu ne convient aux <b>'+fs.length+' familles à la fois</b>. La liste reste classée par nombre de familles servies.';
+     txt.innerHTML = plein
+      ? 'Ce sont les lieux qui conviennent aux <b>'+fs.length+' familles à la fois</b>.'+reste
+      : 'Aucun lieu ne convient aux <b>'+fs.length+' familles à la fois</b>. La liste reste classée par nombre de familles servies.';
     }
    }
    if(note){
@@ -3888,29 +4053,48 @@
   // diverger), et les types de lieux SEULEMENT s'ils ne sont pas tous cochés (l'état par
   // défaut ne mérite pas d'être répété — la maquette ne montre pas ce segment dans son seul
   // exemple, où les quatre types sont actifs).
+  // 2026-08-16 : à plusieurs familles, le bandeau montre leurs INITIALES superposées plutôt
+  // que le seul nombre. « 4 familles » ne disait pas LESQUELLES, et c'est justement ce qu'on
+  // veut savoir sans rouvrir le réglage. Trois pastilles au plus, puis « +N » : au-delà, la
+  // pile mange la place des deux autres segments du bandeau.
   function lxMiniFamHtml(){
    var fs=lxSel();
    if(!fs.length) return '<span style="color:var(--ink-faint);font-weight:400">Sélectionnez au moins une famille</span>';
    if(fs.length===1){
     var f=fs[0];
-    return '<span class="mini-fam"><span class="av">'+esc(f.initiales)+'</span>'+esc(f.nom)
-     +(f.moi?' <span style="font-weight:400;color:var(--ink-faint);font-size:.72rem">(vous)</span>':'')+'</span>';
+    return '<span class="stack"><span class="av">'+esc(f.initiales)+'</span></span>'+esc(f.nom)
+     +(f.moi?' <span style="font-weight:400;color:var(--ink-faint);font-size:.72rem">(vous)</span>':'');
    }
-   return '<span class="mini-fam">'+fs.length+' familles</span>';
+   var vus=fs.slice(0,3), reste=fs.length-vus.length;
+   return '<span class="stack">'
+    + vus.map(function(f){ return '<span class="av" title="'+esc(f.nom)+'">'+esc(f.initiales)+'</span>'; }).join('')
+    + (reste>0 ? '<span class="av" title="'+esc(fs.slice(3).map(function(f){return f.nom;}).join(', '))+'">+'+reste+'</span>' : '')
+    + '</span> '+fs.length+' familles';
   }
   function lxMiniTypesTexte(){
    var actifs=LX_TYPES.filter(function(t){ return lxTypesOn[t.id]; });
    if(actifs.length===LX_TYPES.length || !actifs.length) return ''; // tout ou rien = défaut, rien à signaler
    return actifs.map(function(t){ return t.label; }).join(', ');
   }
+  // Libellé court de la géographie pour le bandeau. 'off' ne dit rien : l'absence de filtre
+  // n'est pas une information à afficher en permanence.
+  var LX_ZONE_MINI={zone:'dans la zone retenue', coeur:'départements de cœur'};
   function lxRenderMiniFiltre(){
    var fam=$('lxMiniFam'); if(fam) fam.innerHTML=lxMiniFamHtml();
-   var seg=$('lxMiniSeg'); if(seg) seg.textContent=lxSel().length ? (lxFiltreN+' '+lxLibelleNiveau()) : '';
+   var segs=$('lxMiniSegs'); if(!segs) return;
+   // 2026-08-16 — LA GÉOGRAPHIE ENTRE DANS LE BANDEAU. Elle en était absente, et depuis que
+   // son défaut est « dans la zone retenue » (et non plus « sans filtre »), cette absence
+   // devenait le défaut que Benoit avait nommé lui-même : « un réglage actif par défaut qui
+   // ne se voit pas est pire qu'un filtre absent ». Constaté sur capture, pas déduit — le
+   // bandeau annonçait les familles et l'exigence, jamais que 62 lieux étaient déjà écartés.
+   var parts=[];
+   if(lxSel().length) parts.push({t:lxFiltreN+' '+lxLibelleNiveau(), actif:true});
+   if(LX_ZONE_MINI[lxZoneMode]) parts.push({t:LX_ZONE_MINI[lxZoneMode], actif:true});
    var typesTexte=lxMiniTypesTexte();
-   var typesEl=$('lxMiniTypes'); if(typesEl) typesEl.textContent=typesTexte;
-   var d1=$('lxMiniDot1'), d2=$('lxMiniDot2');
-   if(d1) d1.hidden=!lxSel().length; // pas de puce avant le premier segment si rien à dire
-   if(d2) d2.hidden=!typesTexte;
+   if(typesTexte) parts.push({t:typesTexte, actif:false});
+   segs.innerHTML=parts.map(function(p){
+     return '<span class="lx-dot"></span><span class="lx-seg'+(p.actif?' actif':'')+'">'+esc(p.t)+'</span>';
+   }).join('');
   }
 
   /* ----- Orchestrateur : un seul endroit qui sait dans quel ordre tout recalculer ----- */
@@ -3932,29 +4116,53 @@
     if(tCarte) tCarte.addEventListener('click', function(){ lxSetSubtab('carte'); });
     if(tListe) tListe.addEventListener('click', function(){ lxSetSubtab('liste'); });
 
-    // Décision 14 — bandeau replié : clic n'importe où sur les 44px du bandeau ouvre le
-    // réglage (écouteur sur le conteneur entier, .mini-btn ET .mini-right, pas seulement le
-    // bouton — c'est la consigne explicite : « clic n'importe où sur le bandeau »). Un clic
-    // qui vient de DANS le réglage ouvert (.filtre-overlay, nichée à l'intérieur une fois
-    // ouverte) ne doit jamais le refermer : sans cette garde, chaque clic sur une puce/case du
-    // filtre remonterait jusqu'ici et le fermerait aussitôt.
-    // 2026-08-15 : le bandeau OUVRE, il ne referme plus (demande explicite de Benoit). Un
-    // clic dans le réglage — sur une famille, une puce, le curseur — ne doit surtout rien
-    // fermer ; la garde .filtre-overlay le couvrait déjà, mais le bandeau lui-même se
-    // refermait au reclic, ce qui suffisait à faire disparaître le réglage par accident
-    // pendant qu'on s'en sert. La fermeture a maintenant UN seul geste : le bouton dédié.
-    var mini=$('lxMiniFiltre');
-    if(mini) mini.addEventListener('click', function(e){
-      if(e.target.closest('.filtre-overlay')) return;
-      if(mini.classList.contains('is-open')) return;
-      mini.classList.add('is-open');
-      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','true');
+    // Bandeau de réglage : clic n'importe où sur ses 40 px — l'écouteur est sur la barre
+    // entière, pas sur le seul bouton, c'est la consigne d'origine (« clic n'importe où sur
+    // le bandeau »).
+    // 2026-08-16 — INVERSION ASSUMÉE de la décision du 2026-08-15. Ce jour-là, Benoit avait
+    // demandé que le bandeau n'OUVRE que, la fermeture passant par un bouton dédié : le
+    // reclic involontaire faisait disparaître le réglage pendant qu'on s'en servait. Il
+    // redemande aujourd'hui l'inverse (« il y a toujours le bug de ne pas pouvoir replier le
+    // volet filtre en cliquant sur la barre d'en haut »), et valide en plus la fermeture au
+    // clic extérieur. On rétablit donc la bascule. Ce qui protège du geste accidentel n'est
+    // plus le verrou mais le PÉRIMÈTRE : la garde .lx-overlay ci-dessous (un clic DANS le
+    // réglage ne remonte jamais jusqu'ici) et un rideau qui ne couvre que ce qui est sous le
+    // bandeau — ni la recherche, ni les onglets Carte/Liste.
+    var barre=$('lxToggleBar');
+    function lxOuvrirFiltre(ouvert){
+      if(!barre) return;
+      barre.classList.toggle('is-open', ouvert);
+      var b=$('lxMiniBtn'); if(b) b.setAttribute('aria-expanded', ouvert?'true':'false');
+      var go=$('lxMiniGo'); if(go) go.innerHTML = ouvert ? 'Fermer &rsaquo;' : 'Régler les filtres &rsaquo;';
+    }
+    window.lxOuvrirFiltre=lxOuvrirFiltre; // hook QA en lecture/écriture, comme openPanel
+    if(barre) barre.addEventListener('click', function(e){
+      // Un clic né DANS le réglage ouvert (une case, le curseur, une liste déroulante) ne
+      // doit jamais le refermer — c'est la garde qui rend la bascule vivable.
+      if(e.target.closest('.lx-overlay')) return;
+      lxOuvrirFiltre(!barre.classList.contains('is-open'));
+    });
+    // Clic à l'extérieur = fermeture (validé par Benoit). Écouteur sur le document plutôt
+    // qu'un rideau posé par-dessus la page : un rideau a une géométrie, donc il recouvre —
+    // la première version en couvrait la barre de recherche et les onglets, exactement ce que
+    // l'arbitrage excluait. Deux exceptions, et ce sont les deux qui ont été validées :
+    //   · .lx-filterhead — la barre permanente, le bandeau, le réglage lui-même ;
+    //   · .subtabs — changer de vue Carte/Liste ne referme pas le réglage qu'on est en train
+    //     de poser (les critères sont globaux aux deux vues, c'est la décision du 15/08).
+    document.addEventListener('click', function(e){
+      if(!barre || !barre.classList.contains('is-open')) return;
+      if(e.target.closest('.lx-filterhead') || e.target.closest('.subtabs')) return;
+      lxOuvrirFiltre(false);
+    });
+    // Échap ferme aussi : c'est le geste attendu de tout panneau superposé, et il donne une
+    // sortie au clavier à qui n'utilise pas la souris.
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape' && barre && barre.classList.contains('is-open')) lxOuvrirFiltre(false);
     });
     var voirCarte=$('lxVoirCarte');
     if(voirCarte) voirCarte.addEventListener('click', function(e){
-      e.stopPropagation(); // ne pas laisser remonter jusqu'à l'écouteur ci-dessus (rouvrirait)
-      if(mini) mini.classList.remove('is-open');
-      var btn=$('lxMiniBtn'); if(btn) btn.setAttribute('aria-expanded','false');
+      e.stopPropagation(); // ne pas laisser remonter jusqu'à l'écouteur ci-dessus (rebasculerait)
+      lxOuvrirFiltre(false);
     });
     var typeRow=$('lx-typeRow');
     if(typeRow) typeRow.addEventListener('click', function(e){
@@ -4030,19 +4238,26 @@
     var fit=$('lxFit');
     if(fit) fit.addEventListener('click', fitAll);
 
-    // Incrément 6a — bande familles : puces de sélection (multi), « Toutes », « Seulement moi ».
+    // Familles : liste à cocher (2026-08-16). L'écouteur est en `change` sur la liste, plus en
+    // `click` : une case se coche aussi à la BARRE D'ESPACE, et un écouteur de clic manquerait
+    // ce chemin-là sans que rien ne le signale. « Toutes » / « Seulement moi » ont quitté la
+    // liste pour la ligne d'outils en dessous : ils ont donc leur propre écouteur.
     var famRow=$('famRow');
-    if(famRow) famRow.addEventListener('click', function(e){
-      var allBtn=e.target.closest('#lx-allFams');
-      if(allBtn){ lxFiltreFams=LX_FAMS.map(function(f){return f.id;}); lxRenderFiltre(); return; }
-      var meBtn=e.target.closest('#lx-meFam');
-      if(meBtn){ var mine=LX_FAMS.filter(function(f){return f.moi;}).map(function(f){return f.id;}); lxFiltreFams=mine; lxRenderFiltre(); return; }
-      var chip=e.target.closest('[data-fam]');
-      if(chip){
-        var id=chip.getAttribute('data-fam'), i=lxFiltreFams.indexOf(id);
-        if(i>=0) lxFiltreFams.splice(i,1); else lxFiltreFams.push(id);
-        lxRenderFiltre();
-      }
+    if(famRow) famRow.addEventListener('change', function(e){
+      var cb=e.target.closest('input[data-fam]');
+      if(!cb) return;
+      var id=cb.getAttribute('data-fam'), i=lxFiltreFams.indexOf(id);
+      if(cb.checked){ if(i<0) lxFiltreFams.push(id); }
+      else if(i>=0) lxFiltreFams.splice(i,1);
+      lxRenderFiltre();
+    });
+    var allBtn=$('lx-allFams');
+    if(allBtn) allBtn.addEventListener('click', function(){
+      lxFiltreFams=LX_FAMS.map(function(f){return f.id;}); lxRenderFiltre();
+    });
+    var meBtn=$('lx-meFam');
+    if(meBtn) meBtn.addEventListener('click', function(){
+      lxFiltreFams=LX_FAMS.filter(function(f){return f.moi;}).map(function(f){return f.id;}); lxRenderFiltre();
     });
     // Curseur d'exigence : glissière + puces numérotées, deux entrées vers le même réglage.
     var slider=$('lx-slider');
