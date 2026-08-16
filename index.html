@@ -1136,6 +1136,23 @@
           <span><span class="d" style="background:#3c7a4e"></span>À reprendre / à vendre</span>
           <span class="vs"></span>
           <span>Taille du cercle = importance</span>
+          <span class="vs"></span>
+          <!-- LUM-42 (2026-08-16) : le TROISIÈME canal de la carte était le seul non documenté.
+               La légende expliquait la couleur et la taille ; la couronne, elle, se déchiffrait
+               par déduction. Le rendu de l'exemple reprend exactement les deux teintes de
+               lxCouronneSvg() (vert --green pour un segment tenu, --line-strong sinon) : une
+               légende qui n'aurait pas la couleur du dessin est pire que pas de légende. -->
+          <span>
+            <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true" style="vertical-align:-4px">
+              <!-- r=6.2 -> circonférence 38.96 ; 3 secteurs de 12.99 dont 0.9 de jour :
+                   dash 12.09, reste 26.87, décalages 0 / -12.99 / -25.97. Même construction
+                   que lxCouronneSvg(), pas un dessin approché à l'œil. -->
+              <circle cx="8.5" cy="8.5" r="6.2" fill="none" stroke="#5C7A4A" stroke-width="2.6" stroke-dasharray="12.09 26.87" transform="rotate(-90 8.5 8.5)"/>
+              <circle cx="8.5" cy="8.5" r="6.2" fill="none" stroke="#DFD6C4" stroke-width="2.6" stroke-dasharray="12.09 26.87" stroke-dashoffset="-12.99" transform="rotate(-90 8.5 8.5)"/>
+              <circle cx="8.5" cy="8.5" r="6.2" fill="none" stroke="#DFD6C4" stroke-width="2.6" stroke-dasharray="12.09 26.87" stroke-dashoffset="-25.97" transform="rotate(-90 8.5 8.5)"/>
+            </svg>
+            Couronne = un segment par famille sélectionnée, plein si le lieu tient son niveau
+          </span>
         </p>
         <div class="lx-load-error" id="lxLoadError"><div class="box"><h2>Chargement impossible</h2><p id="lxLoadErrorMsg"></p></div></div>
       </section>
