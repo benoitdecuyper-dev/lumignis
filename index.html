@@ -659,6 +659,11 @@
   #panel-lieux .fiche-desc{margin:.7rem 0 .2rem;font-size:13px;line-height:1.5;color:var(--lp-ink2);}
   #panel-lieux .fiche-desc p{margin:0 0 .5rem;}
   #panel-lieux .fiche-desc p:empty{display:none;}
+  /* « Voir plus » (2026-08-16) : un lien de texte dans le fil de la phrase, pas un bouton
+     plein — il prolonge la lecture, il ne concurrence pas les actions de la fiche. */
+  #panel-lieux .voir-plus{border:0;background:none;padding:0;cursor:pointer;font-family:var(--f-label);
+      font-size:11.5px;color:var(--gold-deep);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;}
+  #panel-lieux .voir-plus:hover{color:var(--ember);}
   #panel-lieux .crit-groupe{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:.9rem 0 .35rem;}
   #panel-lieux .criterion-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fbf5ea;color:#8a6a1f;font-weight:900;font-size:11px;font-family:var(--f-label);}
   #panel-lieux .criterion-main b{display:block;color:var(--lp-ink);font-size:12.5px;margin-bottom:2px}#panel-lieux .criterion-main span{color:#776b5d}
@@ -1073,8 +1078,11 @@
                on le demande. La règle vit dans lx-verdict.js (LxVerdict.zoneRetenue), testée. -->
           <label class="tsel" for="lx-zoneSel"><span>Géographie</span>
             <select id="lx-zoneSel" aria-label="Filtre géographique">
-              <option value="off" selected>sans filtre</option>
-              <option value="zone">dans la zone retenue</option>
+              <!-- 2026-08-16 : le défaut est « dans la zone retenue » (arbitrage de Benoit),
+                   la valeur initiale du <select> doit donc suivre lxZoneMode, sinon l'écran
+                   annonce « sans filtre » pendant que le moteur filtre déjà. -->
+              <option value="off">sans filtre</option>
+              <option value="zone" selected>dans la zone retenue</option>
               <option value="coeur">départements de cœur</option>
             </select>
           </label>
@@ -2000,6 +2008,32 @@
    lxWikiCache[key]=p; return p;
   }
   function lxTrim(t,n){ if(!t) return ''; t=t.trim(); return t.length>n? t.slice(0,n).replace(/\s+\S*$/,'')+'…':t; }
+  // 2026-08-16 (signalé par Benoit sur l'abbaye Sainte-Marie de Boulaur : « descriptif tronqué,
+  // très désagréable ») : un texte long se REPLIE, il ne se coupe plus. lxTrim() posait des
+  // points de suspension et jetait le reste — pour un lieu sans description propre en base
+  // (Boulaur n'en a aucune), l'extrait Wikipédia est le SEUL texte de la fiche, et on en
+  // perdait la moitié sans même dire qu'il y avait une suite.
+  // Le texte entier est gardé en mémoire, jamais re-téléchargé au dépliage.
+  function lxPoseTexteDepliable(el, texte, seuil){
+   if(!el) return;
+   el.innerHTML='';
+   var t=String(texte==null?'':texte).trim();
+   if(!t) return;
+   if(t.length<=seuil){ el.textContent=t; return; }
+   var court=t.slice(0,seuil).replace(/\s+\S*$/,'');
+   var span=document.createElement('span'), btn=document.createElement('button'), ouvert=false;
+   btn.type='button'; btn.className='voir-plus';
+   function peindre(){
+     span.textContent = ouvert ? t+' ' : court+'… ';
+     btn.textContent = ouvert ? 'Voir moins' : 'Voir plus';
+     btn.setAttribute('aria-expanded', ouvert?'true':'false');
+   }
+   // Écouteur direct, pas de délégation : ce bouton naît et meurt avec la fiche (le corps du
+   // panneau est réécrit en innerHTML à chaque lieu), il n'y a rien à survivre.
+   btn.addEventListener('click', function(){ ouvert=!ouvert; peindre(); });
+   peindre();
+   el.appendChild(span); el.appendChild(btn);
+  }
   var LX_CAD={v:'en ville',b:'village / bourg',c:'pleine campagne'};
   function lxInf(x){return x && x.toLowerCase().indexOf('non précisé')!==0;}
 
@@ -2579,7 +2613,10 @@
    if(reussi){
      loadComments(it);
      lxWikiFetch(it.w,it.c).then(function(w){
-       if(w){ var wx=$('wx'); if(wx) wx.textContent=lxTrim(w.extract,520); }
+       // Garde de course ajoutée au passage (2026-08-16) : cette réponse peut arriver APRÈS
+       // qu'on a ouvert un autre lieu — sans ce test, le texte de A se peindrait dans la
+       // fiche de B, ce qui ne se voit pas (c'est du texte plausible) et se lit comme un fait.
+       if(w && LX_CUR===it) lxPoseTexteDepliable($('wx'), w.extract, 520);
      });
    }
   }
@@ -3449,9 +3486,18 @@
   }
 
   var lxFiltreFams=[], lxFiltreN=6, lxFiltreSort='fam', lxCacheOn=true; // restreint par défaut (2026-08-15)
-  // 2026-08-15 : 'off' (defaut) = pas de filtre geographique ; 'zone' = zone retenue
-  // (favorable + coeur) ; 'coeur' = departements de coeur. Liste deroulante de la barre.
-  var lxZoneMode='off';
+  // 2026-08-15 : 'off' = pas de filtre geographique ; 'zone' = zone retenue (favorable +
+  // coeur) ; 'coeur' = departements de coeur. Liste deroulante de la barre.
+  // 2026-08-16, arbitrage de Benoit : le DÉFAUT passe de 'off' à **'zone'** — « il faut que
+  // les filtres soient présélectionnés sur un filtre géographique zone cherchée (pas de
+  // cœur) ». La zone retenue est ce que les familles ont explicitement coché au
+  // questionnaire : arriver sur des lieux hors de toutes les zones demandait à chacun de
+  // refaire le même geste à chaque visite. 'coeur' reste un resserrement volontaire, pas le
+  // point de départ (6 départements de cœur chez Decuyper videraient presque la carte).
+  // Deux garde-fous rendent ce défaut sûr, tous deux testés dans lx-verdict.js : un lieu sans
+  // département connu n'est exclu par aucun mode, et si aucune famille cochée n'a de cœur
+  // renseigné, le mode cœur retombe sur 'zone' au lieu de vider l'écran.
+  var lxZoneMode='zone';
   // Devient vrai après le premier passage de lxRenderFiltre() (donc après que #lx-filtreBand
   // a reçu son contenu réel — familles, curseur, résultat). Lu par lxTraceResize() (R16) pour
   // dater, dans la trace, si une mesure de la carte a eu lieu AVANT ou APRÈS que la barre ait
@@ -3527,19 +3573,33 @@
   // — un tri, pas un filtre, et l'écran continuait d'annoncer 262 lieux.
   // La puce reste l'échappatoire explicite : décochée, elle rend visibles ceux qui ne
   // conviennent pas — c'est un choix de l'utilisateur, pas le défaut.
+  // 2026-08-16 — LA POPULATION DE RÉFÉRENCE, point de vérité unique.
+  // Défaut signalé par Benoit (« quand je clique sur département de cœur ou restriction
+  // géographique, je veux que le nombre de lieux correspondant se synchronise ») : le grand
+  // nombre de la bande résultat et son dénominateur étaient calculés sur lxVisibles()
+  // — recherche, nature, favoris — tandis que la carte et la Liste affichaient lxMontres(),
+  // seul à appliquer la restriction géographique. Le compteur et l'écran lisaient donc DEUX
+  // listes différentes : changer la géographie ne POUVAIT pas faire bouger le chiffre.
+  //
+  // C'est la même classe d'erreur que le 2026-08-11 (deux implémentations de la même question
+  // qui divergent) et elle se ferme de la même façon : une seule fonction rend la population,
+  // tout le monde la lit. Ne jamais réintroduire un décompte sur lxVisibles() : cette
+  // liste-là ignore la géographie par construction, elle n'est que l'étage recherche/nature.
+  function lxPopulation(){
+   return lxVisibles().filter(function(it){ return LxVerdict.zoneRetenue(it.d, lxSel(), lxZoneMode); });
+  }
   function lxMontres(){
-   var V=lxVisibles();
-   if(!lxCacheOn) return V.filter(function(it){ return LxVerdict.zoneRetenue(it.d, lxSel(), lxZoneMode); });
-   var fs=lxSel();
-   // La geographie filtre INDEPENDAMMENT des criteres : elle s'applique meme sans famille
-   // selectionnee (auquel cas zoneRetenue ne restreint rien, cf. sa note) et meme si l'on a
-   // decoche « n'afficher que les lieux qui conviennent ».
-   V=V.filter(function(it){ return LxVerdict.zoneRetenue(it.d, fs, lxZoneMode); });
+   // La géographie filtre INDÉPENDAMMENT des critères : elle s'applique même sans famille
+   // sélectionnée (auquel cas zoneRetenue ne restreint rien, cf. sa note) et même si l'on a
+   // décoché « n'afficher que les lieux qui conviennent » — d'où sa place dans lxPopulation(),
+   // en amont des deux.
+   var V=lxPopulation(), fs=lxSel();
+   if(!lxCacheOn) return V;
    if(!fs.length) return V; // aucune famille sélectionnée : il n'y a rien à restreindre
    return V.filter(function(it){ return lxBilan(it, lxFiltreN).sat===fs.length; });
   }
   function lxNbPlein(n){
-   return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxVisibles(), n, LX_NOTES);
+   return LxVerdict.nbPlein(LX_CRIT_ETATS, lxSel(), lxPopulation(), n, LX_NOTES);
   }
 
   /* ----- Rendu : familles, curseur, résultat, critères (transposé de la maquette) ----- */
@@ -3617,7 +3677,10 @@
     if(btn) btn.hidden=true;
     return;
    }
-   var fs=lxSel(), n=lxFiltreN, plein=lxNbPlein(n), V=lxVisibles().length;
+   // 2026-08-16 : le dénominateur suit la MÊME population que le numérateur (lxPopulation,
+   // géographie comprise). Sinon « 13 sur 255 » annoncerait 13 retenus sur un ensemble de 255
+   // dont 207 avaient déjà été écartés par la géographie — un rapport faux dans les deux sens.
+   var fs=lxSel(), n=lxFiltreN, plein=lxNbPlein(n), V=lxPopulation().length;
    if(resN) resN.textContent=plein;
    if(txt){
     if(!fs.length){ txt.innerHTML='Sélectionnez au moins une famille pour voir un résultat.'; }
@@ -3644,7 +3707,13 @@
     fs.forEach(function(f){ f.order.slice(0, Math.min(n, f.order.length)).forEach(function(c){
       // « qualifié nulle part » : aucun lieu n'a d'état pour ce critère (b1..b10 jamais posé
       // par l'équipe, ou s1..s7/critère ajouté à la main — jamais qualifié par construction).
-      var jamais=lxVisibles().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
+      // 2026-08-16 : mesuré sur lxTousLieux() et NON sur la liste filtrée. « Nulle part » est
+      // une affirmation absolue sur le catalogue ; la mesurer sur un sous-ensemble la rendait
+      // de plus en plus « vraie » à mesure qu'on resserre les filtres — un critère bien
+      // qualifié ailleurs serait déclaré non documenté dès qu'on restreint la géographie.
+      // C'est le défaut inversé déjà rencontré le 11/08 : un écran qui sous-affirme se lit
+      // comme un fait de données, pas comme un effet de filtre.
+      var jamais=lxTousLieux().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
       if(jamais) vides[c]=1;
     }); });
     var vl=Object.keys(vides).map(lxCritNom);
@@ -3675,7 +3744,7 @@
      // 'ask' partout et ce flag marquerait TOUS les critères « qualifié nulle part » — faux
      // dans l'autre sens que B1 (sous-affirme au lieu de sur-affirmer), même famille de
      // défaut. On ne calcule le flag que si le chargement a réussi.
-     var jamais=!LX_LOAD_ERROR && lxVisibles().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
+     var jamais=!LX_LOAD_ERROR && lxTousLieux().every(function(it){ return lxEtatEquipe(it.qid,c)==='ask'; });
      var flag=jamais ? '<span class="flag">qualifié nulle part</span>' : '';
      return cut+'<li class="'+(i<k?'':'past')+'"><span class="rk">'+(i+1)+'</span><span>'+esc(lxCritNom(c))+'</span>'+flag+'</li>';
     }).join('');
@@ -3932,9 +4001,12 @@
       lxCacheOn=true;
       var cacheChip=$('lx-cacheChip');
       if(cacheChip){ cacheChip.classList.add('is-on'); cacheChip.setAttribute('aria-pressed','true'); }
-      // La géographie revient elle aussi à son défaut : aucun filtre.
-      lxZoneMode='off';
-      var zoneSelR=$('lx-zoneSel'); if(zoneSelR) zoneSelR.value='off';
+      // La géographie revient elle aussi à SON DÉFAUT — qui est « dans la zone retenue »
+      // depuis le 2026-08-16, plus « sans filtre ». « Tout réafficher » remet l'écran dans
+      // l'état d'arrivée ; le remettre sur 'off' donnerait un troisième état, ni celui
+      // d'arrivée ni celui qu'on vient de quitter.
+      lxZoneMode='zone';
+      var zoneSelR=$('lx-zoneSel'); if(zoneSelR) zoneSelR.value='zone';
       lxRenderFiltre();
     });
     var q=$('lx-q');
