@@ -12,14 +12,17 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0I4ODYyRiIgZD0iTTEyIDFjMSA3IDQgMTAgMTEgMTEtNyAxLTEwIDQtMTEgMTEtMS03LTQtMTAtMTEtMTEgNy0xIDEwLTQgMTEtMTF6Ii8+PC9zdmc+" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,560;9..144,600&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
+<!-- LUM-47 (2026-08-16) : Fraunces retiré du chargement. Le CLAUDE.md impose « Literata partout,
+     titres inclus » ; la famille n'était plus neutralisée que par un scope sur #panel-lieux, donc
+     le reste du site dérogeait à la DA. Une police en moins à télécharger, au passage. -->
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=Work+Sans:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
   :root{
     --paper:#FFFFFF;--paper-warm:#FAF7F1;--ink:#201B15;--ink-soft:#4A443B;--ink-faint:#8A8177;
     --gold:#B8862F;--gold-deep:#9A6F22;--ember:#C4501E;--slate:#6B7A8F;--line:#ECE6D9;--line-strong:#DFD6C4;
     --green:#5C7A4A;
-    --f-display:"Fraunces",Georgia,serif;--f-body:"Literata",Georgia,serif;--f-label:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --f-display:"Literata",Georgia,serif;--f-body:"Literata",Georgia,serif;--f-label:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     --max:46rem;--max-accueil:42rem;
     --r-s:.35rem;--r-m:.6rem;--r-l:1rem;--r-full:999px;
     --sh-s:0 1px 3px rgba(32,24,14,.07);
@@ -31,7 +34,9 @@
   html{-webkit-text-size-adjust:100%;}
   body{margin:0;background:var(--paper-warm);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 1.25rem;}
-  h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);line-height:1.2;font-variation-settings:"opsz" 30,"SOFT" 30,"WONK" 0;}
+  /* LUM-47 : SOFT et WONK sont des axes de Fraunces — sans objet sur Literata, retirés avec elle.
+     opsz existe sur les deux, il reste. */
+  h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);line-height:1.2;font-variation-settings:"opsz" 30;}
   a{color:var(--ember);}
   .soft{color:var(--ink-soft);} .center{text-align:center;} .hidden{display:none !important;}
   :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:3px;}
@@ -186,9 +191,10 @@
      Carte/Liste, dans #panel-lieux — transposition fidèle de
      maquettes/2026-08-09-filtre-criteres/maq-filtre-lieux.html, moins le curseur
      par famille et le volet des critères (incrément 6, hors périmètre ici).
-     Écart DA assumé et scopé : le reste du site charge Fraunces, le CLAUDE.md
-     impose Literata partout — corrigé ici, alignement global en ticket séparé. */
-  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));--f-display:"Literata",Georgia,serif;}
+     LUM-47 (2026-08-16) : l'écart DA est refermé à la source — --f-display vaut Literata pour
+     TOUT le site (:root) et Fraunces n'est plus chargée. Le scope local qui vivait ici, seul
+     garde-fou jusqu'alors, n'a plus d'objet et disparaît avec elle. */
+  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));}
   #panel-lieux .foot-note{max-width:46rem;margin-left:auto;margin-right:auto;}
 
   #panel-lieux .filtre{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;border-bottom:0;box-shadow:0 1px 2px rgba(32,24,14,.05);}
@@ -459,9 +465,16 @@
   #panel-lieux .fam-block .zone-note.z-coeur{color:var(--gold-deep);font-weight:600;}
   #panel-lieux .fam-block .zone-note.z-coeur::before{content:"\2665\00a0";}
 
-  /* Décision 8 : plein PC, limite basse propre sous 1280px (pas de cascade responsive). */
+  /* Décision 8 : plein PC, limite basse propre (pas de cascade responsive).
+     2026-08-16 — SEUIL ABAISSÉ À 1152px. Le seuil précédent (1279px) était posé sur la
+     largeur d'ÉCRAN visée (1280) alors que la media query mesure le VIEWPORT : sur un
+     portable 1280×800, la barre de défilement verticale ramène le viewport à ~1262px, donc
+     l'écran visé tombait du mauvais côté de la limite et ne voyait RIEN d'autre que le
+     message de refus. Le seuil est désormais franchement en dessous de la plus petite
+     largeur réellement ciblée (1280 − barre de défilement − marge), pour que ce soit
+     l'écran qui décide, pas l'épaisseur d'une barre de défilement. */
   #panel-lieux .petit-ecran{display:none;}
-  @media(max-width:1279px){
+  @media(max-width:1151px){
     #panel-lieux .filtre,#panel-lieux .mini-filtre,#panel-lieux .subtabs,#panel-lieux .app-wrap-lieux,#panel-lieux .foot-note{display:none;}
     #panel-lieux .petit-ecran{display:block;border:1px solid var(--line-strong);border-radius:var(--r-m);background:var(--paper-warm);padding:2rem;text-align:center;font-size:.95rem;color:var(--ink-soft);}
   }
@@ -647,14 +660,29 @@
   #panel-lieux .comment{background:#fff;border:1px solid var(--lp-line);border-radius:8px;padding:9px 10px;font-size:13px;line-height:1.42}
   #panel-lieux .comment-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:#897a67;font-size:11px;margin-bottom:4px;font-family:var(--f-label);}
   #panel-lieux .comment-kind{font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#8a6a1f}#panel-lieux .comment-kind.decision{color:#8b3c14}#panel-lieux .comment-kind.action{color:#4e6936}#panel-lieux .comment-kind.question{color:#2f6d9e}#panel-lieux .comment-kind.source{color:#6b5b8e}
-  #panel-lieux .mention{font-weight:800;color:#2f6d9e;background:#edf4fa;border-radius:5px;padding:0 3px}
+  /* LUM-34 : les personnes prévenues sont une MÉTADONNÉE du commentaire, affichée sous le
+     texte — plus un mot surligné dans la phrase. .mention (le surlignage des @) est retirée
+     avec la convention qu'elle décorait. */
+  #panel-lieux .comment-men{margin-top:5px;font-family:var(--f-label);font-size:11px;color:#2f6d9e}
+  #panel-lieux .comment-men::before{content:"\2192\00a0"}
+  #panel-lieux .cmt-plus{width:100%;border:1px dashed var(--lp-line);background:#fbf5ea;color:#6d5e4b;border-radius:8px;font-size:11.5px;padding:7px;cursor:pointer;font-family:var(--f-label);}
+  #panel-lieux .cmt-plus:hover{border-color:var(--lp-or);color:var(--lp-ink)}
   #panel-lieux .comment-empty{font-size:12.5px;color:#8c7a63;background:#fbf5ea;border:1px dashed var(--lp-line);border-radius:8px;padding:10px}
   #panel-lieux .comment-form{background:#fff;border:1px solid var(--lp-line);border-radius:8px;padding:9px}
   #panel-lieux .comment-tools{display:flex;gap:7px;margin-bottom:8px}#panel-lieux .comment-tools select{border:1px solid var(--lp-line);border-radius:7px;background:#fffdf8;padding:6px 8px;font-size:12px;color:var(--lp-ink2);font-family:var(--f-label);}
   #panel-lieux .comment-form textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--lp-line);border-radius:7px;padding:8px;font:13px/1.45 var(--f-body);color:var(--lp-ink);background:#fffdf8}
   #panel-lieux .comment-form textarea:focus{outline:none;border-color:var(--lp-or);box-shadow:0 0 0 3px rgba(189,138,62,.15)}
   #panel-lieux .comment-submit{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}#panel-lieux .comment-hint{font-size:11.5px;color:#8c7a63;font-family:var(--f-label);}#panel-lieux .comment-submit button{border:0;border-radius:7px;background:var(--acc,#c4561f);color:#fff;font-weight:800;font-size:12px;padding:8px 12px;cursor:pointer;font-family:var(--f-label);}
-  #panel-lieux .mention-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}#panel-lieux .mention-chips button{border:1px solid var(--lp-line);background:#fbf5ea;color:#6d5e4b;border-radius:999px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:var(--f-label);}
+  /* LUM-34 — puces de destinataires. Sélectionné = plein, pas seulement une teinte : la
+     couleur n'est jamais seule porteuse (même règle que les états de critère de la fiche),
+     et aria-pressed dit la même chose aux lecteurs d'écran. */
+  #panel-lieux .men-box{margin-top:8px}
+  #panel-lieux .men-note{margin:0;font-family:var(--f-label);font-size:11.5px;color:#8c7a63}
+  #panel-lieux .mention-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  #panel-lieux .men-chip{border:1px solid var(--lp-line);background:#fbf5ea;color:#6d5e4b;border-radius:999px;font-size:11px;padding:4px 9px;cursor:pointer;font-family:var(--f-label);transition:background-color .15s,border-color .15s,color .15s}
+  #panel-lieux .men-chip:hover{border-color:var(--lp-or);color:var(--lp-ink)}
+  #panel-lieux .men-chip.on{background:var(--acc,#c4561f);border-color:var(--acc,#c4561f);color:#fff;font-weight:700}
+  #panel-lieux .men-chip.on::before{content:"\2713\00a0"}
   #panel-lieux .fav-btn{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--lp-or);background:#fff;color:var(--lp-or);border-radius:9px;padding:8px 12px;font-weight:700;font-size:13px;margin:2px 0 12px;transition:background .15s,color .15s;font-family:var(--f-label);}
   #panel-lieux .fav-btn:hover{background:#fbf3e1}
   #panel-lieux .fav-btn.on{background:var(--lp-or);color:#fff}
@@ -683,6 +711,27 @@
   .doc a,.doc button{font-family:var(--f-label);font-size:.72rem;letter-spacing:.03em;text-decoration:none;background:none;border:1px solid var(--line-strong);border-radius:var(--r-s);padding:.4rem .7rem;color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s;}
   .doc a:hover,.doc button:hover{border-color:var(--gold);color:var(--gold-deep);}
 
+  /* ===== LUM-35 — Centre de notifications =====================================
+     Terracotta (--ember) uniquement sur la pastille de non-lus et le point de la ligne :
+     c'est un accent d'appel, pas une teinte de fond (DA — jamais de terracotta en masse).
+     Une notification lue ne disparaît pas, elle s'efface : on doit pouvoir relire ce qu'on
+     a déjà vu sans aller chercher le lieu. */
+  .tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.05rem;height:1.05rem;margin-left:.35rem;padding:0 .25rem;border-radius:var(--r-full);background:var(--ember);color:#fff;font-size:.62rem;font-weight:700;line-height:1;vertical-align:1px;}
+  .notif-tools{display:flex;justify-content:flex-end;margin:0 0 1rem;}
+  .notif-list{display:grid;gap:.6rem;}
+  .notif{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:1rem 1.15rem;transition:box-shadow .15s;}
+  .notif:hover{box-shadow:var(--sh-s);}
+  .notif.lu{background:var(--paper-warm);border-color:var(--line);}
+  .notif-meta{display:flex;align-items:center;gap:.5rem;font-family:var(--f-label);font-size:.7rem;color:var(--ink-faint);margin:0 0 .35rem;}
+  .notif-dot{width:.45rem;height:.45rem;border-radius:50%;background:var(--ember);flex-shrink:0;}
+  .notif-qui{color:var(--ink-soft);font-weight:600;}
+  .notif-etat{margin-left:auto;letter-spacing:.08em;text-transform:uppercase;font-size:.62rem;}
+  .notif-etat.neuf{color:var(--ember);font-weight:700;}
+  .notif h3{margin:0 0 .3rem;font-size:1.05rem;}
+  .notif p{margin:0 0 .8rem;font-size:.92rem;color:var(--ink-soft);}
+  .notif-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .notif-actions .btn-ghost{padding:.4rem .8rem;font-size:.66rem;}
+
   .loading{text-align:center;color:var(--ink-faint);padding:2.6rem 0;font-style:italic;}
 
   /* ===== Accueil (présentation du projet) — scopé à #panel-accueil ===== */
@@ -707,7 +756,7 @@
   #panel-accueil .hero-inner{position:relative;z-index:1;width:100%;max-width:var(--max-accueil);margin:0 auto;}
   #panel-accueil h1.brand{
     font-family:var(--f-display);font-weight:600;
-    font-variation-settings:"opsz" 40,"SOFT" 50,"WONK" 0;
+    font-variation-settings:"opsz" 40;
     font-size:clamp(2.9rem,8.5vw,4.6rem);line-height:.98;letter-spacing:-.012em;
     margin:0 0 1rem;color:#FFFDF8;text-shadow:0 1px 22px rgba(0,0,0,.30);
   }
@@ -731,8 +780,8 @@
   #panel-accueil section{padding:2.7rem 0;}
   #panel-accueil .lead{font-size:1.18rem;line-height:1.6;color:var(--ink);}
   #panel-accueil h2{
-    font-family:var(--f-display);font-weight:560;
-    font-variation-settings:"opsz" 26,"SOFT" 42,"WONK" 0;
+    font-family:var(--f-display);font-weight:600;
+    font-variation-settings:"opsz" 26;
     font-size:clamp(1.55rem,4vw,2.05rem);line-height:1.18;letter-spacing:-.005em;
     margin:0 0 1.1rem;color:var(--ink);
   }
@@ -826,6 +875,9 @@
     <button class="tab" data-panel="quest" type="button">Questionnaire</button>
     <button class="tab" data-panel="lieux" type="button">Les lieux</button>
     <button class="tab" data-panel="docs" type="button">Documents</button>
+    <!-- LUM-35 : la pastille n'est peinte que s'il y a des non-lus (lxMajBadgeNotifs) — un
+         onglet ne doit pas porter un rond vide en permanence. -->
+    <button class="tab" data-panel="notifs" type="button">Notifications<span class="tab-badge hidden" id="notif-badge" aria-hidden="true">0</span></button>
   </nav>
 
   <div class="topbar-actions">
@@ -1127,7 +1179,7 @@
 
     <p class="foot-note">Certains lieux ont été <strong>écartés d'emblée</strong> : un pour une raison de protection des personnes (affaire judiciaire en cours) — filtre non négociable ; deux autres pour un bâti verrouillé ou en ruine.</p>
 
-    <p class="petit-ecran">Cet espace se consulte sur un ordinateur, avec un écran d'au moins 1280 px de large.</p>
+    <p class="petit-ecran">Cet espace se consulte sur un ordinateur, avec un écran d'au moins 1280&nbsp;px de large. Sur une fenêtre plus étroite, la carte et la fiche du lieu ne tiennent pas côte à côte.</p>
 
   </div>
 
@@ -1145,6 +1197,19 @@
       <p class="soft" id="doc-status"></p>
     </div>
     <div class="doc-list" id="doc-list"><p class="loading">Chargement…</p></div>
+  </div>
+
+  <!-- LUM-35 — Centre de notifications. Périmètre volontairement étroit (arbitrage du
+       2026-08-09) : une ligne par mention reçue dans les échanges d'un lieu, rien d'autre.
+       Pas de flux d'activité générale — la contrainte est aussi posée en base par le check
+       sur notifications.type. -->
+  <div class="panel" id="panel-notifs">
+    <h2>Notifications</h2>
+    <p class="lead">Quand quelqu'un te prévient dans les échanges d'un lieu, ça arrive ici.</p>
+    <div class="notif-tools">
+      <button type="button" class="btn-ghost" id="notif-allread">Tout marquer comme lu</button>
+    </div>
+    <div class="notif-list" id="notif-list"><p class="loading">Chargement…</p></div>
   </div>
 
 </div>
@@ -1340,7 +1405,10 @@
   window.__sb=sb; // partagé avec le panneau Questionnaire
   var $=function(id){return document.getElementById(id);};
   var msgEl=$('auth-msg');
-  var ME={email:'',name:''};
+  // LUM-34 (2026-08-16) : ME porte désormais l'identifiant de compte (auth.users.id) en plus de
+  // l'adresse. C'est la clé de l'annuaire, celle des mentions et celle des notifications —
+  // l'email restait la clé des favoris et des commentaires historiques, il ne bouge pas.
+  var ME={email:'',name:'',id:''};
   // GARANTIE STRUCTURELLE, pas temporelle (vérifiée le 2026-08-10, suite au retrait de
   // currentEmail() de carte.html — correctif R4 — au profit d'une lecture directe de ME.email
   // dans le code Lieux inliné) : ME.email est posé plus haut dans onAuthed(), AVANT l'appel à
@@ -1370,6 +1438,14 @@
 
   function msg(t,cls){ msgEl.textContent=t||''; msgEl.className='msg'+(cls?' '+cls:''); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  // LUM-45 (2026-08-16) : une URL qui part dans un href= ou un src= passe par ICI, jamais par
+  // esc() seul. L'échappement HTML protège la structure du document (on ne sort pas de
+  // l'attribut) mais ne dit RIEN du schéma : `javascript:…` ou `data:text/html,…` s'écrivent
+  // sans un seul caractère à échapper et s'exécutent au clic. Les données concernées viennent
+  // de la base (annonces saisies par l'équipe, sources d'écoles, photos Wikimédia) : le risque
+  // est faible, mais c'est le genre de garde qu'on pose une fois, pas au premier incident.
+  // Rend '' quand le schéma n'est pas http(s) — chaque appelant décide alors de ne rien rendre.
+  function lxUrlSure(u){ u=String(u==null?'':u).trim(); return /^https?:\/\//i.test(u)?u:''; }
 
   // —— Shell / états d'affichage ——
   function showVisitor(){
@@ -1486,11 +1562,18 @@
     if(chk.error){ showAccessError(); return; }
     if(!chk.member){ showNotMember(); return; }
     var u=chk.user;
-    ME.email=u?u.email:''; ME.name=(u&&u.user_metadata&&u.user_metadata.name)||ME.email;
+    ME.email=u?u.email:''; ME.name=(u&&u.user_metadata&&u.user_metadata.name)||ME.email; ME.id=u?u.id:'';
     $('tb-user').textContent=ME.email;
     revealMember();
     if(!tabsSetup){ tabsSetup=true; setupTabs(); }
     if(!actuLoadedOnce){ actuLoadedOnce=true; loadActu(); }
+    // LUM-34/35 : l'annuaire et la boîte de notifications se chargent dès l'entrée dans
+    // l'espace — l'annuaire parce que les puces de destinataires sont construites à
+    // l'ouverture de la première fiche, la boîte parce que la pastille de non-lus doit être
+    // juste AVANT qu'on ouvre l'onglet. Ni l'un ni l'autre ne bloque l'affichage : un échec
+    // se voit à l'écran concerné, il n'empêche pas d'entrer.
+    loadAnnuaire();
+    loadNotifs();
     // Réserve 6c #4 (consommation du hash #lieu=, cf. la garantie structurelle ci-dessus) :
     // écrite ICI, APRÈS setupTabs() — jamais avant, sous peine de rouvrir la course sur
     // ME.email par un troisième chemin d'entrée vers openPanel()/loadComments(). ME.email est
@@ -1527,6 +1610,10 @@
     // lieuxLoaded dans buildLieux()) mais n'est plus une iframe depuis l'inline (incrément 5).
     if(name==='route') buildRoute();
     if(name==='docs') loadDocs();
+    // LUM-35 : la boîte se relit à CHAQUE ouverture de l'onglet (pas de garde « une seule
+    // fois » comme docs/route) — c'est le seul moment où l'on sait que l'utilisateur regarde,
+    // et une notification arrivée entre-temps doit s'y trouver.
+    if(name==='notifs'){ initNotifs(); lxRenderNotifs(); loadNotifs(); }
     if(name==='quest' && window.initQuest) window.initQuest();
   }
   function frDate(s){ try{ return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T00:00:00')); }catch(e){ return s; } }
@@ -1888,7 +1975,10 @@
    if(!hero||!pc||!pv||!nx) return;
    if(pl) pl.style.display=LX_PH.chargement?'inline-flex':'none';
    if(!LX_PH.list.length){ hero.innerHTML='<div class="ph">'+(msg||'Chargement des photos…')+'</div>'; pc.style.display='none'; pv.style.display='none'; nx.style.display='none'; return; }
-   hero.innerHTML='<img src="'+esc(LX_PH.list[LX_PH.i])+'" alt="" onerror="lxPhErr()">';
+   // LUM-45 : une photo au schéma inattendu n'est pas peinte du tout, plutôt qu'insérée en src.
+   var photo=lxUrlSure(LX_PH.list[LX_PH.i]);
+   hero.innerHTML=photo?('<img src="'+esc(photo)+'" alt="" onerror="lxPhErr()">')
+                       :'<div class="ph">Photo indisponible.</div>';
    var multi=LX_PH.list.length>1;
    pc.textContent=(LX_PH.i+1)+' / '+LX_PH.list.length; pc.style.display=multi?'block':'none';
    pv.style.display=multi?'flex':'none'; nx.style.display=multi?'flex':'none';
@@ -1971,6 +2061,7 @@
   function lxTipImgErr(img){ var p=img&&img.parentNode; if(p) p.innerHTML=LX_TIP_MISSING; }
   window.lxTipImgErr=lxTipImgErr;
   function lxTipPhotoHtml(src, resolved){
+   src=lxUrlSure(src); // LUM-45
    if (src) return '<div class="tip-photo"><img src="'+esc(src)+'" alt="" loading="lazy" onerror="lxTipImgErr(this)"></div>';
    if (resolved) return '<div class="tip-photo">'+LX_TIP_MISSING+'</div>';
    return '<div class="tip-photo"><div class="tip-skel"></div><div class="tip-loading"><span class="tip-spin"></span>Chargement de la photo…</div></div>';
@@ -2151,14 +2242,16 @@
    return 'Compléter la qualification avant tout contact : interlocuteur Église, bâti disponible, écoles, logements proches.';
   }
   function lxActionLinks(it,gmaps,gimg){
-   var source=it.u?'<a href="'+it.u+'" target="_blank" rel="noopener">Source</a>':'';
+   var uSource=lxUrlSure(it.u); // LUM-45 : et `it.u` n'était même pas échappé ici.
+   var source=uSource?'<a href="'+esc(uSource)+'" target="_blank" rel="noopener">Source</a>':'';
    return '<div class="fbtns">'+source+'<a class="gr" href="'+gmaps+'" target="_blank" rel="noopener">Google Maps</a><a href="'+gimg+'" target="_blank" rel="noopener">Photos</a></div>';
   }
   function lxEcoleLine(lbl,e){
    if(!e||!e.nom) return '<div class="info-line"><b>'+lbl+'</b><span>—</span></div>';
    var d=(e.km!=null?' · ~'+e.km+' km':'');
    var tr=e.tradition?' · <span style="color:#9a3d25">tradition</span>':'';
-   var src=e.url?' <a href="'+esc(e.url)+'" target="_blank" rel="noopener" title="source">↗</a>':'';
+   var uEcole=lxUrlSure(e.url); // LUM-45
+   var src=uEcole?' <a href="'+esc(uEcole)+'" target="_blank" rel="noopener" title="source">↗</a>':'';
    return '<div class="info-line"><b>'+lbl+'</b><span>'+esc(e.nom)+(e.commune?' · '+esc(e.commune):'')+d+tr+src+'</span></div>';
   }
   function lxEcolesHtml(it){
@@ -2176,7 +2269,18 @@
   // piste équipe (pas de qualification à évaluer) : le bloc ne s'affiche pas.
   function lxFicheVerdictHtml(it){
    var fs=lxSel();
-   if(!fs.length || it._piste) return '';
+   // LUM-39 (2026-08-16) : le test de panne passe AVANT le garde de sortie. Sous panne du
+   // chargement des familles, lxSel() rend une liste vide — l'ancien ordre sortait donc sur
+   // `!fs.length` et la fiche restait muette, seul chemin de la classe « le verdict ne se
+   // charge pas » resté ouvert après la MEP du 11/08. Le silence est moins faux qu'une
+   // fausse affirmation, mais il se lit comme « rien à dire sur ce lieu », pas comme une panne.
+   if(LX_LOAD_ERROR) return '<div class="summary-box">'+esc(LX_LOAD_ERROR)+'</div>';
+   // LUM-43 (2026-08-16) : les pistes équipe ne sont plus exclues. Elles passent par le même
+   // moteur de verdict que le reste depuis le lot LUM-33 (la Liste en affiche un pour elles),
+   // et la fiche du MÊME lieu n'en affichait aucun : deux écrans, deux réponses, pour une
+   // donnée unique. Leurs critères sont servis par la vue depuis la migration v2 (fusion dans
+   // absorbCriteresPistes) — il n'y a plus de raison de les traiter à part.
+   if(!fs.length) return '';
    // Même classe que lxRenderTable()/lxRenderResultat() : le crible de la fiche est un
    // verdict (lxEvalFam) au même titre que la Liste et la bande résultat — pas de troisième
    // chemin qui l'ignorerait. Réutilise .summary-box, déjà le patron de ce bloc pour une
@@ -2210,7 +2314,7 @@
   // onglet. Sans source connue, on ne fabrique pas un lien mort : on renvoie sur une recherche
   // nommée, et le titre du bouton dit lequel des deux on est en train d'ouvrir.
   function lxLienAnnonce(it){
-   var u=it.u||it.url||(it.source&&/^https?:/.test(it.source)?it.source:'');
+   var u=lxUrlSure(it.u)||lxUrlSure(it.url)||lxUrlSure(it.source); // LUM-45
    var titre=u ? 'Ouvrir l’annonce / la source dans un nouvel onglet'
                : 'Aucune source enregistrée pour ce lieu — ouvrir une recherche web';
    if(!u) u='https://www.google.com/search?q='+encodeURIComponent((it.n||'')+' '+(it.c||''));
@@ -2266,8 +2370,9 @@
    LX_CUR=p;
    var mp=$('mapPanel'); if(mp) mp.style.setProperty('--acc','#a06a1f');
    var heroImg=$('hero-img');
-   if(heroImg) heroImg.innerHTML = p.img
-     ? '<img src="'+esc(p.img)+'" alt="'+esc(p.nom)+'" onerror="this.style.display=\'none\'">'
+   var imgPiste=lxUrlSure(p.img); // LUM-45
+   if(heroImg) heroImg.innerHTML = imgPiste
+     ? '<img src="'+esc(imgPiste)+'" alt="'+esc(p.nom)+'" onerror="this.style.display=\'none\'">'
      : '<div class="ph">◆ Piste repérée par l\'équipe — '+esc(p.zone)+'</div>';
    var pc=$('ph-count'), pv=$('ph-prev'), nx=$('ph-next');
    if(pc)pc.style.display='none'; if(pv)pv.style.display='none'; if(nx)nx.style.display='none';
@@ -2279,7 +2384,8 @@
      var atouts=(p.pour&&p.pour.length)?'<div class="anl pf"><h4>Atouts</h4><ul>'+p.pour.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
      var reserves=(p.contre&&p.contre.length)?'<div class="anl lm"><h4>Réserves</h4><ul>'+p.contre.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
      var detail=p.contenu?'<div class="anl"><h4>En détail</h4><p>'+esc(p.contenu)+'</p></div>':'';
-     var lk=(p.links&&p.links.length)?p.links.filter(function(x){return x&&x.url;}).map(function(x){return '<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}):[];
+     // LUM-45 : le filtre ne retient plus « une url quelconque » mais « une url http(s) ».
+     var lk=(p.links&&p.links.length)?p.links.filter(function(x){return x&&lxUrlSure(x.url);}).map(function(x){return '<a href="'+esc(lxUrlSure(x.url))+'" target="_blank" rel="noopener">'+esc(x.label||x.url)+'</a>';}):[];
      var srcs=(p.sources&&p.sources.length)?'<div class="kv" style="color:#8c7a63;font-size:12px">Sources : '+p.sources.map(esc).join(' · ')+(lk.length?'<br>Liens : '+lk.join(' · '):'')+'</div>':(lk.length?'<div class="kv" style="color:#8c7a63;font-size:12px">Liens : '+lk.join(' · ')+'</div>':'');
      if(pb) pb.innerHTML=lxPanelScaffold(p,forts+atouts+reserves+detail+srcs,lxActionLinks(p,gmaps,gimg));
      reussi=true;
@@ -2352,7 +2458,13 @@
   }
   function lxPoseLienLieu(it){
    if(!it) return;
-   try{ history.replaceState(null,'',location.pathname+location.search+'#lieu='+encodeURIComponent(lxFavKey(it))); }
+   // LUM-34/40 (2026-08-16) : le lien porte désormais l'identifiant CANONIQUE du lieu
+   // (it.qid = carte_lieux.id), plus le slug recalculé au navigateur. C'est la même clé que
+   // celle écrite dans commentaires_lieux.lieu depuis ce lot, donc le lien d'une notification
+   // et le lien de la barre d'adresse désignent le lieu de la même façon — une seule clé de
+   // lieu dans tout le produit. lxOuvrirDepuisHash() accepte encore l'ancien slug : les liens
+   // déjà partagés continuent d'ouvrir leur lieu.
+   try{ history.replaceState(null,'',location.pathname+location.search+'#lieu='+encodeURIComponent(it.qid||lxFavKey(it))); }
    catch(e){ /* navigation privée très restrictive : le lien reste copiable par le bouton */ }
   }
   function lxEffaceLienLieu(){
@@ -2366,26 +2478,77 @@
      Repris intact de carte.html (R1-R6) : pas de repli localStorage, échec visible et
      texte conservé, échappement complet, identité fiable (ME, posé par onAuthed()). */
   var LX_COMMENTS={}, LX_CMT_MODE='';
-  function lxCmtKey(it){ return lxFavKey(it); }
+  // LUM-40 (2026-08-16) : la clé de lieu d'un commentaire est l'identifiant CANONIQUE
+  // (carte_lieux.id, porté par it.qid), plus le slug recalculé au navigateur depuis le nom
+  // affiché. L'ancien lxCmtKey = lxFavKey fabriquait une clé qui COÏNCIDAIT souvent avec l'id
+  // sans que rien ne le garantisse (troncature à 90 caractères, nom modifié depuis l'import,
+  // doublons de nom) : la clé étrangère posée par la migration 4b refuserait ces lignes-là.
+  // Les favoris, eux, gardent lxFavKey : leur table n'a pas de clé étrangère et porte des
+  // lignes existantes — c'est une dette identifiée, pas un oubli (voir la note de fin de lot).
+  function lxCmtKey(it){ return (it&&it.qid)||''; }
   function lxKindLabel(k){ return {observation:'Observation',question:'Question',decision:'Décision',action:'Action',source:'Source'}[k]||'Observation'; }
   function lxFmtDate(s){ try{return new Date(s).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';} }
   function lxInitials(email){ var x=(email||'?').split('@')[0].replace(/[._-]+/g,' ').trim(); return x||'?'; }
-  function lxParseMentions(t){
-   var out=[], re=/@([A-Za-zÀ-ÿ0-9._-]+)/g, m;
-   while((m=re.exec(t||''))){ if(out.indexOf(m[1])<0) out.push(m[1]); }
-   return out;
+  // LUM-37 (2026-08-16) : lxParseMentions()/lxLinkMentions()/lxMemberSuggestions() sont
+  // SUPPRIMÉES, et avec elles la convention « @prénom ». Elles relisaient le TEXTE pour deviner
+  // qui était cité, contre une liste de prénoms écrite en dur (« Benoit, Raphael, Emmanuel »)
+  // qui ne correspondait à aucun compte : un @ tapé au clavier n'atteignait personne, et
+  // l'invite du champ promettait le contraire. Depuis ce lot, qui est prévenu est une valeur
+  // RÉSOLUE (un identifiant de compte, choisi par un bouton), jamais un mot relu dans une
+  // phrase — c'est aussi la règle que le déclencheur SQL fait respecter côté base.
+  function lxCorpsHtml(t){ return esc(t).replace(/\n/g,'<br>'); }
+
+  /* ===== LUM-34 — l'annuaire des destinataires, c'est la liste des comptes =====
+     Arbitrage de Benoit du 2026-08-09 : « il faut notifier des gens qui ont un compte,
+     1 compte = une famille ». Il n'y a donc pas d'annuaire de personnes à construire :
+     public.annuaire_comptes() (posée par la migration 4a) EST la liste, et le libellé affiché
+     y est déjà résolu (nom de la réponse publiée au questionnaire, sinon le nom du membre).
+     Le compte QA n'apparaît pas dans les puces : c'est un compte de recette, pas une famille,
+     et cet écran s'adresse aux familles. Il reste joignable côté base pour le banc. */
+  var LX_ANNUAIRE=[], LX_ANNUAIRE_ERR='';
+  async function loadAnnuaire(){
+   LX_ANNUAIRE=[]; LX_ANNUAIRE_ERR='';
+   if(!ME.email) return;
+   try{
+     var r=await sb.rpc('annuaire_comptes');
+     if(r.error){ LX_ANNUAIRE_ERR='annuaire indisponible'; console.error('loadAnnuaire: échec', r.error); return; }
+     LX_ANNUAIRE=(r.data||[]).filter(function(a){ return a && a.compte_id; });
+   }catch(e){ LX_ANNUAIRE_ERR='annuaire indisponible'; console.error('loadAnnuaire: exception', e); }
   }
-  function lxLinkMentions(t){
-   return esc(t).replace(/@([A-Za-zÀ-ÿ0-9._-]+)/g,'<span class="mention">@$1</span>').replace(/\n/g,'<br>');
+  // Destinataires proposés : tout compte sauf soi-même et sauf la recette.
+  function lxDestinataires(){
+   return LX_ANNUAIRE.filter(function(a){ return a.compte_id!==ME.id && !a.est_qa; });
   }
-  function lxMemberSuggestions(){
-   var set={};
-   if(ME.email) set[lxInitials(ME.email)]=true;
-   Object.keys(LX_FAV).forEach(function(k){ (LX_FAV[k]||[]).forEach(function(e){ if(e) set[lxInitials(e)]=true; }); });
-   ['Benoit','Raphael','Emmanuel'].forEach(function(x){set[x]=true;});
-   return Object.keys(set).slice(0,8);
+  function lxNomCompte(id){
+   var a=LX_ANNUAIRE.find(function(x){ return x.compte_id===id; });
+   return a?a.nom:'';
+  }
+  // Brouillon en cours : les comptes cochés pour le commentaire qu'on est en train d'écrire.
+  // Remis à zéro à chaque ouverture de fiche (lxThreadHtml) et après une publication réussie —
+  // jamais reporté d'un lieu à l'autre, ce qui préviendrait des gens à leur insu.
+  var LX_CMT_MEN=[];
+  // Fil déplié ou plié aux 8 derniers (LUM-46) — remis au pli à chaque ouverture de fiche.
+  var LX_CMT_TOUT=false;
+  // Puces de destinataires : un bouton par compte, l'identifiant en data-men, l'état de
+  // sélection en aria-pressed (lu par les lecteurs d'écran, pas seulement une couleur).
+  // P1 (verrouillé au lot précédent) : jamais d'onclick inline construit avec une valeur
+  // dynamique — écouteur délégué sur #mapPanel, cf. initLieuxSkeleton().
+  function lxMenChipsHtml(){
+   var gens=lxDestinataires();
+   if(LX_ANNUAIRE_ERR) return '<p class="men-note">Impossible de charger la liste des comptes : personne ne peut être prévenu depuis cet écran pour le moment.</p>';
+   if(!gens.length) return '<p class="men-note">Aucun autre compte à prévenir pour le moment.</p>';
+   return '<p class="men-note">Prévenir quelqu’un <span class="soft">(il verra la notification dans son espace)</span></p>'+
+    '<div class="mention-chips">'+gens.map(function(a){
+      var on=LX_CMT_MEN.indexOf(a.compte_id)>=0;
+      return '<button type="button" class="men-chip'+(on?' on':'')+'" data-men="'+esc(a.compte_id)+'" aria-pressed="'+(on?'true':'false')+'">'+esc(a.nom)+'</button>';
+    }).join('')+'</div>';
+  }
+  function lxRenderMenChips(){
+   var box=$('men-box'); if(box) box.innerHTML=lxMenChipsHtml();
   }
   function lxThreadHtml(it){
+   LX_CMT_MEN=[];       // un brouillon de destinataires ne traverse jamais deux lieux
+   LX_CMT_TOUT=false;   // ni l'état « voir tous les échanges »
    return '<div class="team-thread">'+
     '<div class="thread-head"><h3>Échanges équipe</h3><span class="thread-mode" id="thread-mode">chargement…</span></div>'+
     '<div id="comment-list" class="comment-list"><div class="comment-empty">Chargement des échanges…</div></div>'+
@@ -2393,11 +2556,11 @@
      '<div class="comment-tools"><select id="comment-kind" aria-label="Type de commentaire">'+
       '<option value="observation">Observation</option><option value="question">Question</option><option value="decision">Décision</option><option value="action">Action</option><option value="source">Source</option>'+
      '</select></div>'+
-     '<textarea id="comment-body" placeholder="Ajouter une info utile, une question, une décision… Utilise @prenom pour interpeller quelqu’un."></textarea>'+
-     // P1 : puces de mention par data-men + écouteur délégué (voir initLieuxSkeleton), jamais
-     // d'onclick inline construit avec une valeur dynamique — c'est le prérequis verrouillé
-     // pour LUM-34, appliqué dès maintenant puisqu'on déplace ce code.
-     '<div class="mention-chips">'+lxMemberSuggestions().map(function(x){return '<button type="button" data-men="'+esc(x)+'">@'+esc(x)+'</button>';}).join('')+'</div>'+
+     // LUM-37 : l'invite ne promet plus que taper « @prénom » interpelle quelqu'un. Ce que
+     // l'écran annonce et ce que le produit fait sont désormais la même chose : on prévient
+     // en cliquant un nom ci-dessous, et cette personne reçoit vraiment une notification.
+     '<textarea id="comment-body" placeholder="Ajouter une info utile, une question, une décision…"></textarea>'+
+     '<div id="men-box" class="men-box">'+lxMenChipsHtml()+'</div>'+
      '<div class="comment-submit"><span class="comment-hint">Fil centré qualification, pas chat général.</span><button type="button" data-act="submit-comment">Publier</button></div>'+
     '</div>'+
    '</div>';
@@ -2410,25 +2573,31 @@
    if(LX_CMT_MODE==='error'){ el.innerHTML='<div class="comment-empty">Échec du chargement des échanges sur ce lieu. Réessaie dans un instant.</div>'; return; }
    if(LX_CMT_MODE==='guest'){ el.innerHTML='<div class="comment-empty">Connecte-toi à l’espace équipe pour voir et publier des échanges sur ce lieu.</div>'; return; }
    if(!rows.length){ el.innerHTML='<div class="comment-empty">Aucun échange sur ce lieu. Ajoute la première info fiable ou la prochaine action.</div>'; return; }
-   el.innerHTML=rows.slice(0,8).map(function(c){
-    return '<div class="comment"><div class="comment-meta"><span class="comment-kind '+esc(c.kind||'observation')+'">'+lxKindLabel(c.kind)+'</span><span>'+esc(lxInitials(c.email))+'</span><span>'+lxFmtDate(c.created_at)+'</span></div><div>'+lxLinkMentions(c.body)+'</div></div>';
-   }).join('');
+   // LUM-46 (2026-08-16) : le fil ne coupe plus en silence à 8. L'ancien code chargeait
+   // 25 commentaires et n'en peignait que 8, sans aucun moyen de voir les suivants : dès qu'un
+   // fil dépassait huit messages, une mention notifiée tombant au 9ᵉ envoyait son destinataire
+   // sur un lieu où le message annoncé n'était nulle part. Huit reste le repli visuel par
+   // défaut, mais c'est désormais un pli, pas une troncature.
+   var COUPE=8, cache=Math.max(0, rows.length-COUPE), vus=LX_CMT_TOUT?rows:rows.slice(0,COUPE);
+   el.innerHTML=vus.map(function(c){
+    var prevenus=(c.mentions&&c.mentions.length)
+      ? '<div class="comment-men">Prévenus : '+c.mentions.map(esc).join(', ')+'</div>' : '';
+    return '<div class="comment"><div class="comment-meta"><span class="comment-kind '+esc(c.kind||'observation')+'">'+lxKindLabel(c.kind)+'</span><span>'+esc(lxInitials(c.email))+'</span><span>'+lxFmtDate(c.created_at)+'</span></div><div>'+lxCorpsHtml(c.body)+'</div>'+prevenus+'</div>';
+   }).join('')
+   + (cache>0 ? '<button type="button" class="cmt-plus" data-act="cmt-plus">'+(LX_CMT_TOUT?'Ne montrer que les 8 derniers':('Voir les '+cache+' échange'+(cache>1?'s':'')+' plus ancien'+(cache>1?'s':'')))+'</button>' : '');
   }
   async function loadComments(it){
    var k=lxCmtKey(it); LX_COMMENTS[k]=[];
    if(!ME.email){ LX_CMT_MODE='guest'; lxRenderComments(it); return; }
+   if(!k){ LX_CMT_MODE='error'; console.error('loadComments: lieu sans identifiant canonique (qid)', it&&it.n); lxRenderComments(it); return; }
    try{
-    var r=await sb.from('commentaires_lieux').select('id,lieu,nom,email,kind,body,mentions,created_at').eq('lieu',k).order('created_at',{ascending:false}).limit(25);
-    if(r.error){ LX_CMT_MODE='error'; lxRenderComments(it); return; }
+    // 100 plutôt que 25 : le pli « voir plus » n'a de sens que si les échanges pliés ont
+    // vraiment été chargés. Au-delà de 100 sur un seul lieu, il faudra paginer pour de bon —
+    // le fil en compte 0 à ce jour, ce n'est pas le moment de construire une pagination.
+    var r=await sb.from('commentaires_lieux').select('id,lieu,nom,email,kind,body,mentions,created_at').eq('lieu',k).order('created_at',{ascending:false}).limit(100);
+    if(r.error){ LX_CMT_MODE='error'; console.error('loadComments: échec', r.error); lxRenderComments(it); return; }
     LX_COMMENTS[k]=r.data||[]; LX_CMT_MODE='supabase'; lxRenderComments(it);
-   }catch(e){ LX_CMT_MODE='error'; lxRenderComments(it); }
-  }
-  function insertMention(name){
-   var ta=$('comment-body'); if(!ta) return;
-   var ins='@'+name+' ';
-   var start=ta.selectionStart||ta.value.length, end=ta.selectionEnd||start;
-   ta.value=ta.value.slice(0,start)+ins+ta.value.slice(end);
-   ta.focus(); ta.selectionStart=ta.selectionEnd=start+ins.length;
+   }catch(e){ LX_CMT_MODE='error'; console.error('loadComments: exception', e); lxRenderComments(it); }
   }
   async function submitComment(){
    if(!LX_CUR) return;
@@ -2437,7 +2606,14 @@
    var body=(ta.value||'').trim(); if(!body) return;
    if(!ME.email){ alert('Connecte-toi à l’espace équipe pour publier un commentaire.'); return; }
    var k=lxCmtKey(LX_CUR);
-   var row={lieu:k,nom:LX_CUR.n,email:ME.email,kind:(sel&&sel.value)||'observation',body:body,mentions:lxParseMentions(body),created_at:new Date().toISOString()};
+   if(!k){ alert('Ce lieu n’a pas d’identifiant exploitable : impossible d’y attacher un échange. Préviens l’équipe.'); return; }
+   // LUM-34/40 : on envoie les IDENTIFIANTS des comptes prévenus, jamais des libellés — le
+   // déclencheur SQL en dérive lui-même la colonne `mentions` (les noms affichés) depuis
+   // l'annuaire, et refuse un commentaire qui arriverait avec des libellés sans identifiants.
+   // `mentions` et `created_at` ne sont plus envoyés du tout : la base fait foi sur les deux
+   // (défaut now() pour la date — une horloge de navigateur déréglée ne doit pas décider de
+   // l'ordre du fil).
+   var row={lieu:k,nom:LX_CUR.n,email:ME.email,kind:(sel&&sel.value)||'observation',body:body,mentions_comptes:LX_CMT_MEN.slice()};
    // Le texte n'est vidé du champ qu'après une insertion confirmée : un échec ne doit jamais
    // faire perdre à l'auteur ce qu'il a écrit, ni afficher un commentaire qui n'a pas été publié.
    try{
@@ -2445,7 +2621,8 @@
     if(r.error){ console.error('submitComment: échec insertion commentaires_lieux', r.error); alert('Échec de la publication du commentaire. Ton texte est conservé, réessaie.'); return; }
     row=r.data||row;
    }catch(e){ console.error('submitComment: exception', e); alert('Échec de la publication du commentaire. Vérifie ta connexion et réessaie, ton texte est conservé.'); return; }
-   LX_COMMENTS[k]=(LX_COMMENTS[k]||[]).concat([row]); ta.value=''; lxRenderComments(LX_CUR);
+   LX_COMMENTS[k]=(LX_COMMENTS[k]||[]).concat([row]);
+   ta.value=''; LX_CMT_MEN=[]; lxRenderMenChips(); lxRenderComments(LX_CUR);
   }
   // Réserve 6c #3 : n'est plus posée sur window — data-act="submit-comment" sur le même
   // écouteur délégué de #mapPanel que copy-place-link/toggle-fav.
@@ -2484,8 +2661,31 @@
    // entrées, une seule logique d'écriture.
    it = it || LX_CUR;
    if(!it || !ME.email) return; var k=lxFavKey(it);
-   if(lxMineFav(it)){ LX_FAV[k]=lxFavEmails(it).filter(function(e){return e!==ME.email;}); try{ await sb.from('favoris').delete().eq('lieu',k).eq('email',ME.email); }catch(e){ console.error('toggleFav: échec delete', e); } }
-   else { LX_FAV[k]=lxFavEmails(it).concat([ME.email]); try{ await sb.from('favoris').insert({lieu:k,email:ME.email,nom:it.n}); }catch(e){ console.error('toggleFav: échec insert', e); } }
+   // LUM-44 (2026-08-16) : le cache n'est plus écrit AVANT le réseau, et l'erreur PostgREST est
+   // lue. L'ancien code posait l'étoile puis lançait l'appel dans un try/catch qui n'inspectait
+   // même pas `r.error` : un refus de la base (RLS, réseau coupé côté serveur) rendait une
+   // réponse SANS exception, l'étoile restait allumée, et la famille croyait sa short-list
+   // partagée. Même patron que celui corrigé pour les commentaires à l'incrément 2 : on
+   // n'affiche que ce que la base a confirmé.
+   var etait=lxMineFav(it), r;
+   try{
+     r = etait
+       ? await sb.from('favoris').delete().eq('lieu',k).eq('email',ME.email)
+       : await sb.from('favoris').insert({lieu:k,email:ME.email,nom:it.n});
+   }catch(e){
+     console.error('toggleFav: exception', e);
+     alert('Impossible d’enregistrer ce favori pour le moment. Vérifie ta connexion et réessaie.');
+     return;
+   }
+   if(r && r.error){
+     console.error('toggleFav: refus de la base', r.error);
+     alert(etait ? 'Impossible de retirer ce favori pour le moment. Réessaie dans un instant.'
+                 : 'Impossible d’ajouter ce favori pour le moment. Réessaie dans un instant.');
+     return;
+   }
+   LX_FAV[k] = etait
+     ? lxFavEmails(it).filter(function(e){return e!==ME.email;})
+     : lxFavEmails(it).concat([ME.email]);
    lxStyleMarker(it); if(LX_CUR && lxFavKey(LX_CUR)===k) lxSyncPanelStar(it); lxRefresh();
   }
   // Réserve 6c #3 : n'est plus posée sur window — cf. la note sur data-act ci-dessus.
@@ -3096,7 +3296,12 @@
   // que LX_FILTRE_RENDU — pas un second signal de disponibilité, le même.
   var LX_HASH_LIEU_EN_ATTENTE=null;
   function lxOuvrirDepuisHash(cle){
-   var it=lxTousLieux().find(function(x){ return lxFavKey(x)===cle; });
+   // LUM-34/40 : deux clés acceptées, dans cet ordre. L'identifiant canonique (it.qid) est
+   // celui que POSE désormais lxPoseLienLieu() et celui que porte une notification ; le slug
+   // (lxFavKey) est celui des liens partagés avant le 2026-08-16. On ne casse pas un lien déjà
+   // envoyé pour changer de clé — d'où le second essai, et non un remplacement.
+   var tous=lxTousLieux();
+   var it=tous.find(function(x){ return x.qid===cle; }) || tous.find(function(x){ return lxFavKey(x)===cle; });
    if(!it){ console.error('lxOuvrirDepuisHash: aucun lieu ne correspond à la clé du lien', cle); return; }
    if(it._piste) openPiste(it); else openPanel(it);
   }
@@ -3532,7 +3737,23 @@
       lxRenderFiltre();
     });
     var q=$('lx-q');
-    if(q) q.addEventListener('input', lxRenderFiltre);
+    // LUM-46 (2026-08-16) : la recherche est amortie. Chaque frappe relançait lxRenderFiltre(),
+    // qui régénère les 262 marqueurs de la carte ET la table de la Liste : taper « abbaye »
+    // (6 caractères) déclenchait six reconstructions complètes, dont cinq jetées aussitôt.
+    // 160 ms : sous le seuil où la liste paraît en retard sur la frappe, au-dessus de la
+    // cadence de frappe normale. Rendu forcé à l'Entrée et à la sortie du champ pour que rien
+    // ne dépende du minuteur quand l'utilisateur, lui, a fini.
+    if(q){
+      var qTimer=null;
+      var qMaintenant=function(){ if(qTimer){ clearTimeout(qTimer); qTimer=null; } lxRenderFiltre(); };
+      q.addEventListener('input', function(){
+        if(qTimer) clearTimeout(qTimer);
+        qTimer=setTimeout(function(){ qTimer=null; lxRenderFiltre(); },160);
+      });
+      q.addEventListener('change', qMaintenant); // vidage par la croix native du type=search
+      q.addEventListener('blur', qMaintenant);
+      q.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); qMaintenant(); } });
+    }
     var fit=$('lxFit');
     if(fit) fit.addEventListener('click', fitAll);
 
@@ -3596,8 +3817,17 @@
     // sur window, seulement d'un attribut stable dans le HTML régénéré de la fiche.
     var mp=$('mapPanel');
     if(mp) mp.addEventListener('click', function(e){
+      // LUM-34 : la puce ne tape plus « @prénom » dans le texte — elle coche un COMPTE. Le
+      // texte du commentaire et la liste des personnes prévenues sont deux choses distinctes :
+      // effacer le message n'annule pas la notification, et réécrire la phrase ne prévient
+      // personne de plus. C'est ce que le déclencheur SQL impose de toute façon côté base.
       var b=e.target.closest('[data-men]');
-      if(b){ insertMention(b.getAttribute('data-men')); return; }
+      if(b){
+        var id=b.getAttribute('data-men'), i=LX_CMT_MEN.indexOf(id);
+        if(i>=0) LX_CMT_MEN.splice(i,1); else LX_CMT_MEN.push(id);
+        lxRenderMenChips();
+        return;
+      }
       var act=e.target.closest('[data-act]');
       if(act){
         // 2026-08-15 : ce preventDefault() servait au ↗ « copier le lien », qui était un
@@ -3608,6 +3838,7 @@
         var action=act.getAttribute('data-act');
         if(action==='toggle-fav') toggleFav();
         else if(action==='submit-comment') submitComment();
+        else if(action==='cmt-plus'){ LX_CMT_TOUT=!LX_CMT_TOUT; lxRenderComments(LX_CUR); } // LUM-46
       }
     });
     // Réserve 6c #3 : closePanel/phMove ne sont plus posées sur window — #lxPanelClose/
@@ -3643,6 +3874,117 @@
     var h=e.data&&e.data.lumignisRoadmapH;
     if(h>0){ var fr=$('route-frame'); if(fr) fr.style.height=Math.ceil(h)+'px'; }
   });
+
+  /* —— LUM-35 · Centre de notifications ————————————————————————————————————————
+     Périmètre arrêté par Benoit le 2026-08-09 : uniquement les mentions reçues dans les
+     échanges d'un lieu. Une ligne par mention, pastille de non-lus, clic qui ouvre le lieu
+     concerné, marquage comme lu. Pas de flux d'activité générale — la table le refuse
+     (check sur `type`), ce n'est pas qu'une intention d'écran.
+
+     Le CONTENU n'est jamais recopié dans notifications : il est joint depuis
+     commentaires_lieux à la lecture (embed PostgREST via la clé étrangère
+     notifications.commentaire_id, posée par la migration 4b). Deux copies du même message
+     se désynchroniseraient au premier commentaire modifié.
+
+     Ce que cet écran ne fait PAS, sciemment : il ne se rafraîchit pas tout seul. Une
+     notification arrivée pendant que l'onglet est ouvert apparaît au prochain passage sur
+     l'onglet, pas à la seconde. Le temps réel (souscription Supabase) est un moteur de plus
+     à faire vivre pour cinq familles qui ne sont pas connectées en même temps — LUM-36 le
+     traitera par le relais courriel, qui est la vraie demande derrière « être prévenu ». */
+  var LX_NOTIFS=[], LX_NOTIF_ERR='';
+  async function loadNotifs(){
+    if(!ME.email){ LX_NOTIFS=[]; lxMajBadgeNotifs(); return; }
+    LX_NOTIF_ERR='';
+    try{
+      var r=await sb.from('notifications')
+        .select('id,lu_at,created_at,commentaire_id,commentaires_lieux(id,lieu,nom,email,kind,body,created_at)')
+        .order('created_at',{ascending:false}).limit(100);
+      if(r.error){ LX_NOTIF_ERR='Impossible de charger tes notifications pour le moment.'; console.error('loadNotifs: échec', r.error); }
+      else { LX_NOTIFS=r.data||[]; }
+    }catch(e){ LX_NOTIF_ERR='Impossible de charger tes notifications pour le moment.'; console.error('loadNotifs: exception', e); }
+    lxMajBadgeNotifs();
+    if($('panel-notifs') && $('panel-notifs').classList.contains('is-active')) lxRenderNotifs();
+  }
+  function lxNonLus(){ return LX_NOTIFS.filter(function(n){ return !n.lu_at; }); }
+  function lxMajBadgeNotifs(){
+    var b=$('notif-badge'); if(!b) return;
+    var n=lxNonLus().length;
+    b.textContent=n>99?'99+':String(n);
+    b.classList.toggle('hidden', n===0);
+    // La pastille est aussi annoncée en toutes lettres : un rond coloré ne dit rien à qui ne
+    // le voit pas, et l'onglet est le seul endroit où le nombre existe.
+    var tab=b.closest('.tab');
+    if(tab) tab.setAttribute('aria-label', n===0?'Notifications':('Notifications — '+n+' non lue'+(n>1?'s':'')));
+  }
+  function lxRenderNotifs(){
+    var el=$('notif-list'); if(!el) return;
+    if(LX_NOTIF_ERR){ el.innerHTML='<p class="loading">'+esc(LX_NOTIF_ERR)+' Réessaie dans un instant.</p>'; return; }
+    if(!LX_NOTIFS.length){
+      el.innerHTML='<p class="loading">Rien pour le moment. Quand quelqu\'un te préviendra dans les échanges d\'un lieu, tu le verras ici.</p>';
+      return;
+    }
+    el.innerHTML=LX_NOTIFS.map(function(n){
+      var c=n.commentaires_lieux||{};
+      // Un commentaire supprimé emporte sa notification (cascade) : si la jointure est vide,
+      // c'est une anomalie, on le dit plutôt que d'afficher une ligne muette.
+      var titre=c.nom||'Lieu inconnu';
+      var extrait=(c.body||'').replace(/\s+/g,' ').trim();
+      if(extrait.length>180) extrait=extrait.slice(0,180)+'…';
+      return '<article class="notif'+(n.lu_at?' lu':'')+'" data-notif="'+esc(n.id)+'" data-lieu="'+esc(c.lieu||'')+'">'
+        + '<div class="notif-meta">'
+        +  (n.lu_at?'':'<span class="notif-dot" aria-hidden="true"></span>')
+        +  '<span class="notif-qui">'+esc(lxInitials(c.email))+'</span>'
+        +  '<span class="notif-quand">'+lxFmtDate(n.created_at)+'</span>'
+        +  (n.lu_at?'<span class="notif-etat">lu</span>':'<span class="notif-etat neuf">non lu</span>')
+        + '</div>'
+        + '<h3>'+esc(titre)+'</h3>'
+        + '<p>'+(extrait?esc(extrait):'<span class="soft">Cet échange n’est plus disponible.</span>')+'</p>'
+        + '<div class="notif-actions">'
+        +  '<button type="button" class="btn-ghost" data-notif-act="ouvrir">Ouvrir le lieu</button>'
+        +  (n.lu_at?'':'<button type="button" class="btn-ghost" data-notif-act="lu">Marquer comme lu</button>')
+        + '</div>'
+        + '</article>';
+    }).join('');
+  }
+  // Marque une liste de notifications comme lues. L'affichage ne bouge qu'après confirmation
+  // de la base — même discipline que les favoris (LUM-44) et les commentaires : une pastille
+  // qui s'éteint sur un échec réseau ferait croire l'information consultée.
+  async function lxMarquerLues(ids){
+    if(!ids.length) return false;
+    try{
+      var r=await sb.from('notifications').update({lu_at:new Date().toISOString()}).in('id',ids).select('id,lu_at');
+      if(r.error){ console.error('lxMarquerLues: refus de la base', r.error); alert('Impossible de marquer comme lu pour le moment. Réessaie dans un instant.'); return false; }
+      var vus={}; (r.data||[]).forEach(function(x){ vus[x.id]=x.lu_at; });
+      LX_NOTIFS.forEach(function(n){ if(vus[n.id]) n.lu_at=vus[n.id]; });
+      lxMajBadgeNotifs(); lxRenderNotifs();
+      return true;
+    }catch(e){ console.error('lxMarquerLues: exception', e); alert('Impossible de marquer comme lu pour le moment. Vérifie ta connexion.'); return false; }
+  }
+  var notifsInit=false;
+  function initNotifs(){
+    if(notifsInit) return; notifsInit=true;
+    var liste=$('notif-list');
+    if(liste) liste.addEventListener('click', function(e){
+      var btn=e.target.closest('[data-notif-act]'); if(!btn) return;
+      var art=btn.closest('[data-notif]'); if(!art) return;
+      var id=art.getAttribute('data-notif'), lieu=art.getAttribute('data-lieu');
+      if(btn.getAttribute('data-notif-act')==='lu'){ lxMarquerLues([id]); return; }
+      // « Ouvrir le lieu » : la lecture est la conséquence de l'ouverture, pas une case à
+      // cocher en plus. On n'attend pas la confirmation du marquage pour naviguer — si la
+      // base refuse, la notification restera simplement non lue, ce qui est le bon repli.
+      lxMarquerLues([id]);
+      if(!lieu){ alert('Cet échange n’est plus rattaché à un lieu.'); return; }
+      setPanel('lieux');
+      lxSetSubtab('carte');
+      if(LX_FILTRE_RENDU) lxOuvrirDepuisHash(lieu); else LX_HASH_LIEU_EN_ATTENTE=lieu;
+    });
+    var tout=$('notif-allread');
+    if(tout) tout.addEventListener('click', function(){
+      var ids=lxNonLus().map(function(n){ return n.id; });
+      if(!ids.length) return;
+      lxMarquerLues(ids);
+    });
+  }
 
   // —— Documents ——
   var docsInit=false;
