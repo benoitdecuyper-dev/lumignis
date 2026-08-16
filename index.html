@@ -4096,9 +4096,16 @@
 
      Ce que cet écran ne fait PAS, sciemment : il ne se rafraîchit pas tout seul. Une
      notification arrivée pendant que l'onglet est ouvert apparaît au prochain passage sur
-     l'onglet, pas à la seconde. Le temps réel (souscription Supabase) est un moteur de plus
-     à faire vivre pour cinq familles qui ne sont pas connectées en même temps — LUM-36 le
-     traitera par le relais courriel, qui est la vraie demande derrière « être prévenu ». */
+     l'onglet, pas à la seconde. Le temps réel (souscription Supabase) serait un moteur de
+     plus à faire vivre pour cinq familles qui ne sont pas connectées en même temps.
+
+     ET C'EST DÉSORMAIS LE SEUL CANAL (arbitrage de Benoit, 2026-08-16 : « on ne fera pas de
+     mailing, trop relou » — LUM-36 abandonné, pas reporté). Conséquence à assumer telle
+     quelle : une mention n'atteint son destinataire QUE lorsqu'il revient sur le site. Rien
+     ne le lui apprend entre-temps. C'est pour ça que la pastille de non-lus doit rester
+     juste dès l'entrée dans l'espace (loadNotifs() est appelée dans onAuthed(), pas à
+     l'ouverture de l'onglet) : elle est la seule chose qui dise « il s'est passé quelque
+     chose » à quelqu'un qui vient pour autre chose. Ne pas la déplacer derrière un clic. */
   var LX_NOTIFS=[], LX_NOTIF_ERR='';
   async function loadNotifs(){
     if(!ME.email){ LX_NOTIFS=[]; lxMajBadgeNotifs(); return; }
