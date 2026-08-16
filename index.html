@@ -289,9 +289,8 @@
      en dessous, en flux normal) — en superposition, l'overlay flotte au-dessus de la carte,
      plus rien en dessous pour fermer visuellement le bloc sans cette bordure. */
   #panel-lieux .lx-togglebar.is-open .lx-overlay{display:block;position:absolute;left:0;right:0;top:100%;border-radius:0;border-bottom:1px solid var(--line-strong);box-shadow:var(--sh-l);z-index:2;}
-  #panel-lieux .overlay-foot{display:flex;justify-content:flex-end;padding:.7rem 1.1rem .9rem;background:var(--paper-warm);border-top:1px solid var(--line);}
-  #panel-lieux .btn-gold{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:#FFFDF8;background:var(--gold-deep);border:0;border-radius:var(--r-full);padding:.4rem 1.05rem;cursor:pointer;}
-  #panel-lieux .btn-gold:hover{background:var(--gold);}
+  /* 2026-08-16 : .overlay-foot et .btn-gold retirées avec le pied « Fermer les filtres », leur
+     seul porteur (vérifié : plus aucune occurrence dans le markup ni dans le JS). */
   #panel-lieux .filtre-inline{position:relative;}
   /* Réserve 6c #2 : la barre de filtre neutralisée quand le chargement des lieux a échoué —
      même opacité que .tchip.is-off (assourdie, pas juste grisée en apparence) et
@@ -1207,14 +1206,11 @@
         <div class="crit-grid" id="critGrid"></div>
       </details>
 
-      <!-- Décision 14 : visible seulement quand le filtre est ouvert EN SUPERPOSITION sur la
-           carte (fermeture explicite, en plus du reclic sur le bandeau) — masqué sur la vue
-           Liste, où la barre reste dépliée en ligne sans rien à fermer. -->
-      <div class="overlay-foot" id="lxOverlayFoot" hidden>
-        <!-- 2026-08-15 : libellé neutre — le réglage se ferme désormais aussi bien sur la
-             Liste que sur la Carte, « Voir la carte » y était faux une fois sur deux. -->
-        <button type="button" class="btn-gold" id="lxVoirCarte">Fermer les filtres</button>
-      </div>
+      <!-- 2026-08-16 : le pied « Fermer les filtres » est SUPPRIMÉ (décision de Benoit). Il
+           datait du 15/08, quand la fermeture n'avait qu'un seul geste possible et devait donc
+           avoir son bouton. Depuis que le bandeau referme au reclic et qu'un clic extérieur
+           ferme aussi, il faisait double emploi — et un troisième chemin vers le même effet
+           n'apporte rien qu'une bande de 44 px prise sur la carte. -->
     </section>
       </div><!-- /.lx-togglebar -->
     </div><!-- /.lx-filterhead -->
@@ -2011,14 +2007,15 @@
   //     chemin d'entrée qui puisse l'oublier.
   //
   // (2) La FERMETURE AUTOMATIQUE. « Je ne veux pas que la fenêtre de filtre se ferme quand je
-  //     clique sur une famille ni ailleurs, à part le bouton Fermer les filtres. » Le réglage
-  //     est global aux deux vues : changer de vue n'est pas une raison de le refermer.
-  //     Cette fonction ne ferme plus rien ; elle ne fait plus que garder le pied de bloc
-  //     cohérent.
-  function lxMoveFiltreBand(carte){
-    var foot=$('lxOverlayFoot');
-    if(foot) foot.hidden=false;
-  }
+  //     clique sur une famille ni ailleurs. » Le réglage est global aux deux vues : changer de
+  //     vue n'est pas une raison de le refermer — c'est toujours vrai, et c'est l'une des deux
+  //     exceptions de l'écouteur de clic extérieur (voir initLieuxSkeleton).
+  //
+  // 2026-08-16 : lxMoveFiltreBand() est SUPPRIMÉE. Elle ne déplaçait plus rien depuis le
+  // 15/08 (point 1 ci-dessus) et ne servait plus qu'à révéler le pied « Fermer les filtres »,
+  // lui-même retiré aujourd'hui. Une fonction qui ne fait plus rien mais qu'on continue
+  // d'appeler à chaque changement de vue est une piste que le prochain lecteur suivra pour
+  // rien : elle part avec son objet.
   function lxSetSubtab(name){
     var tCarte=$('tab-carte'), tListe=$('tab-liste'), vCarte=$('vueCarte'), vListe=$('vueListe');
     if(!tCarte||!tListe||!vCarte||!vListe) return;
@@ -2027,7 +2024,6 @@
     tCarte.removeAttribute('aria-current'); tListe.removeAttribute('aria-current');
     (carte?tCarte:tListe).setAttribute('aria-current','page');
     vCarte.hidden=!carte; vListe.hidden=carte;
-    lxMoveFiltreBand(carte);
     // 2026-08-15 : le bandeau est désormais commun aux deux vues — il se révèle dès que le
     // filtre a été rendu une fois, quelle que soit la vue active (avant, il n'apparaissait
     // que par la branche `carte` ci-dessous, d'où une Liste sans barre repliable).
@@ -2052,8 +2048,9 @@
       // à chaque arrivée, pas seulement la première.
       var pret=LX_FILTRE_RENDU;
       vCarte.classList.toggle('attente', !pret);
-      // Le réglage NE SE REFERME PLUS au changement de vue (cf. lxMoveFiltreBand) : il est
-      // global aux deux vues, le fermer ici reviendrait à le fermer « ailleurs ».
+      // Le réglage NE SE REFERME PLUS au changement de vue : il est global aux deux vues, le
+      // fermer ici reviendrait à le fermer « ailleurs ». C'est aussi pourquoi .subtabs est une
+      // exception de l'écouteur de clic extérieur.
       var mini=$('lxMiniFiltre');
       if(mini) mini.hidden=!pret;
       // R8 (2026-08-10) : mesurer AVANT de construire Leaflet, pas seulement après. L.map()
@@ -3360,11 +3357,9 @@
      // qu'on corrige (cf. la note dans lxSetSubtab('carte')).
      var vcNow=$('vueCarte');
      if(vcNow) vcNow.classList.remove('attente');
-     // Décision 14 : même jalon que .attente, un seul point d'entrée — mais seulement si la
-     // vue Carte est ACTUELLEMENT active (si les données sont arrivées pendant que
-     // l'utilisateur est sur Liste, #lx-filtreBand est déjà déplacé hors de #lxMiniFiltre par
-     // lxMoveFiltreBand(false) : révéler le bandeau ici le montrerait vide. lxSetSubtab('carte')
-     // le révèlera correctement au moment où l'utilisateur y arrivera, pret étant déjà vrai).
+     // Décision 14 : même jalon que .attente, un seul point d'entrée. (La réserve d'origine
+     // portait sur le déplacement runtime de la barre entre les deux vues — supprimé le
+     // 15/08, la barre est nichée dans le bandeau dans le HTML. Elle n'a plus d'objet.)
      var miniNow=$('lxMiniFiltre');
      // 2026-08-15 : la condition `!vcNow.hidden` (vue Carte affichée) est tombée — le bandeau
      // est commun aux deux vues, il se révèle dès que le filtre est rendu, y compris quand on
@@ -4158,11 +4153,6 @@
     // sortie au clavier à qui n'utilise pas la souris.
     document.addEventListener('keydown', function(e){
       if(e.key==='Escape' && barre && barre.classList.contains('is-open')) lxOuvrirFiltre(false);
-    });
-    var voirCarte=$('lxVoirCarte');
-    if(voirCarte) voirCarte.addEventListener('click', function(e){
-      e.stopPropagation(); // ne pas laisser remonter jusqu'à l'écouteur ci-dessus (rebasculerait)
-      lxOuvrirFiltre(false);
     });
     var typeRow=$('lx-typeRow');
     if(typeRow) typeRow.addEventListener('click', function(e){
