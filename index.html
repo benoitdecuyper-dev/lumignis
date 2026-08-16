@@ -34,6 +34,11 @@
   html{-webkit-text-size-adjust:100%;}
   body{margin:0;background:var(--paper-warm);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 1.25rem;}
+  /* 2026-08-16 — le conteneur des écrans d'OUTIL. Même gouttière que la barre du haut, pour
+     que la marque, les onglets et le contenu s'alignent sur la même verticale. Aucune
+     max-width : c'est la règle du progiciel (pleine largeur partout, jamais de colonne de
+     lecture centrée), et c'est ce que Benoit a redemandé après l'en-tête. */
+  .wrap-app{max-width:none;margin:0 auto;padding:0 1.6rem;}
   /* LUM-47 : SOFT et WONK sont des axes de Fraunces — sans objet sur Literata, retirés avec elle.
      opsz existe sur les deux, il reste. */
   h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);line-height:1.2;font-variation-settings:"opsz" 30;}
@@ -218,7 +223,11 @@
      LUM-47 (2026-08-16) : l'écart DA est refermé à la source — --f-display vaut Literata pour
      TOUT le site (:root) et Fraunces n'est plus chargée. Le scope local qui vivait ici, seul
      garde-fou jusqu'alors, n'a plus d'objet et disparaît avec elle. */
-  #panel-lieux{width:min(96vw,78rem);margin-left:calc(50% - min(48vw,39rem));}
+  /* 2026-08-16 : le calage `width:min(96vw,78rem);margin-left:calc(50% - …)` disparaît. Il
+     n'existait que pour ÉCHAPPER à la colonne de 46 rem du conteneur — un contre-feu, pas une
+     intention de largeur. Le conteneur étant désormais pleine largeur (.wrap-app), l'écran
+     n'a plus rien à fuir : il prend la place qu'on lui donne, et il la prend jusqu'au bout
+     (avant, il replafonnait à 78 rem au-delà de 1300 px de fenêtre). */
   #panel-lieux .foot-note{max-width:46rem;margin-left:auto;margin-right:auto;}
 
   #panel-lieux .filtre{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m) var(--r-m) 0 0;border-bottom:0;box-shadow:0 1px 2px rgba(32,24,14,.05);}
@@ -1148,8 +1157,13 @@
 
 </div>
 
-<!-- PANNEAUX INTERNES — visibles uniquement pour les membres connectés -->
-<div class="wrap">
+<!-- PANNEAUX INTERNES — visibles uniquement pour les membres connectés.
+     2026-08-16 : ce conteneur n'est plus .wrap (46 rem, une colonne de LECTURE) mais
+     .wrap-app, pleine largeur. L'espace équipe est un progiciel : on y consulte des listes,
+     une carte, des tableaux — pas un article. La colonne centrée y produisait exactement le
+     « bandeau pour petit écran » que Benoit a relevé sur l'en-tête, sur quatre écrans de
+     plus. #panel-accueil garde sa colonne (--max-accueil) : c'est une vitrine, elle se lit. -->
+<div class="wrap-app">
 
   <div class="panel" id="panel-actu">
     <div id="actu-list"><p class="loading">Chargement…</p></div>
@@ -4685,7 +4699,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 @media (max-width:760px){ .tb-espace{display:none;} .topbar #main-tabs{justify-content:flex-start;} }
 
 #panel-quest{
-  --qmax:78rem;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
+  --qmax:none;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
   --tint-gold:rgba(184,134,47,.14);--cream:#FFFDF8;--bg:var(--paper-warm);
 }
 #panel-quest .q-btn{width:auto;margin-top:0;}
