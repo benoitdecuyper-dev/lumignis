@@ -79,7 +79,14 @@
      (et défilent au besoin), jamais la barre qui passe à deux lignes. */
   .topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding-top:.8rem;padding-bottom:.8rem;flex-wrap:nowrap;min-width:0;}
   html{overflow-x:hidden;}
-  .topbar .topbar-inner{max-width:72rem;}
+  /* 2026-08-16 (Benoit : « j'observe un bandeau header pour petit écran, ça me gonfle car
+     j'avais dit que c'était pour PC ») : la barre prend TOUTE la largeur. Elle héritait du
+     max-width de .wrap (46 rem, une colonne de lecture) relevé à 72 rem — soit 1152 px, donc
+     bridée et centrée dès 1280, avec des onglets comprimés au point que « Notifications » se
+     coupait en « Notifica ». C'est la règle du progiciel : pleine largeur partout, jamais de
+     max-width typographique sur un écran d'outil. Padding un peu plus large que .wrap pour
+     que la marque ne colle pas au bord. */
+  .topbar .topbar-inner{max-width:none;padding-left:1.6rem;padding-right:1.6rem;}
 
   /* ===== Accueil : le header se fond dans la photo du hero ===== */
   /* #site-head enveloppe topbar + onglets + bandeau "pas encore autorisé".
@@ -102,7 +109,6 @@
   body.on-accueil #site-head .btn-ghost{border-color:rgba(255,253,248,.55);color:#FFFDF8;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);text-shadow:0 1px 6px rgba(0,0,0,.3);}
   body.on-accueil #site-head .btn-ghost:hover{background:rgba(255,255,255,.26);border-color:rgba(255,255,255,.85);color:#FFFDF8;}
   body.on-accueil .account-trigger{border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.13);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
-  body.on-accueil .tb-user{color:#FFFDF8;text-shadow:0 1px 6px rgba(0,0,0,.3);}
   body.on-accueil .account-caret{color:#FFFDF8;}
   body.on-accueil .notmember-banner p{color:#FFFDF8;text-shadow:0 1px 6px rgba(0,0,0,.3);}
   body.on-accueil #main-tabs .tab{color:rgba(255,253,248,.75);text-shadow:0 1px 6px rgba(0,0,0,.3);}
@@ -120,7 +126,6 @@
   body.on-accueil.scrolled #site-head .btn-ghost{border-color:var(--line-strong);color:var(--ink-soft);background:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:none;}
   body.on-accueil.scrolled #site-head .btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep);background:var(--paper-warm);}
   body.on-accueil.scrolled .account-trigger{border-color:var(--line-strong);background:var(--paper);backdrop-filter:none;-webkit-backdrop-filter:none;}
-  body.on-accueil.scrolled .tb-user{color:var(--ink-soft);text-shadow:none;}
   body.on-accueil.scrolled .account-caret{color:var(--ink-faint);}
   body.on-accueil.scrolled .notmember-banner{background:var(--paper-warm);border-bottom-color:var(--line-strong);}
   body.on-accueil.scrolled .notmember-banner p{color:var(--ink-soft);text-shadow:none;}
@@ -143,7 +148,26 @@
   .account-trigger:hover{border-color:var(--gold);box-shadow:var(--sh-s);}
   .account-trigger[aria-expanded="true"]{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,47,.14);}
   .account-avatar{display:flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:50%;background:linear-gradient(155deg,var(--gold),var(--ember));color:#fff;font-family:var(--f-display);font-weight:600;font-size:.78rem;flex-shrink:0;}
-  .tb-user{font-family:var(--f-label);font-size:.76rem;color:var(--ink-soft);max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s;}
+  .account-menu-mail{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:0;padding:.55rem .9rem .5rem;word-break:break-all;}
+
+  /* ===== La cloche des notifications (2026-08-16) =====================================
+     Terracotta uniquement sur la pastille : c'est un accent d'appel, pas une teinte de fond.
+     .is-active reprend le doré du compte pour dire « c'est cette section que vous regardez »,
+     puisque la cloche a quitté la rangée d'onglets et ne peut plus s'y souligner. */
+  .bell{position:relative;display:flex;align-items:center;justify-content:center;width:2.15rem;height:2.15rem;
+      background:var(--paper);border:1px solid var(--line-strong);border-radius:50%;color:var(--ink-soft);
+      cursor:pointer;flex:0 0 auto;transition:border-color .15s,color .15s,box-shadow .15s;}
+  .bell:hover{border-color:var(--gold);color:var(--gold-deep);box-shadow:var(--sh-s);}
+  .bell.is-active{border-color:var(--gold);color:var(--gold-deep);box-shadow:0 0 0 3px rgba(184,134,47,.14);}
+  .bell-badge{position:absolute;top:-.18rem;right:-.18rem;display:flex;align-items:center;justify-content:center;
+      min-width:1.05rem;height:1.05rem;padding:0 .22rem;border-radius:var(--r-full);background:var(--ember);
+      border:1.5px solid var(--paper);color:#fff;font-family:var(--f-label);font-size:.6rem;font-weight:700;line-height:1;
+      font-variant-numeric:tabular-nums;}
+  body.on-accueil .bell{border-color:rgba(255,253,248,.45);background:rgba(255,255,255,.13);color:#FFFDF8;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+  body.on-accueil.scrolled .bell{border-color:var(--line-strong);background:var(--paper);color:var(--ink-soft);
+      backdrop-filter:none;-webkit-backdrop-filter:none;}
+  body.on-accueil .bell-badge{border-color:transparent;}
   .account-caret{color:var(--ink-faint);transition:transform .18s var(--ease),color .2s;flex-shrink:0;}
   .account-trigger[aria-expanded="true"] .account-caret{transform:rotate(180deg);}
   .account-menu{position:absolute;top:calc(100% + .55rem);right:0;min-width:14rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:var(--sh-l);padding:.4rem;
@@ -938,7 +962,6 @@
 
   /* ===== Responsive ===== */
   @media (max-width:640px){
-    .tb-user{display:none;}
     .account-trigger{padding:.3rem;}
   }
   @media (max-width:520px){
@@ -962,26 +985,48 @@
     <button class="tab" data-panel="quest" type="button">Questionnaire</button>
     <button class="tab" data-panel="lieux" type="button">Les lieux</button>
     <button class="tab" data-panel="docs" type="button">Documents</button>
-    <!-- LUM-35 : la pastille n'est peinte que s'il y a des non-lus (lxMajBadgeNotifs) — un
-         onglet ne doit pas porter un rond vide en permanence. -->
-    <button class="tab" data-panel="notifs" type="button">Notifications<span class="tab-badge hidden" id="notif-badge" aria-hidden="true">0</span></button>
+    <!-- 2026-08-16 : l'onglet « Notifications » quitte la rangée pour une CLOCHE, posée à
+         droite du compte (demande de Benoit). Un centre de notifications n'est pas une
+         section du site au même titre que les Lieux ou les Documents : c'est un état
+         personnel, sa place est du côté du compte. Et il rendait la rangée trop longue —
+         c'est lui qui se coupait en « Notifica ». -->
   </nav>
 
   <div class="topbar-actions">
     <button class="btn-ghost" id="btn-team" type="button">Espace équipe</button>
 
     <div class="account hidden" id="account">
+      <!-- 2026-08-16 : l'identifiant est réduit à ses INITIALES (demande de Benoit). L'adresse
+           complète prenait jusqu'à 11 rem dans la barre et n'apprenait rien à qui est déjà
+           connecté ; elle reste lisible en toutes lettres dans le menu du compte, juste en
+           dessous, là où on va quand on veut vérifier avec quel compte on est. -->
       <button class="account-trigger" id="account-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="account-menu">
-        <span class="account-avatar" id="account-avatar" aria-hidden="true"></span>
-        <span class="tb-user" id="tb-user"></span>
+        <!-- Les initiales vivent DANS la pastille, pas à côté : deux fois la même information
+             (un rond « F » suivi du texte « FD ») serait du bruit dans 2 cm de barre. -->
+        <span class="account-avatar" id="account-avatar"></span>
         <svg class="account-caret" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="account-menu" id="account-menu" role="menu" aria-label="Compte">
+        <!-- L'adresse complète vit ICI depuis que la barre n'affiche que les initiales : une
+             information qu'on ne consulte que par doute doit être à un clic, pas en permanence. -->
+        <p class="account-menu-mail" id="account-mail"></p>
+        <div class="account-menu-sep"></div>
         <button class="account-menu-item" id="chpw" type="button" role="menuitem">Changer le mot de passe</button>
         <div class="account-menu-sep"></div>
         <button class="account-menu-item account-menu-item--danger" id="logout" type="button" role="menuitem">Se déconnecter</button>
       </div>
     </div>
+
+    <!-- La cloche, À DROITE du compte (demande de Benoit). Elle porte la pastille de non-lus,
+         qui n'est peinte que s'il y en a — une cloche ne doit pas porter un rond vide en
+         permanence. Masquée avec le reste tant qu'on n'est pas membre connecté. -->
+    <button class="bell hidden" id="btn-notifs" type="button" aria-label="Notifications">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 8a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14 18 8"/>
+        <path d="M13.7 19a2 2 0 0 1-3.4 0"/>
+      </svg>
+      <span class="bell-badge hidden" id="notif-badge" aria-hidden="true">0</span>
+    </button>
   </div>
 </div></header>
 
@@ -1577,6 +1622,16 @@
   // blocage visible, pas une écriture silencieuse.
 
   function msg(t,cls){ msgEl.textContent=t||''; msgEl.className='msg'+(cls?' '+cls:''); }
+  // Initiales de repli, tirées de l'adresse, en attendant celles de l'annuaire. « prenom.nom@ »
+  // -> PN ; « qa.lumignis.repro@ » -> QL ; un local-part d'un seul mot -> ses deux premières
+  // lettres. Même esprit que public.initiales() en SQL, sans prétendre en être la copie : ici
+  // on part d'une adresse, là-bas d'un nom.
+  function lxInitialesEmail(email){
+    var loc=String(email||'').split('@')[0].replace(/[._-]+/g,' ').trim();
+    var mots=loc.split(/\s+/).filter(Boolean);
+    if(mots.length>=2) return (mots[0].charAt(0)+mots[1].charAt(0)).toUpperCase();
+    return loc.slice(0,2).toUpperCase() || '?';
+  }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   // LUM-45 (2026-08-16) : une URL qui part dans un href= ou un src= passe par ICI, jamais par
   // esc() seul. L'échappement HTML protège la structure du document (on ne sort pas de
@@ -1591,6 +1646,7 @@
   function showVisitor(){
     $('btn-team').classList.remove('hidden');
     $('account').classList.add('hidden');
+    $('btn-notifs').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.add('hidden');
@@ -1600,6 +1656,7 @@
     $('notmember-msg').textContent=text;
     $('btn-team').classList.add('hidden');
     $('account').classList.add('hidden');
+    $('btn-notifs').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.remove('hidden');
@@ -1614,6 +1671,7 @@
   function revealMember(){
     $('btn-team').classList.add('hidden');
     $('account').classList.remove('hidden');
+    $('btn-notifs').classList.remove('hidden');
     $('main-tabs').classList.remove('hidden');
     $('tb-espace').classList.remove('hidden');
     $('notmember-banner').classList.add('hidden');
@@ -1703,7 +1761,11 @@
     if(!chk.member){ showNotMember(); return; }
     var u=chk.user;
     ME.email=u?u.email:''; ME.name=(u&&u.user_metadata&&u.user_metadata.name)||ME.email; ME.id=u?u.id:'';
-    $('tb-user').textContent=ME.email;
+    // 2026-08-16 : la barre montre les INITIALES, l'adresse complète passe dans le menu du
+    // compte. Repli dérivé de l'adresse ici ; loadAnnuaire() les remplace ensuite par celles
+    // du nom réel (« Famille Decuyper » -> FD), qui n'est connu qu'après le RPC.
+    var av=$('account-avatar'); if(av) av.textContent=lxInitialesEmail(ME.email);
+    var mail=$('account-mail'); if(mail) mail.textContent=ME.email;
     revealMember();
     if(!tabsSetup){ tabsSetup=true; setupTabs(); }
     if(!actuLoadedOnce){ actuLoadedOnce=true; loadActu(); }
@@ -1736,9 +1798,17 @@
     document.querySelectorAll('.tab').forEach(function(t){
       t.addEventListener('click', function(){ setPanel(t.dataset.panel); });
     });
+    // La cloche ouvre le même panneau que l'ancien onglet : un seul point d'entrée, setPanel,
+    // qui charge la boîte et repeint la pastille (cf. sa branche 'notifs').
+    var cloche=$('btn-notifs');
+    if(cloche) cloche.addEventListener('click', function(){ setPanel('notifs'); });
   }
   function setPanel(name){
     document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('is-active', t.dataset.panel===name); });
+    // La cloche a quitté la rangée d'onglets : elle ne peut plus s'y souligner, elle porte
+    // donc son propre état actif. Sans ça, ouvrir les notifications n'allumerait RIEN dans la
+    // barre et l'écran paraîtrait sans origine.
+    var cloche=$('btn-notifs'); if(cloche) cloche.classList.toggle('is-active', name==='notifs');
     document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('is-active'); });
     var p=$('panel-'+name); if(p) p.classList.add('is-active');
     document.body.classList.toggle('on-accueil', name==='accueil');
@@ -2819,6 +2889,11 @@
      var r=await sb.rpc('annuaire_comptes');
      if(r.error){ LX_ANNUAIRE_ERR='annuaire indisponible'; console.error('loadAnnuaire: échec', r.error); return; }
      LX_ANNUAIRE=(r.data||[]).filter(function(a){ return a && a.compte_id; });
+     // Les initiales de la barre passent du repli (dérivé de l'adresse) à celles du nom réel,
+     // résolu par l'annuaire — « Famille Decuyper » donne FD, là où l'adresse donnait BD.
+     var moi=LX_ANNUAIRE.filter(function(a){ return a.compte_id===ME.id; })[0];
+     var av=$('account-avatar');
+     if(moi && moi.initiales && av){ av.textContent=moi.initiales; av.title=moi.nom; }
    }catch(e){ LX_ANNUAIRE_ERR='annuaire indisponible'; console.error('loadAnnuaire: exception', e); }
   }
   // Destinataires proposés : tout compte sauf soi-même et sauf la recette.
@@ -4404,9 +4479,9 @@
     b.textContent=n>99?'99+':String(n);
     b.classList.toggle('hidden', n===0);
     // La pastille est aussi annoncée en toutes lettres : un rond coloré ne dit rien à qui ne
-    // le voit pas, et l'onglet est le seul endroit où le nombre existe.
-    var tab=b.closest('.tab');
-    if(tab) tab.setAttribute('aria-label', n===0?'Notifications':('Notifications — '+n+' non lue'+(n>1?'s':'')));
+    // le voit pas, et depuis le 2026-08-16 la cloche n'a plus de libellé texte du tout.
+    var cloche=b.closest('.bell');
+    if(cloche) cloche.setAttribute('aria-label', n===0?'Notifications':('Notifications — '+n+' non lue'+(n>1?'s':'')));
   }
   function lxRenderNotifs(){
     var el=$('notif-list'); if(!el) return;
@@ -4530,8 +4605,6 @@
   var acc=document.getElementById('account');
   var trigger=document.getElementById('account-trigger');
   var menu=document.getElementById('account-menu');
-  var avatar=document.getElementById('account-avatar');
-  var userLabel=document.getElementById('tb-user');
   if(!acc||!trigger||!menu) return;
 
   function openMenu(){ acc.classList.add('is-open'); trigger.setAttribute('aria-expanded','true'); }
@@ -4545,15 +4618,11 @@
     btn.addEventListener('click', function(){ closeMenu(); });
   });
 
-  // Monogramme discret dérivé de l'email affiché (purement cosmétique, ne touche pas à la logique existante)
-  if(avatar && userLabel){
-    function refreshAvatar(){
-      var t=(userLabel.textContent||'').trim();
-      avatar.textContent = t ? t.charAt(0).toUpperCase() : '';
-    }
-    refreshAvatar();
-    new MutationObserver(refreshAvatar).observe(userLabel,{childList:true,characterData:true,subtree:true});
-  }
+  // 2026-08-16 : le monogramme dérivé par MutationObserver est SUPPRIMÉ. Il lisait la première
+  // lettre de #tb-user (l'adresse affichée dans la barre) — élément qui n'existe plus, la
+  // pastille portant désormais les initiales elle-même. Un observateur laissé sur un nœud
+  // absent ne fait rien de visible, mais il fait croire au lecteur suivant que la pastille est
+  // encore pilotée d'ici : elle l'est par onAuthed() puis par loadAnnuaire().
 })();
 </script>
 <!-- Écouteur de scroll — bascule le header de "posé sur la photo" à "bandeau clair" sur l'accueil.
