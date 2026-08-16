@@ -39,6 +39,12 @@
      max-width : c'est la règle du progiciel (pleine largeur partout, jamais de colonne de
      lecture centrée), et c'est ce que Benoit a redemandé après l'en-tête. */
   .wrap-app{max-width:none;margin:0 auto;padding:0 1.6rem;}
+  /* Rollback demandé par Benoit le même jour (« c'était mieux avant ») : le Fil d'actu
+     retrouve sa colonne de lecture. Il se LIT — des billets en paragraphes, pas des objets
+     qu'on balaie du regard. La pleine largeur y donnait des lignes de 180 caractères.
+     La distinction qui reste, et qui est la bonne : pleine largeur pour les écrans d'OUTIL
+     (Lieux, Documents), colonne pour ce qui se lit (Accueil, Fil d'actu, Questionnaire). */
+  #panel-actu{max-width:var(--max);margin:0 auto;}
   /* LUM-47 : SOFT et WONK sont des axes de Fraunces — sans objet sur Literata, retirés avec elle.
      opsz existe sur les deux, il reste. */
   h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);line-height:1.2;font-variation-settings:"opsz" 30;}
@@ -155,10 +161,23 @@
   .account-avatar{display:flex;align-items:center;justify-content:center;width:1.9rem;height:1.9rem;border-radius:50%;background:linear-gradient(155deg,var(--gold),var(--ember));color:#fff;font-family:var(--f-display);font-weight:600;font-size:.78rem;flex-shrink:0;}
   .account-menu-mail{font-family:var(--f-label);font-size:.72rem;color:var(--ink-faint);margin:0;padding:.55rem .9rem .5rem;word-break:break-all;}
 
-  /* ===== La cloche des notifications (2026-08-16) =====================================
+  /* ===== La cloche des notifications et son pop-up (2026-08-16) =======================
      Terracotta uniquement sur la pastille : c'est un accent d'appel, pas une teinte de fond.
-     .is-active reprend le doré du compte pour dire « c'est cette section que vous regardez »,
-     puisque la cloche a quitté la rangée d'onglets et ne peut plus s'y souligner. */
+     Le pop-up reprend le patron de .account-menu (même ancrage, même transition, même
+     z-index) : deux menus voisins dans la même barre doivent s'ouvrir pareil, sinon on
+     apprend deux comportements pour un seul geste. */
+  .notifs{position:relative;flex:0 0 auto;}
+  .notifs-pop{position:absolute;top:calc(100% + .55rem);right:0;width:26rem;max-width:min(26rem,90vw);
+    background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);box-shadow:var(--sh-l);
+    opacity:0;visibility:hidden;transform:translateY(-6px) scale(.98);transform-origin:top right;
+    transition:opacity .16s var(--ease),transform .16s var(--ease),visibility .16s;z-index:600;}
+  .notifs.is-open .notifs-pop{opacity:1;visibility:visible;transform:none;}
+  .notifs-pop-head{display:flex;align-items:baseline;justify-content:space-between;gap:.8rem;
+    padding:.7rem .9rem .5rem;font-family:var(--f-label);font-size:.7rem;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-faint);border-bottom:1px solid var(--line);}
+  /* Hauteur bornée : un pop-up qui dépasse l'écran ne se referme plus du regard. Au-delà,
+     il défile sur lui-même — jamais la page derrière. */
+  .notifs-pop .notif-list{max-height:min(26rem,60vh);overflow-y:auto;padding:.6rem;gap:.5rem;}
   .bell{position:relative;display:flex;align-items:center;justify-content:center;width:2.15rem;height:2.15rem;
       background:var(--paper);border:1px solid var(--line-strong);border-radius:50%;color:var(--ink-soft);
       cursor:pointer;flex:0 0 auto;transition:border-color .15s,color .15s,box-shadow .15s;}
@@ -836,21 +855,26 @@
      c'est un accent d'appel, pas une teinte de fond (DA — jamais de terracotta en masse).
      Une notification lue ne disparaît pas, elle s'efface : on doit pouvoir relire ce qu'on
      a déjà vu sans aller chercher le lieu. */
-  .tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.05rem;height:1.05rem;margin-left:.35rem;padding:0 .25rem;border-radius:var(--r-full);background:var(--ember);color:#fff;font-size:.62rem;font-weight:700;line-height:1;vertical-align:1px;}
-  .notif-tools{display:flex;justify-content:flex-end;margin:0 0 1rem;}
+  /* 2026-08-16 : .tab-badge et .notif-tools retirées avec leurs porteurs — l'onglet à pastille
+     (parti sur la cloche) et le pied du panneau (parti dans l'en-tête du pop-up). */
   .notif-list{display:grid;gap:.6rem;}
-  .notif{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:1rem 1.15rem;transition:box-shadow .15s;}
+  /* Tailles resserrées d'un cran depuis le passage en pop-up : la même carte qui respirait
+     sur une page pleine largeur doit tenir dans 26 rem, à côté d'une cloche. */
+  .notif{background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r-m);padding:.7rem .8rem;transition:box-shadow .15s;}
   .notif:hover{box-shadow:var(--sh-s);}
   .notif.lu{background:var(--paper-warm);border-color:var(--line);}
-  .notif-meta{display:flex;align-items:center;gap:.5rem;font-family:var(--f-label);font-size:.7rem;color:var(--ink-faint);margin:0 0 .35rem;}
-  .notif-dot{width:.45rem;height:.45rem;border-radius:50%;background:var(--ember);flex-shrink:0;}
+  .notif-meta{display:flex;align-items:center;gap:.45rem;font-family:var(--f-label);font-size:.66rem;color:var(--ink-faint);margin:0 0 .3rem;}
+  .notif-dot{width:.4rem;height:.4rem;border-radius:50%;background:var(--ember);flex-shrink:0;}
   .notif-qui{color:var(--ink-soft);font-weight:600;}
-  .notif-etat{margin-left:auto;letter-spacing:.08em;text-transform:uppercase;font-size:.62rem;}
+  .notif-etat{margin-left:auto;letter-spacing:.08em;text-transform:uppercase;font-size:.58rem;}
   .notif-etat.neuf{color:var(--ember);font-weight:700;}
-  .notif h3{margin:0 0 .3rem;font-size:1.05rem;}
-  .notif p{margin:0 0 .8rem;font-size:.92rem;color:var(--ink-soft);}
-  .notif-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
-  .notif-actions .btn-ghost{padding:.4rem .8rem;font-size:.66rem;}
+  .notif h3{margin:0 0 .2rem;font-size:.9rem;}
+  .notif p{margin:0 0 .55rem;font-size:.8rem;line-height:1.4;color:var(--ink-soft);}
+  .notif-actions{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .notif-actions .btn-ghost{padding:.32rem .7rem;font-size:.62rem;}
+  /* L'état vide et l'erreur sont dans le même conteneur : sans ce dégonflage, .loading
+     réservait 2,6 rem de padding vertical au milieu d'un pop-up de 26 rem de large. */
+  .notifs-pop .loading{padding:1.6rem .8rem;font-size:.82rem;}
 
   .loading{text-align:center;color:var(--ink-faint);padding:2.6rem 0;font-style:italic;}
 
@@ -1004,6 +1028,30 @@
   <div class="topbar-actions">
     <button class="btn-ghost" id="btn-team" type="button">Espace équipe</button>
 
+    <!-- 2026-08-16, second passage : la cloche est À GAUCHE de l'identifiant (Benoit), et son
+         contenu est un POP-UP, plus une section du site. Un centre de notifications se
+         consulte en trois secondes et on repart où on était ; en faire un écran obligeait à
+         quitter sa page pour lire deux lignes, puis à y revenir. Le pop-up reprend exactement
+         le patron du menu du compte, juste à côté : même ancrage, même ouverture, mêmes
+         gestes de fermeture — un seul comportement à apprendre pour les deux. -->
+    <div class="notifs hidden" id="notifs-wrap">
+      <button class="bell" id="btn-notifs" type="button" aria-label="Notifications"
+              aria-haspopup="true" aria-expanded="false" aria-controls="notifs-pop">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14 18 8"/>
+          <path d="M13.7 19a2 2 0 0 1-3.4 0"/>
+        </svg>
+        <span class="bell-badge hidden" id="notif-badge" aria-hidden="true">0</span>
+      </button>
+      <div class="notifs-pop" id="notifs-pop" role="dialog" aria-label="Notifications">
+        <div class="notifs-pop-head">
+          <span>Notifications</span>
+          <button type="button" class="lnk-mini" id="notif-allread">Tout marquer comme lu</button>
+        </div>
+        <div class="notif-list" id="notif-list"><p class="loading">Chargement…</p></div>
+      </div>
+    </div>
+
     <div class="account hidden" id="account">
       <!-- 2026-08-16 : l'identifiant est réduit à ses INITIALES (demande de Benoit). L'adresse
            complète prenait jusqu'à 11 rem dans la barre et n'apprenait rien à qui est déjà
@@ -1026,16 +1074,6 @@
       </div>
     </div>
 
-    <!-- La cloche, À DROITE du compte (demande de Benoit). Elle porte la pastille de non-lus,
-         qui n'est peinte que s'il y en a — une cloche ne doit pas porter un rond vide en
-         permanence. Masquée avec le reste tant qu'on n'est pas membre connecté. -->
-    <button class="bell hidden" id="btn-notifs" type="button" aria-label="Notifications">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 8a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 14 18 8"/>
-        <path d="M13.7 19a2 2 0 0 1-3.4 0"/>
-      </svg>
-      <span class="bell-badge hidden" id="notif-badge" aria-hidden="true">0</span>
-    </button>
   </div>
 </div></header>
 
@@ -1398,18 +1436,9 @@
     <div class="doc-list" id="doc-list"><p class="loading">Chargement…</p></div>
   </div>
 
-  <!-- LUM-35 — Centre de notifications. Périmètre volontairement étroit (arbitrage du
-       2026-08-09) : une ligne par mention reçue dans les échanges d'un lieu, rien d'autre.
-       Pas de flux d'activité générale — la contrainte est aussi posée en base par le check
-       sur notifications.type. -->
-  <div class="panel" id="panel-notifs">
-    <h2>Notifications</h2>
-    <p class="lead">Quand quelqu'un te prévient dans les échanges d'un lieu, ça arrive ici.</p>
-    <div class="notif-tools">
-      <button type="button" class="btn-ghost" id="notif-allread">Tout marquer comme lu</button>
-    </div>
-    <div class="notif-list" id="notif-list"><p class="loading">Chargement…</p></div>
-  </div>
+  <!-- 2026-08-16 : le panneau Notifications est SUPPRIMÉ, son contenu vit dans le pop-up de la
+       cloche (barre du haut). Le périmètre, lui, ne bouge pas — une ligne par mention reçue,
+       rien d'autre, contrainte tenue en base par le check sur notifications.type. -->
 
 </div>
 
@@ -1660,7 +1689,7 @@
   function showVisitor(){
     $('btn-team').classList.remove('hidden');
     $('account').classList.add('hidden');
-    $('btn-notifs').classList.add('hidden');
+    $('notifs-wrap').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.add('hidden');
@@ -1670,7 +1699,7 @@
     $('notmember-msg').textContent=text;
     $('btn-team').classList.add('hidden');
     $('account').classList.add('hidden');
-    $('btn-notifs').classList.add('hidden');
+    $('notifs-wrap').classList.add('hidden');
     $('main-tabs').classList.add('hidden');
     $('tb-espace').classList.add('hidden');
     $('notmember-banner').classList.remove('hidden');
@@ -1685,7 +1714,7 @@
   function revealMember(){
     $('btn-team').classList.add('hidden');
     $('account').classList.remove('hidden');
-    $('btn-notifs').classList.remove('hidden');
+    $('notifs-wrap').classList.remove('hidden');
     $('main-tabs').classList.remove('hidden');
     $('tb-espace').classList.remove('hidden');
     $('notmember-banner').classList.add('hidden');
@@ -1812,17 +1841,42 @@
     document.querySelectorAll('.tab').forEach(function(t){
       t.addEventListener('click', function(){ setPanel(t.dataset.panel); });
     });
-    // La cloche ouvre le même panneau que l'ancien onglet : un seul point d'entrée, setPanel,
-    // qui charge la boîte et repeint la pastille (cf. sa branche 'notifs').
-    var cloche=$('btn-notifs');
-    if(cloche) cloche.addEventListener('click', function(){ setPanel('notifs'); });
+    // 2026-08-16 : la cloche n'ouvre plus une SECTION mais un pop-up. Elle ne passe donc plus
+    // par setPanel() — l'écran où l'on se trouve ne change pas, et c'est bien l'intérêt :
+    // on lit ses notifications sans quitter ce qu'on faisait.
+    initNotifsPop();
+  }
+  /* ===== Pop-up des notifications (2026-08-16) =====================================
+     Même comportement que le menu du compte, voisin immédiat : clic pour ouvrir/fermer, clic
+     extérieur et Échap pour fermer. Un seul geste à apprendre pour les deux menus de la barre.
+     La liste est RELUE à chaque ouverture : c'est le seul moment où l'on sait que quelqu'un
+     regarde, et une notification arrivée entre-temps doit s'y trouver. */
+  var notifsPopInit=false;
+  function lxOuvrirNotifs(ouvert){
+    var w=$('notifs-wrap'); if(!w) return;
+    w.classList.toggle('is-open', ouvert);
+    var b=$('btn-notifs'); if(b) b.setAttribute('aria-expanded', ouvert?'true':'false');
+    if(ouvert){ initNotifs(); lxRenderNotifs(); loadNotifs(); }
+  }
+  function initNotifsPop(){
+    if(notifsPopInit) return; notifsPopInit=true;
+    var w=$('notifs-wrap'), b=$('btn-notifs');
+    if(!w || !b) return;
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      lxOuvrirNotifs(!w.classList.contains('is-open'));
+    });
+    document.addEventListener('click', function(e){
+      if(w.classList.contains('is-open') && !w.contains(e.target)) lxOuvrirNotifs(false);
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape' && w.classList.contains('is-open')){ lxOuvrirNotifs(false); b.focus(); }
+    });
   }
   function setPanel(name){
     document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('is-active', t.dataset.panel===name); });
-    // La cloche a quitté la rangée d'onglets : elle ne peut plus s'y souligner, elle porte
-    // donc son propre état actif. Sans ça, ouvrir les notifications n'allumerait RIEN dans la
-    // barre et l'écran paraîtrait sans origine.
-    var cloche=$('btn-notifs'); if(cloche) cloche.classList.toggle('is-active', name==='notifs');
+    // 2026-08-16, second passage : plus d'état actif à poser sur la cloche. Elle n'ouvre plus
+    // une section — son pop-up se superpose à l'écran courant, qui reste celui qu'on regarde.
     document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('is-active'); });
     var p=$('panel-'+name); if(p) p.classList.add('is-active');
     document.body.classList.toggle('on-accueil', name==='accueil');
@@ -1834,10 +1888,6 @@
     // lieuxLoaded dans buildLieux()) mais n'est plus une iframe depuis l'inline (incrément 5).
     if(name==='route') buildRoute();
     if(name==='docs') loadDocs();
-    // LUM-35 : la boîte se relit à CHAQUE ouverture de l'onglet (pas de garde « une seule
-    // fois » comme docs/route) — c'est le seul moment où l'on sait que l'utilisateur regarde,
-    // et une notification arrivée entre-temps doit s'y trouver.
-    if(name==='notifs'){ initNotifs(); lxRenderNotifs(); loadNotifs(); }
     if(name==='quest' && window.initQuest) window.initQuest();
   }
   function frDate(s){ try{ return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T00:00:00')); }catch(e){ return s; } }
@@ -4484,7 +4534,10 @@
       else { LX_NOTIFS=r.data||[]; }
     }catch(e){ LX_NOTIF_ERR='Impossible de charger tes notifications pour le moment.'; console.error('loadNotifs: exception', e); }
     lxMajBadgeNotifs();
-    if($('panel-notifs') && $('panel-notifs').classList.contains('is-active')) lxRenderNotifs();
+    // Repeint seulement si le pop-up est ouvert : loadNotifs() est aussi appelée à la
+    // connexion, pour la pastille, et il n'y a alors rien à peindre.
+    var w=$('notifs-wrap');
+    if(w && w.classList.contains('is-open')) lxRenderNotifs();
   }
   function lxNonLus(){ return LX_NOTIFS.filter(function(n){ return !n.lu_at; }); }
   function lxMajBadgeNotifs(){
@@ -4555,6 +4608,7 @@
       // base refuse, la notification restera simplement non lue, ce qui est le bon repli.
       lxMarquerLues([id]);
       if(!lieu){ alert('Cet échange n’est plus rattaché à un lieu.'); return; }
+      lxOuvrirNotifs(false); // on va ailleurs : le pop-up n'a plus de raison de rester ouvert
       setPanel('lieux');
       lxSetSubtab('carte');
       if(LX_FILTRE_RENDU) lxOuvrirDepuisHash(lieu); else LX_HASH_LIEU_EN_ATTENTE=lieu;
@@ -4699,7 +4753,7 @@ body.on-accueil.scrolled .tb-espace{color:var(--gold-deep);border-color:var(--go
 @media (max-width:760px){ .tb-espace{display:none;} .topbar #main-tabs{justify-content:flex-start;} }
 
 #panel-quest{
-  --qmax:none;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
+  --qmax:78rem;--muted:var(--ink-faint);--success:#5C7A4A;--ember-hover:#A8431A;
   --tint-gold:rgba(184,134,47,.14);--cream:#FFFDF8;--bg:var(--paper-warm);
 }
 #panel-quest .q-btn{width:auto;margin-top:0;}
