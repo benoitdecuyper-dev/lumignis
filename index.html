@@ -4000,6 +4000,26 @@
       ? 'Ce sont les lieux qui conviennent aux <b>'+fs.length+' familles à la fois</b>.'+reste
       : 'Aucun lieu ne convient aux <b>'+fs.length+' familles à la fois</b>. La liste reste classée par nombre de familles servies.';
     }
+    // 2026-08-16 — la géographie DOIT dire ce qu'elle écarte, depuis qu'elle intersecte.
+    // Arbitrage de Benoit : « je préfère une réponse à zéro qu'une réponse qui répond tout ».
+    // Un zéro est donc un résultat légitime — mais un zéro MUET se lit comme une panne. Cette
+    // phrase est ce qui fait la différence entre les deux, et c'est la seule concession :
+    // aucun adoucissement automatique, on nomme la cause, l'utilisateur décoche s'il veut.
+    // Le nombre de familles vient de LxVerdict.zoneContribs (même source que le filtre lui-même,
+    // jamais un recomptage local : la divergence entre deux comptages est le défaut du 16/08).
+    if(txt && fs.length && lxZoneMode!=='off'){
+     var geoC=LxVerdict.zoneContribs(fs, lxZoneMode), ecartes=lxVisibles().length-V;
+     var nC=geoC.fams.length, sfx=nC>1?'s':'';
+     if(!nC){
+      txt.innerHTML+=' <i>Aucune famille cochée n’a renseigné de département : la géographie ne restreint rien.</i>';
+     } else if(geoC.mode!==lxZoneMode){
+      txt.innerHTML+=' <i>Aucune famille cochée n’a renseigné de département de cœur — le filtre retombe sur la zone retenue.</i>';
+     } else if(ecartes>0){
+      txt.innerHTML+= geoC.mode==='coeur'
+       ? ' <i>La géographie en écarte '+ecartes+' : ne restent que les départements de cœur <b>communs</b> aux '+nC+' famille'+sfx+' qui l’ont renseigné.</i>'
+       : ' <i>La géographie en écarte '+ecartes+' : ne restent que les départements retenus par <b>les '+nC+' famille'+sfx+' à la fois</b>.</i>';
+     }
+    }
    }
    if(note){
     var vides={};

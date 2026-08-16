@@ -266,17 +266,31 @@
   // renseigné (ancienne forme de réponse) ne fait jamais échouer le mode 'coeur' — sinon la
   // seule réponse antérieure au niveau cœur viderait le filtre pour tout le monde.
   // Comme partout ailleurs : la sélection vide ne restreint rien.
-  // Révisé le 2026-08-15 sur retour de Benoit : « le fonctionnement, c'est de cœur PAR RAPPORT
-  // À LA FAMILLE SÉLECTIONNÉE ». La première version exigeait que TOUTES les familles
-  // sélectionnées aient le lieu dans leur zone — une intersection, qui ne répond pas à la
-  // question posée : quand on coche une famille, on veut voir SA zone. La règle est donc
-  // « au moins une des familles sélectionnées », ce qui redonne exactement la zone de la
-  // famille quand une seule est cochée, et l'union quand plusieurs le sont.
+  // Révisé le 2026-08-15 (union), REVENU À L'INTERSECTION le 2026-08-16 sur arbitrage de
+  // Benoit : « je préfère une réponse à zéro qu'une réponse qui répond tout ». Historique, à
+  // ne pas re-parcourir : la version d'origine exigeait TOUTES les familles sélectionnées, y
+  // compris celles qui n'ont pas renseigné de cœur — donc une seule ancienne réponse (Famille
+  // Plaut, saisie binaire) vidait l'écran. Le correctif du 15/08 a jeté l'intersection avec
+  // l'eau du bain en passant à « au moins une », c'est-à-dire à l'UNION : à 5 familles cochées,
+  // 193 lieux sur 255 en mode zone et 89 en mode cœur — un filtre qui ne filtrait presque plus.
+  // La bonne dimension n'était pas union/intersection mais QUI PARTICIPE : l'intersection se
+  // fait sur les familles CONTRIBUTRICES, celles qui ont réellement exprimé ce que le mode
+  // demande. Une famille muette sur la question est neutre, jamais éliminatoire ; et à une
+  // seule famille cochée on retrouve exactement sa zone, comme le voulait le retour du 15/08.
   //
   // Trois modes, pilotés par la liste déroulante de la barre de filtre :
-  //   'off'   : aucune restriction géographique (comportement d'avant le 15/08).
-  //   'zone'  : le lieu est dans la zone retenue d'au moins une famille (favorable OU cœur).
-  //   'coeur' : le lieu est dans un département de cœur d'au moins une famille.
+  //   'off'   : aucune restriction géographique.
+  //   'zone'  : le lieu est dans la zone retenue (favorable OU cœur) de TOUTES les familles
+  //             cochées qui ont renseigné au moins un département.
+  //   'coeur' : le lieu est dans un département de cœur de TOUTES les familles cochées qui ont
+  //             renseigné un cœur.
+  //
+  // Conséquence assumée, mesurée en base le 16/08 avant d'écrire (5 familles publiées) : les
+  // cœurs de Gineyts (22, 29) sont disjoints de ceux de Decuyper/Gastou (44, 85), donc
+  // l'intersection des 4 cœurs renseignés est VIDE et le mode 'coeur' à 5 familles ne laisse
+  // que les 12 pistes sans département. Ce n'est pas un défaut : c'est le fait que l'écran
+  // doit dire. Le repli reste à la main de l'utilisateur (décocher une famille), jamais
+  // automatique — un filtre qui s'adoucit tout seul ment sur ce qu'il montre.
   //
   // Deux garde-fous, pour que la règle ne se retourne jamais contre quelqu'un :
   //  - un lieu sans département connu (pistes équipe) n'est exclu par AUCUN mode : on ne
@@ -285,30 +299,45 @@
   //    ancienne forme, comme Famille Plaut), le mode 'coeur' retombe sur 'zone' au lieu de
   //    vider l'écran. Un écran vide sans explication se lit comme « aucun lieu ne convient »,
   //    alors que la vraie cause est « cette famille n'a pas dit son cœur ».
+
+  function aUneZone(d) { for (var k in d.n) { if (d.n[k] === 1 || d.n[k] === 2) return true; } return false; }
+  function aUnCoeur(d) {
+    if (!d.coeurConnu) return false;
+    for (var k in d.n) { if (d.n[k] === 2) return true; }
+    return false;
+  }
+
+  // Qui participe réellement au filtre géographique, et sous quel mode après repli. Exposée
+  // parce que l'écran doit pouvoir DIRE « communs aux N familles qui l'ont renseigné » sans
+  // recompter à sa façon — la divergence entre deux comptages est le défaut du 16/08 qu'on ne
+  // rejoue pas. Renvoie toujours {mode, fams} ; fams vide = la géographie ne restreint rien.
+  function zoneContribs(selFams, mode) {
+    var fs = selFams || [], i, d, out = [];
+    if (mode !== "zone" && mode !== "coeur") return { mode: "off", fams: [] };
+    if (!fs.length) return { mode: mode, fams: [] };
+    if (mode === "coeur") {
+      for (i = 0; i < fs.length; i++) { d = normalizeDepts(fs[i].depts); if (aUnCoeur(d)) out.push(fs[i]); }
+      if (out.length) return { mode: "coeur", fams: out };
+      mode = "zone"; // repli explicite, cf. note ci-dessus
+      out = [];
+    }
+    for (i = 0; i < fs.length; i++) { d = normalizeDepts(fs[i].depts); if (aUneZone(d)) out.push(fs[i]); }
+    return { mode: "zone", fams: out };
+  }
+
   function zoneRetenue(deptLieu, selFams, mode) {
-    var fs = selFams || [];
     if (mode !== "zone" && mode !== "coeur") return true;
-    if (!fs.length) return true;
     if (deptLieu == null || deptLieu === "") return true;
 
-    var i, e;
-    if (mode === "coeur") {
-      var unCoeurConnu = false;
-      for (i = 0; i < fs.length; i++) {
-        var d = normalizeDepts(fs[i].depts);
-        if (!d.coeurConnu) continue;
-        for (var k in d.n) { if (d.n[k] === 2) { unCoeurConnu = true; break; } }
-        if (unCoeurConnu) break;
-      }
-      if (!unCoeurConnu) mode = "zone"; // repli explicite, cf. note ci-dessus
-    }
+    var c = zoneContribs(selFams, mode), fams = c.fams;
+    if (!fams.length) return true;
 
-    for (i = 0; i < fs.length; i++) {
-      e = zoneEtat(fs[i].depts, deptLieu);
-      if (mode === "coeur") { if (e === "coeur") return true; }
-      else if (e !== "hors") return true;
+    for (var i = 0; i < fams.length; i++) {
+      var e = zoneEtat(fams[i].depts, deptLieu);
+      if (c.mode === "coeur") { if (e !== "coeur") return false; }
+      else if (e === "hors") return false;
     }
-    return false;
+    return true;
   }
 
   function libelleNiveau(n, selFams) {
@@ -337,6 +366,7 @@
     zoneScore: zoneScore,
     zoneLibelle: zoneLibelle,
     zoneScoreTotal: zoneScoreTotal,
+    zoneContribs: zoneContribs,
     zoneRetenue: zoneRetenue
   };
 });
