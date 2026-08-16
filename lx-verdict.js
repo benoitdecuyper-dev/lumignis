@@ -340,6 +340,106 @@
     return true;
   }
 
+  // ---------------------------------------------------------------------------------------
+  // Textes de la fiche : la description en tête et le résumé, JAMAIS le même paragraphe
+  // (2026-08-16, signalé par Benoit sur l'abbaye Notre-Dame de Valmont).
+  //
+  // Cause : depuis que la description est passée en tête de fiche (07/08), DEUX blocs
+  // puisent dans les MÊMES champs sans se connaître — la description prend le premier texte
+  // descriptif disponible (`desc`, puis `pts`, puis le premier point fort…), et le résumé
+  // reprenait exactement `desc` pour une piste équipe, `pts` pour un bien à vendre, le premier
+  // point fort pour un sanctuaire. Mesuré en base avant de corriger : **59 lieux sur 255**
+  // affichaient le même paragraphe deux fois (12 pistes, 35 biens à vendre, 12 sanctuaires) —
+  // une classe, pas le cas d'un lieu.
+  //
+  // Et ce n'étaient pas deux blocs mais TROIS : les listes du corps de fiche (« Pourquoi c'est
+  // une piste », « À vérifier / limites ») affichent les mêmes `forts` / `pts` dont la
+  // description tire son texte — mesuré au banc sur 12 fiches, 3 redisaient encore leur premier
+  // point fort après la correction des deux premiers blocs.
+  //
+  // La correction ne rustine donc aucun appelant : elle pose UN ordre de priorité des
+  // emplacements, appliqué ici une fois pour toutes —
+  //   **description (tête) > listes du corps > encadré résumé.**
+  // Les listes gardent leur contenu, sauf l'entrée que la description a prise (elles ont un
+  // titre qui les justifie) ; l'encadré résumé, lui, n'avait d'autre contenu que le premier
+  // texte de ces listes : il est désormais VIDE dès que la fiche parle ailleurs, et l'appelant
+  // ne le peint plus. Répéter n'informe pas, une phrase de remplissage non plus.
+  // Les phrases par défaut par type restent le filet des lieux qui n'ont aucun texte.
+  var RESUME_DEFAUT = {
+    p: "Piste repérée par l’équipe. À qualifier avec les critères Lumignis avant contact.",
+    v: "Bien identifié dans la prospection. À qualifier sur le triptyque : vie spirituelle, familles, faisabilité immobilière.",
+    a: "Abbaye ou monastère actif à observer : potentiel lié au lieu, à l’accueil et à l’évolution de la communauté. Point clé : comprendre la relation possible avec l’ordre ou le diocèse.",
+    s: "Sanctuaire repéré pour son potentiel de lieu chrétien habité."
+  };
+
+  // « non précisé » en tête de champ = la donnée dit qu'elle ne sait pas : ce n'est pas un texte.
+  function txtInf(x) { return typeof x === "string" && x.trim() !== "" && x.toLowerCase().indexOf("non précisé") !== 0; }
+  function txtNorm(s) { return String(s == null ? "" : s).replace(/\s+/g, " ").trim(); }
+  // Premier candidat exploitable de la liste, au moins long de minLen caractères.
+  function premierTexte(cands, minLen) {
+    for (var i = 0; i < cands.length; i++) {
+      if (!txtInf(cands[i])) continue;
+      var t = String(cands[i]).trim();
+      if (t.length < (minLen || 1)) continue;
+      return t;
+    }
+    return "";
+  }
+
+  function ficheTextes(it) {
+    it = it || {};
+    var forts0 = (it.forts && it.forts.length) ? it.forts[0] : "";
+    var lims0 = (it.lims && it.lims.length) ? it.lims[0] : "";
+    var pot = (it.p && it.p !== "—") ? it.p : "";
+    var bloc = lims0 ? " Point bloquant à vérifier : " + lims0 : "";
+
+    // Description : le premier texte descriptif que porte réellement la donnée (seuil de 20
+    // caractères, inchangé : en dessous, ce n'est pas une présentation mais une étiquette).
+    var description = premierTexte([it.desc, it.pts, forts0, it.resume, it.presentation, pot, it.ac, it.st], 21);
+
+    // Les listes du corps de fiche gardent leur contenu — elles ont un titre qui l'explique
+    // (« Pourquoi c'est une piste », « À vérifier / limites »). C'est donc à la TÊTE de fiche de
+    // ne pas les redire : ce que la description a pris leur est retiré. Ordre de priorité des
+    // emplacements, une fois pour toutes : description > listes du corps > encadré résumé.
+    var fortsRestants = (it.forts || []).filter(function (x) { return txtNorm(x) !== txtNorm(description); });
+    var ptsRestant = (txtInf(it.pts) && txtNorm(it.pts) !== txtNorm(description)) ? String(it.pts).trim() : "";
+
+    // Ce que le corps de fiche affichera de toute façon : tant qu'il y a ça, l'encadré résumé
+    // n'a rien à ajouter — il ne servait qu'à répéter le premier de ces textes.
+    var corpsParle = !!(fortsRestants.length || ptsRestant || lims0 || bloc
+      || (it.pour && it.pour.length) || (it.contre && it.contre.length)
+      || txtInf(it.contenu) || txtInf(it.lim));
+
+    var resume = "";
+    if (it.qualif) {
+      var q = it.qualif, e = q.eglise || {}, s = q.ecoleCatholique || {}, b = s.meilleureReference || s.meilleure || {};
+      // Une référence, pas un texte libre : cet encadré-là ne peut doublonner avec rien.
+      resume = "Référence Église : " + (e.diocese || "à qualifier") + " — " + (e.eveque || "évêque à vérifier")
+             + ". École : " + (b.nom ? b.nom + " à " + b.distanceKm + " km" : "à qualifier") + ".";
+    } else if (it.t === "a") {
+      // Une abbaye active n'a pas de corps de fiche (ni points forts ni limites) : la phrase de
+      // type est le seul repère, et elle n'est candidate à aucune description.
+      resume = RESUME_DEFAUT.a;
+    } else if (!description && !corpsParle) {
+      // Rien nulle part : on ne perd surtout pas un texte court (sous le seuil de description,
+      // donc jamais monté en tête) — la phrase par défaut du type n'est que le dernier recours.
+      resume = premierTexte([it.desc, it.pts], 1) || RESUME_DEFAUT[it.t] || RESUME_DEFAUT.s;
+    }
+    // Sous-titre de la fiche : commune (dép.) · région — sans redire deux fois la même chose.
+    // Les pistes équipe posent c = r = zone à l'absorption (index.html) : toutes affichaient
+    // « Normandie · Normandie ». Vu en capture, jamais par une assertion — c'est le même défaut
+    // que ci-dessus, à l'autre bout de la fiche.
+    var segs = [], tete = (it.c ? String(it.c).trim() : "") + (it.d ? " (" + it.d + ")" : "");
+    if (tete.trim()) segs.push(tete.trim());
+    if (it.r && txtNorm(it.r) !== txtNorm(it.c)) segs.push(String(it.r).trim());
+
+    return {
+      description: description, resume: resume,
+      forts: fortsRestants, pts: ptsRestant,
+      lieu: segs.join(" · ")
+    };
+  }
+
   function libelleNiveau(n, selFams) {
     var mot = motPremiers(n), fs = selFams || [];
     if (fs.length === 1) return fs[0].moi ? mot + " de votre classement" : mot + " " + deFam(fs[0]);
@@ -367,6 +467,7 @@
     zoneLibelle: zoneLibelle,
     zoneScoreTotal: zoneScoreTotal,
     zoneContribs: zoneContribs,
-    zoneRetenue: zoneRetenue
+    zoneRetenue: zoneRetenue,
+    ficheTextes: ficheTextes
   };
 });

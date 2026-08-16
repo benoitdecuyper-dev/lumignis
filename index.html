@@ -2407,22 +2407,12 @@
    if(it.t==='a' && /baisse|fragile|vieill/i.test(it.td||'')) return ['À creuser','status-hot'];
    return ['À qualifier','status-open'];
   }
-  function lxFirstText(a){ return (a&&a.length)?a[0]:''; }
-  function lxSummaryFor(it){
-   if(it.qualif){
-    var q=it.qualif, e=q.eglise||{}, s=q.ecoleCatholique||{}, b=s.meilleureReference||s.meilleure||{};
-    // 2026-08-15 : le pourcentage « Benoit & Éléonore » est retiré de toute la fiche (demande
-    // de Benoit). Un score agrégé sur des critères que chaque famille classe dans son propre
-    // ordre n'a pas de sens partagé — c'est le crible critère par critère qui informe.
-    return esc('Référence Église : '+(e.diocese||'à qualifier')+' — '+(e.eveque||'évêque à vérifier')+'. École : '+(b.nom?b.nom+' à '+b.distanceKm+' km':'à qualifier')+'.');
-   }
-   if(it.t==='p') return esc(it.desc||'Piste repérée par l’équipe. À qualifier avec les critères Lumignis avant contact.');
-   if(it.t==='v') return esc(lxFirstText([it.pts,it.lim].filter(lxInf)) || 'Bien identifié dans la prospection. À qualifier sur le triptyque : vie spirituelle, familles, faisabilité immobilière.');
-   if(it.t==='a') return esc('Abbaye ou monastère actif à observer : potentiel lié au lieu, à l’accueil et à l’évolution de la communauté. Point clé : comprendre la relation possible avec l’ordre ou le diocèse.');
-   var lead = lxFirstText(it.forts) || it.p || 'Sanctuaire repéré pour son potentiel de lieu chrétien habité.';
-   var block = lxFirstText(it.lims);
-   return esc(lead + (block ? ' Point bloquant à vérifier : '+block : ''));
-  }
+  // Le pourcentage « Benoit & Éléonore » reste retiré de toute la fiche (demande du 2026-08-15) :
+  // un score agrégé sur des critères que chaque famille classe dans son propre ordre n'a pas de
+  // sens partagé — c'est le crible critère par critère qui informe. Le texte lui-même est choisi
+  // par LxVerdict.ficheTextes(), qui garantit qu'il ne redit pas la description (cf. sa note).
+  // Chaîne vide = rien à ajouter : l'appelant NE PEINT PAS l'encadré (jamais une boîte creuse).
+  function lxSummaryFor(it){ return esc(LxVerdict.ficheTextes(it).resume); }
   function lxInfoLine(k,v){ return lxInf(v)?'<div class="info-line"><b>'+k+'</b><span>'+esc(v)+'</span></div>':''; }
   var LX_CRIT_NAMES={
    1:'Notre projet / gouvernance',2:'Divine Volonté',3:'Chez nous / logements',
@@ -2761,23 +2751,19 @@
   // Rien n'est inventé ici : on prend le premier texte descriptif que porte réellement la
   // donnée, selon le type de lieu, et l'extrait Wikipédia (#wx) vient s'y ajouter quand il
   // arrive — il était jusqu'ici relégué en bas de fiche, après tout le reste.
+  // 2026-08-16 : le CHOIX du texte est parti dans lx-verdict.js (LxVerdict.ficheTextes), avec
+  // ses tests. Motif : description et résumé puisaient dans les mêmes champs sans se connaître,
+  // et 59 lieux sur 255 affichaient le même paragraphe deux fois (signalé sur Valmont). Les
+  // deux textes se calculent désormais ensemble — le doublon n'est plus un défaut à corriger,
+  // il est impossible. Ici, on ne fait plus que peindre.
   function lxDescriptionHtml(it){
-   var cands=[
-     it.desc,
-     it.pts,                                   // « pourquoi c'est une piste » (biens à vendre)
-     lxFirstText(it.forts),                    // premier point fort (sanctuaires qualifiés)
-     it.resume, it.presentation,
-     (it.p && it.p!=='—') ? it.p : '',         // potentiel
-     it.ac, it.st
-   ];
-   var txt='';
-   for(var i=0;i<cands.length;i++){ if(lxInf(cands[i]) && String(cands[i]).trim().length>20){ txt=String(cands[i]).trim(); break; } }
+   var txt=LxVerdict.ficheTextes(it).description;
    return '<div class="fiche-desc">'+(txt?'<p>'+esc(txt)+'</p>':'')+'<p id="wx"></p></div>';
   }
   function lxPanelScaffold(it,bodyHtml,linksHtml){
    var st=lxStatusFor(it);
    var qualifNote=(!it.qualif && !it._piste) ? '<div class="summary-box">Ce lieu n’a pas encore de qualification détaillée (diocèse, école, crible). Les informations disponibles sont présentées ci-dessous.</div>' : '';
-   return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(it.c||'')+(it.d?' ('+it.d+')':'')+(it.r?' · '+esc(it.r):'')+'</div></div>'+
+   return '<div class="sheet-head"><div class="sheet-title"><h2>'+esc(it.n)+'</h2><div class="loc">'+esc(LxVerdict.ficheTextes(it).lieu)+'</div></div>'+
     '<div class="sheet-actions">'+lxLienAnnonce(it)+'</div></div>'+
     '<div class="status-row"><span class="status-pill '+st[1]+'">'+st[0]+'</span><span class="status-pill status-wait">'+lxTypeLabel(it)+'</span></div>'+
     lxDescriptionHtml(it)+
@@ -2786,7 +2772,9 @@
     // ferait perdre le focus du sélecteur qu'on vient d'utiliser).
     '<div id="fiche-verdict">'+lxFicheVerdictHtml(it)+'</div>'+
     '<div id="fav-slot">'+lxFavBtnHtml(it)+'</div>'+
-    '<div class="summary-box">'+lxSummaryFor(it)+'</div>'+
+    // Encadré résumé : rendu SEULEMENT s'il a quelque chose à dire. Une boîte vide (bordure et
+    // fond d'un bloc sans texte) se lit comme un contenu qui n'a pas chargé.
+    (lxSummaryFor(it) ? '<div class="summary-box">'+lxSummaryFor(it)+'</div>' : '')+
     qualifNote+
     lxCriteriaHtml(it)+
     '<div class="section-title">Infos utiles</div>'+lxPracticalFor(it)+lxEcolesHtml(it)+
@@ -2817,7 +2805,9 @@
    try{
      var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.nom+' '+p.zone);
      var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(p.nom);
-     var forts=(p.forts&&p.forts.length)?'<div class="anl pf"><h4>Points forts</h4><ul>'+p.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+     // Même arbitrage que dans openPanel : la liste ne redit pas ce que la tête de fiche a pris.
+     var Tp=LxVerdict.ficheTextes(p);
+     var forts=Tp.forts.length?'<div class="anl pf"><h4>Points forts</h4><ul>'+Tp.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
      var atouts=(p.pour&&p.pour.length)?'<div class="anl pf"><h4>Atouts</h4><ul>'+p.pour.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
      var reserves=(p.contre&&p.contre.length)?'<div class="anl lm"><h4>Réserves</h4><ul>'+p.contre.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
      var detail=p.contenu?'<div class="anl"><h4>En détail</h4><p>'+esc(p.contenu)+'</p></div>':'';
@@ -2847,15 +2837,19 @@
      var gmaps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(it.n+' '+it.c+' '+it.d);
      var gimg='https://www.google.com/search?tbm=isch&q='+encodeURIComponent(it.n+' '+it.c);
      var body='';
+     // Les textes déjà pris par la tête de fiche ne sont plus dans T.forts / T.pts : c'est
+     // LxVerdict.ficheTextes() qui arbitre, pas ce rendu (cf. sa note — trois blocs puisaient
+     // dans les mêmes champs, 59 lieux affichaient deux fois le même paragraphe).
+     var T=LxVerdict.ficheTextes(it);
      if(it.t==='v'){
-       var pf=lxInf(it.pts)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4>'+esc(it.pts)+'</div>':'';
+       var pf=T.pts?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4>'+esc(T.pts)+'</div>':'';
        var lm=lxInf(it.lim)?'<div class="anl lm"><h4>À vérifier / limites</h4>'+esc(it.lim)+'</div>':'';
        body=pf+lm+
        '<div class="kv" style="color:#8c7a63;font-size:12px">Photos : commune / environs (ou photo fournie) — voir l\'annonce via « Source » pour les photos du bien. Données du dossier de prospection Lumignis (juin 2026), disponibilité à reconfirmer.</div>';
      } else if(it.t==='a'){
        body='';
      } else {
-       var forts=(it.forts&&it.forts.length)?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4><ul>'+it.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
+       var forts=T.forts.length?'<div class="anl pf"><h4>Pourquoi c\'est une piste</h4><ul>'+T.forts.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
        var lims=(it.lims&&it.lims.length)?'<div class="anl lm"><h4>À vérifier / limites</h4><ul>'+it.lims.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>':'';
        body=forts+lims;
      }
